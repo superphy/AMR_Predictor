@@ -33,7 +33,7 @@ if __name__ == "__main__":
 	# for each drug. Does feature selection using given
 	# number of features.
 	#
-	# Call with "python CHANGE THIS <numfeats>"
+	# Call with "python one_vs_all_train_test_split.py <numfeats>"
 	#######################################################
 
 	"""
