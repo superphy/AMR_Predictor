@@ -175,8 +175,8 @@ def main(excel_filepath):
 
     if not os.path.exists('./amr_data'):
         os.mkdir('amr_data')
-    cfile = "amr_data/mic_class_dataframe.pkl"#os.path.join(data_dir, 'interim', 'mic_class_dataframe.pkl')
-    cofile = "amr_data/mic_class_order_dict.pkl"#os.path.join(data_dir, 'interim', 'mic_class_order_dict.pkl')
+    cfile = "../amr_data/mic_class_dataframe.pkl"#os.path.join(data_dir, 'interim', 'mic_class_dataframe.pkl')
+    cofile = "../amr_data/mic_class_order_dict.pkl"#os.path.join(data_dir, 'interim', 'mic_class_order_dict.pkl')
     joblib.dump(c, cfile)
     joblib.dump(class_orders, cofile)
 

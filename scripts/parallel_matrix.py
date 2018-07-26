@@ -115,11 +115,11 @@ if __name__ == "__main__":
             row_index += 1
 
     # Save the matrix and its dictionaries
-    if not os.path.exists('./unfiltered'):
-        os.mkdir('unfiltered')
-    np.save('unfiltered/kmer_matrix.npy', kmer_matrix)
-    np.save('unfiltered/dict_kmer_rows.npy', row_names)
-    np.save('unfiltered/dict_kmer_cols.npy', col_names)
+    if not os.path.exists('../unfiltered'):
+        os.mkdir('../unfiltered')
+    np.save('../unfiltered/kmer_matrix.npy', kmer_matrix)
+    np.save('../unfiltered/dict_kmer_rows.npy', row_names)
+    np.save('../unfiltered/dict_kmer_cols.npy', col_names)
 
     print("end: create matrix (parallel)")
 
