@@ -6,12 +6,14 @@
 RAW_GENOMES_PATH = "genomes/raw/"
 
 # Location of the MIC data file (excel spreadsheet)
-MIC_DATA_FILE = "amr_data/no_ecoli_GenotypicAMR_Master.xlsx" # location of MIC data file
+#MIC_DATA_FILE = "amr_data/no_ecoli_GenotypicAMR_Master.xlsx" # location of MIC data file
+MIC_DATA_FILE = "amr_data/GRDI_AMR_Master.xlsx"
 
 # The number of input genomes. The number of rows must match the
 # nubmer of rows in the MIC data file. The names of the genomes
 # must also be consistent, but need not be in the same order.
-NUM_INPUT_FILES = 2260
+#NUM_INPUT_FILES = 2260
+NUM_INPUT_FILES = 7961
 
 # Kmer length that you want to count 
 KMER_SIZE = 11
