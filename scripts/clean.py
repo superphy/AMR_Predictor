@@ -33,7 +33,7 @@ def find_recurring_char(record, start, end):
     window = end - start
     recur_char = 'X'
     #this is the density threshold for finding a garbage sequence
-    #0.75 means that 75% of nucleotides must be the same to trigger a cut
+    #0.8 means that 80% of nucleotides must be the same to trigger a cut
     perc_cut = 0.75
     A_count = (record).count("A",start,end)
     T_count = (record).count("T",start,end)
@@ -50,7 +50,6 @@ def find_recurring_char(record, start, end):
         recur_char = 'C'
     elif(((N_count)/window)>=perc_cut):
         recur_char = 'N'
-    #if a high density character is found, return that otherwise we return 'X'
     return recur_char
 
 def format_files(files_list, output_dir):
@@ -70,16 +69,16 @@ def format_files(files_list, output_dir):
             with open(f, "r") as fh:
                 for record in SeqIO.parse(fh, "fasta"):
                     if len(record.seq) < 500:
-                        print("Skipping {}, less than 500bp".format(record.id), file=sys.stderr)
+                        #print("Skipping {}, less than 500bp".format(record.id), file=sys.stderr)
                         continue
 
                     m = re.search(r"_cov_([\d\.]+)", record.id)
                     if m:
                         if float(m.group(1)) < 5:
-                            print("Skipping {}, low coverage {}".format(record.id, m.group(1)), file=sys.stderr)
+                            #print("Skipping {}, low coverage {}".format(record.id, m.group(1)), file=sys.stderr)
                             continue
-                    else:
-                        print("Could not find coverage for {}".format(record.id), file=sys.stderr)
+                    #else:
+                        #print("Could not find coverage for {}".format(record.id), file=sys.stderr)
                     length = len(record.seq)
                     str = record.seq
 
@@ -113,7 +112,7 @@ def format_files(files_list, output_dir):
                                 window_size = length - index
                         str = record.seq[0:(length-window_size)]
                         print("Trimming {}, {} mostly {} bases removed".format(record.id, (length-len(str)),recur_char),"from end")
-                    #Same as above but searching front of file instead of back for garbage
+                    #searching front of file for garbage
                     length = len(str)
                     recur_char ="X"
                     window_size =0
