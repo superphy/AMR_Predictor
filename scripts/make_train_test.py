@@ -36,8 +36,8 @@ if __name__ == "__main__":
 
 	NUM_FEATS = sys.argv[1] # default = 270
 
-	df = joblib.load("./amr_data/mic_class_dataframe.pkl") # Matrix of experimental MIC values
-	mic_class_dict = joblib.load("./amr_data/mic_class_order_dict.pkl") # Matrix of classes for each drug
+	df = joblib.load(os.path.abspath(os.path.curdir)+"/amr_data/mic_class_dataframe.pkl") # Matrix of experimental MIC values
+	mic_class_dict = joblib.load(os.path.abspath(os.path.curdir)+"/amr_data/mic_class_order_dict.pkl") # Matrix of classes for each drug
 
 	df_cols = df.columns
 	for drug in df_cols:
@@ -45,9 +45,9 @@ if __name__ == "__main__":
 		print("\n********************",drug,"*******************")
 		num_classes = len(mic_class_dict[drug])
 
-		matrix = np.load('./amr_data/'+drug+'/kmer_matrix.npy')
-		rows_mic = np.load('./amr_data/'+drug+'/kmer_rows_mic.npy')
-		rows_gen = np.load('./amr_data/'+drug+'/kmer_rows_genomes.npy')
+		matrix = np.load(os.path.abspath(os.path.curdir)+'/amr_data/'+drug+'/kmer_matrix.npy')
+		rows_mic = np.load(os.path.abspath(os.path.curdir)+'/amr_data/'+drug+'/kmer_rows_mic.npy')
+		rows_gen = np.load(os.path.abspath(os.path.curdir)+'/amr_data/'+drug+'/kmer_rows_genomes.npy')
 
 		#X = SelectKBest(f_classif, k=int(NUM_FEATS)).fit_transform(matrix, rows_mic)
 		X = matrix
@@ -56,13 +56,13 @@ if __name__ == "__main__":
 
 		cv = StratifiedKFold(n_splits=5, random_state=913824)
 
-		if not os.path.exists('./amr_data/'+drug+'/'+str(NUM_FEATS)+'feats/'):
-			os.mkdir('./amr_data/'+drug+'/'+str(NUM_FEATS)+'feats/')
+		if not os.path.exists(os.path.abspath(os.path.curdir)+'/amr_data/'+drug+'/'+str(NUM_FEATS)+'feats/'):
+			os.mkdir(os.path.abspath(os.path.curdir)+'/amr_data/'+drug+'/'+str(NUM_FEATS)+'feats/')
 
 		loop = 1
 		for train,test in cv.split(X,Y,Z):
 
-			filepath = './amr_data/'+drug+'/'+str(NUM_FEATS)+'feats/'
+			filepath = os.path.abspath(os.path.curdir)+'/amr_data/'+drug+'/'+str(NUM_FEATS)+'feats/'
 
 			Y[train] = encode_categories(Y[train], mic_class_dict[drug])
 			Y[test]  = encode_categories(Y[test], mic_class_dict[drug])

@@ -7,25 +7,25 @@ import os
 
 if __name__ == "__main__":
 	# Matrix of experimental MIC values
-	df = joblib.load("./amr_data/mic_class_dataframe.pkl")
+	df = joblib.load(os.path.abspath(os.path.curdir)+"/amr_data/mic_class_dataframe.pkl")
 	df_rows = df.index.values 	# Row names are genomes
 	df_cols = df.columns		# Col names are drugs
 
 	# Matrix of classes for each drug
-	mic_class_dict = joblib.load("./amr_data/mic_class_order_dict.pkl")
+	mic_class_dict = joblib.load(os.path.abspath(os.path.curdir)+"/amr_data/mic_class_order_dict.pkl")
 
 	# Load the filtered kmer matrix and its row and col lookups
-	kmer_matrix = np.load("./filtered/filtered_matrix.npy")
-	kmer_cols = np.load("./filtered/filtered_cols.npy")
-	kmer_rows = np.load("./filtered/filtered_rows.npy")
+	kmer_matrix = np.load(os.path.abspath(os.path.curdir)+"/filtered/filtered_matrix.npy")
+	kmer_cols = np.load(os.path.abspath(os.path.curdir)+"/filtered/filtered_cols.npy")
+	kmer_rows = np.load(os.path.abspath(os.path.curdir)+"/filtered/filtered_rows.npy")
 
 	# For each drug
 	for drug in df_cols:
 		print("start: prepping amr data for ",drug)
 
 		# Create a directory for the drugs' data
-		if not os.path.exists('./amr_data/'+drug):
-			os.mkdir('./amr_data/'+drug)
+		if not os.path.exists(os.path.abspath(os.path.curdir)+'/amr_data/'+drug):
+			os.mkdir(os.path.abspath(os.path.curdir)+'/amr_data/'+drug)
 
 		# Get the column index of the drug
 		col_index = df.columns.get_loc(drug)
@@ -56,7 +56,7 @@ if __name__ == "__main__":
 
 		# Save the kmer row names (genomes) so that we dont have
 		# to make a copy of it to manipulate it (time saver)
-		np.save('./amr_data/'+drug+'/kmer_rows_genomes.npy', new_kmer_rows)
+		np.save(os.path.abspath(os.path.curdir)+'/amr_data/'+drug+'/kmer_rows_genomes.npy', new_kmer_rows)
 		# Lookup the MIC value for each genome and replace the genome
 		# name with that value, and save it as a separate np array
 		for i in range(new_kmer_rows.shape[0]):
@@ -65,10 +65,10 @@ if __name__ == "__main__":
 			mic_val = new_df.iloc[row_index][0]
 			new_kmer_rows[i] = mic_val
 
-		joblib.dump(new_df, './amr_data/'+drug+'/mic_df.pkl')
-		np.save('./amr_data/'+drug+'/kmer_matrix.npy', new_kmer_matrix)
-		np.save('./amr_data/'+drug+'/kmer_rows_mic.npy', new_kmer_rows)
-		np.save('./amr_data/'+drug+'/kmer_cols.npy', kmer_cols)
+		joblib.dump(new_df, os.path.abspath(os.path.curdir)+'/amr_data/'+drug+'/mic_df.pkl')
+		np.save(os.path.abspath(os.path.curdir)+'/amr_data/'+drug+'/kmer_matrix.npy', new_kmer_matrix)
+		np.save(os.path.abspath(os.path.curdir)+'/amr_data/'+drug+'/kmer_rows_mic.npy', new_kmer_rows)
+		np.save(os.path.abspath(os.path.curdir)+'/amr_data/'+drug+'/kmer_cols.npy', kmer_cols)
 
 		print("end: prepping amr data for ",drug)
 

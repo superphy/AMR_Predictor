@@ -7,9 +7,9 @@ import os
 print("start: filter matrix")
 
 # Loaad in the kmermatrix and row and col lookups
-matrix = np.load("../unfiltered/kmer_matrix.npy")
-kmer_rows = np.load("../unfiltered/kmer_rows.npy")
-kmer_cols = np.load("../unfiltered/kmer_cols.npy")
+matrix = np.load(os.path.abspath(os.path.curdir)+"/unfiltered/kmer_matrix.npy")
+kmer_rows = np.load(os.path.abspath(os.path.curdir)+"/unfiltered/kmer_rows.npy")
+kmer_cols = np.load(os.path.abspath(os.path.curdir)+"/unfiltered/kmer_cols.npy")
 
 # Get the dimensions of the matrix
 num_rows = np.shape(matrix)[0]
@@ -48,10 +48,10 @@ print(matrix.shape)
 kmer_cols = kmer_cols[delete_this]
 
 # Save the filtered matrix and its row and column lookups
-if not os.path.exists('./filtered'):
-	os.mkdir('./filtered')
-np.save("./filtered/filtered_matrix.npy", matrix)
-np.save("./filtered/filtered_cols.npy", kmer_cols)
-np.save("./filtered/filtered_rows.npy", kmer_rows)
+if not os.path.exists(os.path.abspath(os.path.curdir)+'/filtered'):
+	os.mkdir(os.path.abspath(os.path.curdir)+'/filtered')
+np.save(os.path.abspath(os.path.curdir)+"/filtered/filtered_matrix.npy", matrix)
+np.save(os.path.abspath(os.path.curdir)+"/filtered/filtered_cols.npy", kmer_cols)
+np.save(os.path.abspath(os.path.curdir)+"/filtered/filtered_rows.npy", kmer_rows)
 
 print("end: filter matrix")
