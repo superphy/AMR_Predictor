@@ -25,48 +25,48 @@ __email__ = "matthew.whiteside@phac-aspc.gc.ca"
 # Manually define MIC ranges due to mixing of different systems
 mic_ranges = {
     'MIC_AMP': {
-        'top': '>=32.0000',
-        'bottom': '<=1.0000',
+        'top': '>32.0000',
+        'bottom': '<1.0000',
     },
     'MIC_AMC': {
-        'top': '>=32.0000',
-        'bottom': '<=1.0000',
+        'top': '>32.0000',
+        'bottom': '<1.0000',
     },
     'MIC_FOX': {
-        'top': '>=32.0000',
-        'bottom': '<=1.0000',
+        'top': '>32.0000',
+        'bottom': '<1.0000',
     },
     'MIC_CRO': {
-        'top': '>=64.0000',
-        'bottom': '<=0.2500',
+        'top': '>64.0000',
+        'bottom': '<0.2500',
     },
     'MIC_TIO': {
         'top': '>8.0000',
         'bottom': '0.2500',
     },
     'MIC_GEN': {
-        'top': '>=16.0000',
-        'bottom': '<=0.2500',
+        'top': '>16.0000',
+        'bottom': '<0.2500',
     },
     'MIC_FIS': {
         'top': '>256.0000',
-        'bottom': '<=16.0000',
+        'bottom': '<16.0000',
     },
     'MIC_SXT': {
         'top': '>64.0000',
-        'bottom': '<=0.1250',
+        'bottom': '<0.1250',
     },
     'MIC_AZM': {
         'top': '>16.0000',
-        'bottom': '<=1.0000',
+        'bottom': '<1.0000',
     },
     'MIC_CHL': {
         'top': '>32.0000',
-        'bottom': '<=2.0000',
+        'bottom': '<2.0000',
     },
     'MIC_CIP': {
-        'top': '>=4.0000',
-        'bottom': '<=0.0150',
+        'top': '>4.0000',
+        'bottom': '<0.0150',
     },
     'MIC_NAL': {
         'top': '>32.0000',
@@ -74,7 +74,7 @@ mic_ranges = {
     },
     'MIC_TET': {
         'top': '>32.0000',
-        'bottom': '<=4.0000',
+        'bottom': '<4.0000',
     },
 
 }
@@ -97,9 +97,9 @@ def main(excel_filepath):
     # micsdf = micsdf.set_index('run')
 
     micsdf = pd.read_excel(excel_filepath)
-    micsdf = micsdf[["run","MIC_AMP", "MIC_AMC", "MIC_FOX", "MIC_CRO", "MIC_TIO", "MIC_GEN", "MIC_FIS", "MIC_SXT", "MIC_AZM", "MIC_CHL", "MIC_CIP", "MIC_NAL", "MIC_TET"]]
+    micsdf = micsdf[["SANumber","MIC_AMP", "MIC_AMC", "MIC_FOX", "MIC_CRO", "MIC_TIO", "MIC_GEN", "MIC_SXT", "MIC_AZM", "MIC_CHL", "MIC_CIP", "MIC_NAL", "MIC_TET"]]
 
-    micsdf = micsdf.set_index('run')
+    micsdf = micsdf.set_index('SANumber')
     
     classes = {}
     class_orders = {}
