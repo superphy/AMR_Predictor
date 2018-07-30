@@ -114,8 +114,8 @@ def main(excel_filepath):
 
     c = pd.DataFrame(classes)
 
-    cfile = snakemake.output[0]
-    cofile = snakemake.output[1]
+    cfile  = os.path.abspath(os.path.curdir)+"/amr_data/mic_class_dataframe.pkl"#os.path.join(data_dir, 'interim', 'mic_class_dataframe.pkl')
+    cofile = os.path.abspath(os.path.curdir)+"/amr_data/mic_class_order_dict.pkl"#os.path.join(data_dir, 'interim', 'mic_class_order_dict.pkl')
     joblib.dump(c, cfile)
     joblib.dump(class_orders, cofile)
 
@@ -165,4 +165,5 @@ if __name__ == '__main__':
     project_dir = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir)
     load_dotenv(find_dotenv())
 
-    main(snakemake.input[0])
+    #main(snakemake.input[0])
+    main(sys.argv[1])
