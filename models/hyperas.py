@@ -26,6 +26,7 @@ from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 from hyperas import optim
 from hyperas.distributions import choice, uniform, conditional
 
+from sklearn import metrics
 from sklearn.externals import joblib
 from sklearn.cross_validation import train_test_split
 from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit
@@ -122,10 +123,10 @@ def find_major(pred, act, drug, mic_class_dict):
 def find_errors(model, test_data, test_names, genome_names, class_dict, drug, mic_class_dict):
 	prediction = model.predict_classes(test_data)
 
-	if not os.path.exists('../amr_data/errors'):
-		os.mkdir('../amr_data/errors')
+	if not os.path.exists(os.path.abspath(os.path.curdir)+'/amr_data/errors'):
+		os.mkdir(os.path.abspath(os.path.curdir)+'/amr_data/errors')
 
-	err_file = open('../amr_data/errors/'+str(sys.argv[1])+'_feats_hyperas_errors.txt', 'a+')
+	err_file = open(os.path.abspath(os.path.curdir)+'/amr_data/errors/'+str(sys.argv[1])+'_feats_hyperas_errors.txt', 'a+')
 
 	actual = []
 	for row in range(test_names.shape[0]):
@@ -156,14 +157,14 @@ def data():
 	from keras.utils import to_categorical
 
 	# Matrix of experimental MIC values
-	df = joblib.load("../amr_data/mic_class_dataframe.pkl")
+	df = joblib.load(os.path.abspath(os.path.curdir)+"/amr_data/mic_class_dataframe.pkl")
 	# Matrix of classes for each drug
-	mic_class_dict = joblib.load("../amr_data/mic_class_order_dict.pkl")
+	mic_class_dict = joblib.load(os.path.abspath(os.path.curdir)+"/amr_data/mic_class_order_dict.pkl")
 
 	drug = sys.argv[2]
 	num_classes = len(mic_class_dict[drug])
 
-	filepath = '../amr_data/'+drug+'/'+str(sys.argv[1])+'feats/fold'+str(sys.argv[3])+'/'
+	filepath = os.path.abspath(os.path.curdir)+'/amr_data/'+drug+'/'+str(sys.argv[1])+'feats/fold'+str(sys.argv[3])+'/'
 	x_train = np.load(filepath+'x_train.npy')
 	x_test  = np.load(filepath+'x_test.npy')
 	y_train = np.load(filepath+'y_train.npy')
@@ -214,6 +215,16 @@ def create_model(x_train, y_train, x_test, y_test):
 	return {'loss': -acc, 'status': STATUS_OK, 'model': model}
 
 
+def metrics_report_to_df(ytrue, ypred):
+	precision, recall, fscore, support = metrics.precision_recall_fscore_support(ytrue, ypred, labels=mic_class_dict[drug])
+	classification_report = pd.concat(map(pd.DataFrame, [precision, recall, fscore, support]), axis=1)
+	#classification_report.set_axis(mic_class_dict[drug], axis='index', inplace=True)
+	classification_report.columns = ["precision", "recall", "f1-score", "support"] # Add row w "avg/total"
+	classification_report.loc['avg/Total', :] = metrics.precision_recall_fscore_support(ytrue, ypred, average='weighted')
+	classification_report.loc['avg/Total', 'support'] = classification_report['support'].sum()
+	return(classification_report)
+
+
 if __name__ == "__main__":
 	##################################################################
 	# call with
@@ -236,10 +247,10 @@ if __name__ == "__main__":
 	print("************************************")
 
 	# Load data
-	mic_class_dict = joblib.load("../amr_data/mic_class_order_dict.pkl")
+	mic_class_dict = joblib.load(os.path.abspath(os.path.curdir)+"/amr_data/mic_class_order_dict.pkl")
 	class_dict = mic_class_dict[drug]
 	num_classes = len(mic_class_dict[drug])
-	filepath = '../amr_data/'+drug+'/'+str(feats)+'feats/fold'+str(fold)+'/'
+	filepath = os.path.abspath(os.path.curdir)+'/amr_data/'+drug+'/'+str(feats)+'feats/fold'+str(fold)+'/'
 	genome_names = np.load(filepath+'genome_test.npy')
 
 	# Split data, get best model
@@ -251,10 +262,10 @@ if __name__ == "__main__":
 
 	## Score #######################################################
 	score = best_model.evaluate(test_data, test_names)
-	1d_score = eval_model(best_model, test_data, test_names)
-	y_true = 1d_score[3]
-	y_pred = 1d_score[2]
-	sc = {'base acc': [score[1]], '1d acc': [1d_score[0]], 'mcc':[1d_score[1]]}
+	score_1d = eval_model(best_model, test_data, test_names)
+	y_true = score_1d[3]
+	y_pred = score_1d[2]
+	sc = {'base acc': [score[1]], '1d acc': [score_1d[0]], 'mcc':[score_1d[1]]}
 	score_df = DataFrame(sc)
 	################################################################
 
@@ -277,8 +288,8 @@ if __name__ == "__main__":
 	rep_df.to_pickle(filepath+'hyp_rep_df.pkl')
 	with open(filepath+'hyperas_out.txt','w') as f:
 		f.write("\nBase acc: {0}%\n".format(round(Decimal(score[1]*100),2)))
-		f.write("1-d acc: {0}%\n".format(1d_score[0]))
-		f.write("MCC: {0}\n".format(round(1d_score[1],4)))
+		f.write("1-d acc: {0}%\n".format(score_1d[0]))
+		f.write("MCC: {0}\n".format(round(score_1d[1],4)))
 		f.write("\nConfusion Matrix\n{0}\n".format(conf_df))
 		f.write("\nClassification Report\n{0}\n".format(report))
 		f.write("Best performing model chosen hyper-parameters:\n{0}\n".format(best_run))
