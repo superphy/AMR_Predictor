@@ -59,7 +59,7 @@ mic_ranges = {
         'bottom': '<0.1250',
     },
     'MIC_AZM': {
-        'top': '>16.0000',
+        'top': '>16.0000',              mask[i] = 0
         'bottom': '<1.0000',
     },
     'MIC_CHL': {

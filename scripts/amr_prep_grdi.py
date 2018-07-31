@@ -19,6 +19,21 @@ if __name__ == "__main__":
 	kmer_cols = np.load(os.path.abspath(os.path.curdir)+"/filtered/filtered_cols.npy")
 	kmer_rows = np.load(os.path.abspath(os.path.curdir)+"/filtered/filtered_rows.npy")
 
+
+	############################################
+	# need to filter out genomes
+	# if df_genome not in kmer_rows, then delete the row from the df
+
+	kmer_rows=kmer_rows.astype('S11')
+	print(kmer_rows)
+	print(df_rows)
+
+	for gen in df_rows:
+		if gen not in kmer_rows:
+			df = df.drop([gen])
+
+	############################################
+
 	# For each drug
 	for drug in df_cols:
 		print("start: prepping amr data for ",drug)
@@ -47,7 +62,6 @@ if __name__ == "__main__":
 		print(df)
 
 		print("kmer rows shape",kmer_rows.shape)
-
 
 
 		for i in range(kmer_rows.shape[0]):
