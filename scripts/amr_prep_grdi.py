@@ -19,6 +19,32 @@ if __name__ == "__main__":
 	kmer_cols = np.load(os.path.abspath(os.path.curdir)+"/filtered/filtered_cols.npy")
 	kmer_rows = np.load(os.path.abspath(os.path.curdir)+"/filtered/filtered_rows.npy")
 
+
+	############################################
+	# need to filter out genomes
+	# if df_genome not in kmer_rows, then delete the row from the df
+
+	#kmer_rows=kmer_rows.astype('S11')
+	#print(kmer_rows)
+	#print(df_rows)
+
+	print("kmer matrix shape", kmer_matrix.shape)
+	print("df before")
+	print(df)
+
+	kmer_rows =  [x.decode('utf-8') for x in kmer_rows]
+
+	for gen in df_rows:
+		if gen not in kmer_rows:
+			df = df.drop([gen])
+			print(gen)
+	df_rows = df.index.values
+
+	print("df after")
+	print(df)
+
+	############################################
+
 	# For each drug
 	for drug in df_cols:
 		print("start: prepping amr data for ",drug)
@@ -43,16 +69,23 @@ if __name__ == "__main__":
 		num_rows = len(df_rows)
 		mask = [1]*(num_rows)
 
-		for i in range(kmer_rows.shape[0]):
-			x = kmer_rows[i].decode('utf-8')
+		#print("df")
+		#print(df)
+
+		#print("kmer rows shape",kmer_rows.shape)
+
+
+		#for i in range(kmer_rows.shape[0]):
+		for i in range(len(kmer_rows)):
+			x = kmer_rows[i]#.decode('utf-8')
 			if x not in new_df_rows:
 				mask[i] = 0
 		bool_mask = [bool(x) for x in mask]
 
-		print(kmer_matrix.shape)
+		#print(kmer_matrix.shape)
 		new_kmer_matrix = kmer_matrix[bool_mask, :]
 		new_kmer_rows   = kmer_rows[bool_mask]
-		print(new_kmer_matrix.shape)
+		#print(new_kmer_matrix.shape)
 
 		# Save the kmer row names (genomes) so that we dont have
 		# to make a copy of it to manipulate it (time saver)

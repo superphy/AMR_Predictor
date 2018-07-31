@@ -43,8 +43,8 @@ if __name__ == "__main__":
 
 	NUM_FEATS = sys.argv[1] # default = 270
 
-	df = joblib.load("../amr_data/mic_class_dataframe.pkl") # Matrix of experimental MIC values
-	mic_class_dict = joblib.load("../amr_data/mic_class_order_dict.pkl") # Matrix of classes for each drug
+	df = joblib.load("./amr_data/mic_class_dataframe.pkl") # Matrix of experimental MIC values
+	mic_class_dict = joblib.load("./amr_data/mic_class_order_dict.pkl") # Matrix of classes for each drug
 
 	if not os.path.exists('./ry/'):
 		os.mkdir('./ry/')
@@ -59,9 +59,9 @@ if __name__ == "__main__":
 		print("\n********************",drug,"*******************")
 		num_classes = len(mic_class_dict[drug])
 
-		matrix = np.load('../amr_data/'+drug+'/kmer_matrix.npy')
-		rows_mic = np.load('../amr_data/'+drug+'/kmer_rows_mic.npy')
-		rows_gen = np.load('../amr_data/'+drug+'/kmer_rows_genomes.npy')
+		matrix = np.load('./amr_data/'+drug+'/kmer_matrix.npy')
+		rows_mic = np.load('./amr_data/'+drug+'/kmer_rows_mic.npy')
+		rows_gen = np.load('./amr_data/'+drug+'/kmer_rows_genomes.npy')
 
 		#X = SelectKBest(f_classif, k=int(NUM_FEATS)).fit_transform(matrix, rows_mic)
 		X = matrix

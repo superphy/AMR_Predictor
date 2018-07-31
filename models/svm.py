@@ -19,6 +19,7 @@ from keras.models import Sequential#, load_model
 from keras.utils import np_utils, to_categorical
 #from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 
+from sklearn import metrics
 from sklearn.externals import joblib
 from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit, RandomizedSearchCV, GridSearchCV
 from sklearn.feature_selection import SelectKBest, f_classif
@@ -147,9 +148,9 @@ def find_major(pred, act, drug, mic_class_dict):
 
 
 def find_errors(model, test_data, test_names, genome_names, class_dict, drug, mic_class_dict):
-	if not os.path.exists('../amr_data/errors'):
-		os.mkdir('../amr_data/errors')
-	err_file = open('../amr_data/errors/'+str(sys.argv[1])+'_feats_svm_errors.txt', 'a+')
+	if not os.path.exists(os.path.abspath(os.path.curdir)+'/amr_data/errors'):
+		os.mkdir(os.path.abspath(os.path.curdir)+'/amr_data/errors')
+	err_file = open(os.path.abspath(os.path.curdir)+'/amr_data/errors/'+str(sys.argv[1])+'_feats_svm_errors.txt', 'a+')
 
 	prediction = model.predict(test_data)
 	prediction = [int(round(float(value))) for value in prediction]
@@ -175,6 +176,16 @@ def find_errors(model, test_data, test_names, genome_names, class_dict, drug, mi
 			err_file.write("Drug:{} Genome:{} Predicted:{} Actual:{} OBO:{} Major?:{}\n".format(drug, genome_names[i].decode('utf-8'), class_dict[pred], class_dict[int(act)], off_by_one, find_major(pred,act,drug,mic_class_dict)))
 
 
+def metrics_report_to_df(ytrue, ypred):
+	precision, recall, fscore, support = metrics.precision_recall_fscore_support(ytrue, ypred, labels=mic_class_dict[drug])
+	classification_report = pd.concat(map(pd.DataFrame, [precision, recall, fscore, support]), axis=1)
+	#classification_report.set_axis(mic_class_dict[drug], axis='index', inplace=True)
+	classification_report.columns = ["precision", "recall", "f1-score", "support"] # Add row w "avg/total"
+	classification_report.loc['avg/Total', :] = metrics.precision_recall_fscore_support(ytrue, ypred, average='weighted')
+	classification_report.loc['avg/Total', 'support'] = classification_report['support'].sum()
+	return(classification_report)
+
+
 if __name__ == "__main__":
 	##################################################################
 	# call with
@@ -187,7 +198,7 @@ if __name__ == "__main__":
 	#   or use svm.snake (change the features num)
 	##################################################################
 
-	num_feats = sys.argv[1]
+	feats = sys.argv[1]
 	drug = sys.argv[2]
 	fold = sys.argv[3]
 
@@ -198,11 +209,10 @@ if __name__ == "__main__":
 	print("************************************")
 
 	# Load data
-	df = joblib.load("../amr_data/mic_class_dataframe.pkl") # Matrix of experimental MIC values
-	mic_class_dict = joblib.load("../amr_data/mic_class_order_dict.pkl") # Matrix of classes for each drug
+	mic_class_dict = joblib.load(os.path.abspath(os.path.curdir)+"/amr_data/mic_class_order_dict.pkl")
 	class_dict = mic_class_dict[drug]
 	num_classes = len(mic_class_dict[drug])
-	filepath = '../amr_data/'+drug+'/'+str(num_feats)+'feats/fold'+str(fold)+'/'
+	filepath = os.path.abspath(os.path.curdir)+'/amr_data/'+drug+'/'+str(feats)+'feats/fold'+str(fold)+'/'
 	genome_names = np.load(filepath+'genome_test.npy')
 
 	# Load training and testing sets
@@ -220,10 +230,10 @@ if __name__ == "__main__":
 
 	## Score #######################################################
 	score = eval_model(model, x_test, y_test)
-	1d_score = eval_modelOBO(model, x_test, y_test)
+	score_1d = eval_modelOBO(model, x_test, y_test)
 	y_true = score[3]
 	y_pred = score[2]
-	sc = {'base acc': [score[1]], '1d acc': [1d_score[0]], 'mcc':[1d_score[1]]}
+	sc = {'base acc': [score[1]], '1d acc': [score_1d[0]], 'mcc':[score_1d[1]]}
 	score_df = DataFrame(sc)
 	################################################################
 
@@ -246,8 +256,8 @@ if __name__ == "__main__":
 	rep_df.to_pickle(filepath+'svm_rep_df.pkl')
 	with open(filepath+'svm_out.txt','w') as f:
 		f.write("\nBase acc: {0}%\n".format(score[0]))
-		f.write("1-d acc: {0}%\n".format(1d_score[0]))
-		f.write("MCC: {0}\n".format(round(1d_score[1],4)))
+		f.write("1-d acc: {0}%\n".format(score_1d[0]))
+		f.write("MCC: {0}\n".format(round(score_1d[1],4)))
 		f.write("\nConfusion Matrix\n{0}\n".format(conf_df))		
 		f.write("\nClassification Report\n{0}\n".format(report))
 		f.write("Best performing model chosen hyper-parameters:\n{0}".format(best_model))
