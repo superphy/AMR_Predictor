@@ -24,9 +24,11 @@ if __name__ == "__main__":
 	# need to filter out genomes
 	# if df_genome not in kmer_rows, then delete the row from the df
 
-	kmer_rows=kmer_rows.astype('S11')
-	print(kmer_rows)
-	print(df_rows)
+	#kmer_rows=kmer_rows.astype('S11')
+	#print(kmer_rows)
+	#print(df_rows)
+
+	kmer_rows =  [x.decode('utf-8') for x in kmer_rows]
 
 	for gen in df_rows:
 		if gen not in kmer_rows:
