@@ -61,10 +61,11 @@ if __name__ == "__main__":
 		print("df")
 		print(df)
 
-		print("kmer rows shape",kmer_rows.shape)
+		#print("kmer rows shape",kmer_rows.shape)
 
 
-		for i in range(kmer_rows.shape[0]):
+		#for i in range(kmer_rows.shape[0]):
+		for i in range(len(kmer_rows)):
 			x = kmer_rows[i].decode('utf-8')
 			if x not in new_df_rows:
 				mask[i] = 0
