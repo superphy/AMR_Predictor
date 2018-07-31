@@ -68,7 +68,7 @@ if __name__ == "__main__":
 
 		#for i in range(kmer_rows.shape[0]):
 		for i in range(len(kmer_rows)):
-			x = kmer_rows[i].decode('utf-8')
+			x = kmer_rows[i]#.decode('utf-8')
 			if x not in new_df_rows:
 				mask[i] = 0
 		bool_mask = [bool(x) for x in mask]
