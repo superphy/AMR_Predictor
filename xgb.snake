@@ -15,5 +15,5 @@ rule argh:
 		fold="{fold}",
 		feat="{feat}"
 	run:
-		shell("sbatch -c 16 --mem 80G --wrap='time python models/xgboost.py {params.feat} {params.drug} {params.fold}'")
-		#shell("time python xgboost.py {params.feat} {params.drug} {params.fold}")
+		shell("sbatch -c 16 --mem 80G --wrap='time python models/xgb.py {params.feat} {params.drug} {params.fold}'")
+		#shell("time python xgb.py {params.feat} {params.drug} {params.fold}")

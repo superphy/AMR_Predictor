@@ -1,0 +1,18 @@
+# sbatch -c 128 --mem 100G --partition NMLResearch --wrap='snakemake -j 127'
+
+ids, = glob_wildcards('genomes/clean/{id}.fasta')
+
+rule all:
+  input:
+    expand('prokka/{id}/', id=ids)
+
+rule prokka:
+  input:
+    'genomes/clean/{id}.fasta'
+  threads:
+    1
+  output:
+    dir='prokka/{id}/'
+  run:
+    # previously tried mem 2G but got java mem errs; havent tested 4G yet
+    shell('sbatch -c 1 --mem 4G --partition NMLResearch --wrap="prokka --kingdom Bacteria --centre X --compliant --cpus 1 --force --prefix {wildcards.id} --outdir {output.dir} {input}"')

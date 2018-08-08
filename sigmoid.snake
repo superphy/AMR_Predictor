@@ -1,0 +1,18 @@
+rule all:
+	input:
+		expand('amr_data/{drug}/{feat}feats/fold{fold}/sigmoid_out.txt',
+			drug=["AMP","AMC","AZM","CHL","CIP","CRO","FIS","FOX","GEN","NAL","SXT","TET","TIO"],
+			feat=["270"],
+			fold=["1","2","3","4","5"])
+
+rule sigmoid:
+	input:
+		'amr_data/{drug}/'
+	output:
+		touch('amr_data/{drug}/{feat}feats/fold{fold}/sigmoid_out.txt')
+	params:
+		drug="{drug}",
+		fold="{fold}",
+		feat="{feat}"
+	run:
+		shell("sbatch -c 16 --mem 80G --wrap='time python models/sigmoid_model.py {params.feat} {params.drug} {params.fold}'")

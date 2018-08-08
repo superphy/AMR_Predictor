@@ -1,0 +1,67 @@
+
+FEATS=["5000"]
+OUTFILE = ["xgb_out.txt"]
+PREFIX = ["xgb"]
+
+FOLDS=["1","2","3","4","5"]
+DRUGS=["AMP","AMC","AZM","CHL","CIP","CRO","FIS","FOX","GEN","NAL","SXT","TET","TIO"]
+
+rule all:
+  input:
+    expand('roary_amr/{prefix}_{feat}feats/AMC.txt', feat=FEATS, prefix=PREFIX),
+    expand('roary_amr/{prefix}_{feat}feats/AMP.txt', feat=FEATS, prefix=PREFIX),
+    expand('roary_amr/{prefix}_{feat}feats/AZM.txt', feat=FEATS, prefix=PREFIX),
+    expand('roary_amr/{prefix}_{feat}feats/CHL.txt', feat=FEATS, prefix=PREFIX),
+    expand('roary_amr/{prefix}_{feat}feats/CIP.txt', feat=FEATS, prefix=PREFIX),
+    expand('roary_amr/{prefix}_{feat}feats/CRO.txt', feat=FEATS, prefix=PREFIX),
+    expand('roary_amr/{prefix}_{feat}feats/FIS.txt', feat=FEATS, prefix=PREFIX),
+    expand('roary_amr/{prefix}_{feat}feats/FOX.txt', feat=FEATS, prefix=PREFIX),
+    expand('roary_amr/{prefix}_{feat}feats/GEN.txt', feat=FEATS, prefix=PREFIX),
+    expand('roary_amr/{prefix}_{feat}feats/NAL.txt', feat=FEATS, prefix=PREFIX),
+    expand('roary_amr/{prefix}_{feat}feats/SXT.txt', feat=FEATS, prefix=PREFIX),
+    expand('roary_amr/{prefix}_{feat}feats/TET.txt', feat=FEATS, prefix=PREFIX),
+    expand('roary_amr/{prefix}_{feat}feats/TIO.txt', feat=FEATS, prefix=PREFIX)
+
+rule tail:
+  input:
+    amc = expand('roary_amr/AMC/{feat}feats/fold{fold}/{outfile}', feat=FEATS, fold=FOLDS, outfile=OUTFILE),
+    amp = expand('roary_amr/AMP/{feat}feats/fold{fold}/{outfile}', feat=FEATS, fold=FOLDS, outfile=OUTFILE),
+    azm = expand('roary_amr/AZM/{feat}feats/fold{fold}/{outfile}', feat=FEATS, fold=FOLDS, outfile=OUTFILE),
+    chl = expand('roary_amr/CHL/{feat}feats/fold{fold}/{outfile}', feat=FEATS, fold=FOLDS, outfile=OUTFILE),
+    cip = expand('roary_amr/CIP/{feat}feats/fold{fold}/{outfile}', feat=FEATS, fold=FOLDS, outfile=OUTFILE),
+    cro = expand('roary_amr/CRO/{feat}feats/fold{fold}/{outfile}', feat=FEATS, fold=FOLDS, outfile=OUTFILE),
+    fis = expand('roary_amr/FIS/{feat}feats/fold{fold}/{outfile}', feat=FEATS, fold=FOLDS, outfile=OUTFILE),
+    fox = expand('roary_amr/FOX/{feat}feats/fold{fold}/{outfile}', feat=FEATS, fold=FOLDS, outfile=OUTFILE),
+    gen = expand('roary_amr/GEN/{feat}feats/fold{fold}/{outfile}', feat=FEATS, fold=FOLDS, outfile=OUTFILE),
+    nal = expand('roary_amr/NAL/{feat}feats/fold{fold}/{outfile}', feat=FEATS, fold=FOLDS, outfile=OUTFILE),
+    sxt = expand('roary_amr/SXT/{feat}feats/fold{fold}/{outfile}', feat=FEATS, fold=FOLDS, outfile=OUTFILE),
+    tet = expand('roary_amr/TET/{feat}feats/fold{fold}/{outfile}', feat=FEATS, fold=FOLDS, outfile=OUTFILE),
+    tio = expand('roary_amr/TIO/{feat}feats/fold{fold}/{outfile}', feat=FEATS, fold=FOLDS, outfile=OUTFILE)
+  output:
+    amc = 'roary_amr/{prefix}_{feat}feats/AMC.txt',
+    amp = 'roary_amr/{prefix}_{feat}feats/AMP.txt',
+    azm = 'roary_amr/{prefix}_{feat}feats/AZM.txt',
+    chl = 'roary_amr/{prefix}_{feat}feats/CHL.txt',
+    cip = 'roary_amr/{prefix}_{feat}feats/CIP.txt',
+    cro = 'roary_amr/{prefix}_{feat}feats/CRO.txt',
+    fis = 'roary_amr/{prefix}_{feat}feats/FIS.txt',
+    fox = 'roary_amr/{prefix}_{feat}feats/FOX.txt',
+    gen = 'roary_amr/{prefix}_{feat}feats/GEN.txt',
+    nal = 'roary_amr/{prefix}_{feat}feats/NAL.txt',
+    sxt = 'roary_amr/{prefix}_{feat}feats/SXT.txt',
+    tet = 'roary_amr/{prefix}_{feat}feats/TET.txt',
+    tio = 'roary_amr/{prefix}_{feat}feats/TIO.txt'
+  run:
+    shell("tail -n +1 {input.amc} > {output.amc}")
+    shell("tail -n +1 {input.amp} > {output.amp}")
+    shell("tail -n +1 {input.azm} > {output.azm}")
+    shell("tail -n +1 {input.chl} > {output.chl}")
+    shell("tail -n +1 {input.cip} > {output.cip}")
+    shell("tail -n +1 {input.cro} > {output.cro}")
+    shell("tail -n +1 {input.fis} > {output.fis}")
+    shell("tail -n +1 {input.fox} > {output.fox}")
+    shell("tail -n +1 {input.gen} > {output.gen}")
+    shell("tail -n +1 {input.nal} > {output.nal}")
+    shell("tail -n +1 {input.sxt} > {output.sxt}")
+    shell("tail -n +1 {input.tet} > {output.tet}")
+    shell("tail -n +1 {input.tio} > {output.tio}")
