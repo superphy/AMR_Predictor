@@ -33,11 +33,8 @@ if __name__ == "__main__":
 
 	df = joblib.load(os.path.abspath(os.path.curdir)+"/amr_data/mic_class_dataframe.pkl")
 	df_rows = df.index.values 	# Row names are genomes
-
-	# find all drug names
 	df_cols = df.columns
 
-	# prepare plot area
 	f, ((ax1, ax2, ax3), (ax4, ax5, ax6), (ax7, ax8, ax9), (ax10, ax11, ax12), (ax13, ax14, ax15)) = plt.subplots(5, 3)
 	ax_res = [ax1, ax2, ax3, ax4, ax5, ax6, ax7, ax8, ax9, ax10, ax11, ax12, ax13, ax14, ax15]
 
@@ -60,22 +57,14 @@ if __name__ == "__main__":
 		'''
 
 		matrix = np.load("sigmoid_matrices/"+drug+".npy")
-		# matrix is a 2d array with 4 columns, they are:
-		# Col 1: Sigmoid Probability of being in the 1st choice
-		# Col 2: Sigmoid Probability of being in the 2nd choice
-		# Col 3: Sigmoid Probability of being in the 3rd choice
-		# Col 4: What choice was actually correct
 
-		first  = matrix[:,0] # first col
-		second = matrix[:,1] # 2nd col
-
-		# adding the probability of the 1st and 2nd prediction
+		first  = matrix[:,0]
+		second = matrix[:,1]
 		second = np.asarray([first[i]+second[i] for i in range(len(first))])
-		third  = matrix[:,2] # 3rd col
 
-		# adding the probability of the 1st, 2nd, and 3rd prediction
+		third  = matrix[:,2]
 		third  = np.asarray([third[i]+second[i] for i in range(len(third))])
-		guess  = matrix[:,3] # 4th col
+		guess  = matrix[:,3]
 
 		print(first.shape, second.shape, third.shape)
 
@@ -85,8 +74,6 @@ if __name__ == "__main__":
 
 		print(first[1], second[1], third[1])
 
-
-		# determining if the guess is in the range that we find correct
 		for i in range(len(guess)):
 			if guess[i] == 1:
 				first_guess[i] = 1
@@ -127,7 +114,3 @@ if __name__ == "__main__":
 		counter+=1
 	st = f.suptitle("Sigmoid", fontsize=20)
 	plt.show()
-
-
-
-Collapse 
