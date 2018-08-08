@@ -125,7 +125,7 @@ def find_errors(model, test_data, test_names, genome_names, class_dict, drug, mi
 	if not os.path.exists(os.path.abspath(os.path.curdir)+'/amr_data/errors'):
 		os.mkdir(os.path.abspath(os.path.curdir)+'/amr_data/errors')
 
-	err_file = open(os.path.abspath(os.path.curdir)+'/amr_data/errors/'+str(sys.argv[1])+'_feats_nn_errors.txt', 'a+')
+	err_file = open(os.path.abspath(os.path.curdir)+'/amr_data/errors/'+str(sys.argv[1])+'_feats_sigmoid_errors.txt', 'a+')
 
 	actual = []
 	for row in range(test_names.shape[0]):
@@ -217,7 +217,7 @@ if __name__ == "__main__":
 	################################################################
 
 	# Find and record errors
-	#find_errors(model, x_test, y_test, genome_names, class_dict, drug, mic_class_dict, loss_fn)
+	#find_errors(model, x_test, y_test, genome_names, class_dict, drug, mic_class_dict)
 	#print(x_test.shape)
 	#print(x_test[0,:].shape)
 	first_guess = 0
@@ -235,37 +235,53 @@ if __name__ == "__main__":
 		if(sig_pred[i]==unencoded_y_test[i]):
 			sig_counter +=1
 			first_guess"""
+	prob_matrix = np.zeros((x_test.shape[0],4))
 	import operator
 	for i in range(len(sig_pred)):
 		row_dict = {}
 		for j in range(num_classes):
 			row_dict[j]=sig_pred[i,j]
 		first_g = (max(row_dict.items(), key=operator.itemgetter(1))[0])
+		prob_matrix[i,0] = row_dict[first_g]
 		row_dict[first_g] = 0
 		sec_g =(max(row_dict.items(), key=operator.itemgetter(1))[0])
+		prob_matrix[i,1] = row_dict[sec_g]
 		row_dict[sec_g] = 0
 		third_g =(max(row_dict.items(), key=operator.itemgetter(1))[0])
+		prob_matrix[i,2] = row_dict[third_g]
 		row_dict[third_g] = 0
 		fourth_g =(max(row_dict.items(), key=operator.itemgetter(1))[0])
 		if(unencoded_y_test[i]==first_g):
 			sig_counter+=1
 			first_guess +=1
+			prob_matrix[i,3] = 1
 		elif(unencoded_y_test[i]==sec_g):
 			second_guess +=1
+			prob_matrix[i,3] = 2
 		elif(unencoded_y_test[i]==third_g):
 			third_guess +=1
+			prob_matrix[i,3] = 3
 		elif(unencoded_y_test[i]==fourth_g):
 			fourth_guess +=1
+		#add first prob, first+2, and 1+2+3 to array, and which class was right
 
 	size = len(sig_pred)
 	print("1st Guess: {}, 2nd Guess: {}, 3rd Guess: {}, 4th Guess: {}".format(first_guess/size, second_guess/size, third_guess/size, fourth_guess/size))
-	print("Sig Acc:", sig_counter/len(sig_pred))
+	#print("Sig Acc:", sig_counter/len(sig_pred))
 
 	## Score #######################################################
 	score = model.evaluate(x_test, y_test, verbose=0)
 	score_1d = eval_modelOBO(model, x_test, y_test)
 	print("Base: {} 1d: {}".format(score[1], score_1d[0]))
-	"""
+
+
+	np.save(filepath+'sigmoid_prob_matrix.npy', prob_matrix)
+
+	with open(filepath+'sigmoid_out.txt','w') as f:
+		f.write("1st Guess: {}, 2nd Guess: {}, 3rd Guess: {}, 4th Guess: {}".format(first_guess/size, second_guess/size, third_guess/size, fourth_guess/size))
+		f.write("Base: {} 1d: {}".format(score[1], score_1d[0]))
+
+'''
 	y_true = score_1d[3]
 	y_pred = score_1d[2]
 	sc = {'base acc': [score[1]], '1d acc': [score_1d[0]], 'mcc':[score_1d[1]]}
@@ -286,15 +302,15 @@ if __name__ == "__main__":
 
 	## Save Everything #############################################
 	#model.save(filepath+'nn_model.hdf5')
-	conf_df.to_pickle(filepath+'nn_conf_df.pkl')
-	score_df.to_pickle(filepath+'nn_score_df.pkl')
-	rep_df.to_pickle(filepath+'nn_rep_df.pkl')
-	with open(filepath+'nn_out.txt','w') as f:
-		f.write("\nBase acc: {0}%\n".format(score[0]))
+	conf_df.to_pickle(filepath+'sigmoid_conf_df.pkl')
+	score_df.to_pickle(filepath+'sigmoid_score_df.pkl')
+	rep_df.to_pickle(filepath+'sigmoid_rep_df.pkl')
+	with open(filepath+'sigmoid_out.txt','w') as f:
+		
 		f.write("Window acc: {0}%\n".format(score_1d[0]))
 		f.write("MCC: {0}\n".format(round(score_1d[1],4)))
 		f.write("\nConfusion Matrix\n{0}\n".format(conf_df))
 		f.write("\nClassification Report\n{0}\n".format(report))
 		f.write("Best performing model chosen hyper-parameters:\n{0}".format(model))
 	################################################################
-	"""
+'''

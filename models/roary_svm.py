@@ -19,7 +19,6 @@ from keras.models import Sequential#, load_model
 from keras.utils import np_utils, to_categorical
 from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 
-from sklearn import metrics
 from sklearn.externals import joblib
 from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit, RandomizedSearchCV, GridSearchCV
 from sklearn.feature_selection import SelectKBest, f_classif
@@ -36,25 +35,53 @@ seed(913824)
 set_random_seed(913824)
 
 
-def eval_modelOBO(model, test_data, test_names):
+def eval_model(model, test_data, test_names):
 	'''
 	Takes a model (neural net), a set of test data, and a set of test names.
-	Returns perc: the precent of correct guesses by the model within 1 dilution.
+	Returns perc: the precent of correct guesses by the model using a windown of size 1.
 	Returns mcc: the matthews correlation coefficient.
 	Returns prediction and actual.
 	'''
 	# Create the prediction from the model
-	prediction = model.predict_classes(test_data)
-	
-	# Reformat the true test data into the same format as the predicted data
-	actual = []
-	for row in range(test_names.shape[0]):
-		for col in range(test_names.shape[1]):
-			if(test_names[row,col]!=0):
-				actual = np.append(actual,col)
+	prediction = model.predict(test_data)
+	prediction = [int(round(float(value))) for value in prediction]
 
-	# Sum the number of correct guesses within 1 dilution: if the bin is one to either
-	# side of the true bin, it is considered correct
+	actual = test_names
+	actual = [int(float(value)) for value in actual]
+    # Sum the number of correct guesses using a window: if the bin is one to either
+    # side of the true bin, it is considered correct
+	total_count = 0
+	correct_count = 0
+	for i in range(len(prediction)):
+		total_count +=1
+		pred = prediction[i]
+		act = actual[i]
+		if pred==act:
+			correct_count+=1
+	# Calculate the percent of correct guesses
+	perc = (correct_count*100)/total_count
+	perc = Decimal(perc)
+	perc = round(perc,2)
+
+	# Find the matthew's coefficient
+	mcc = matthews_corrcoef(np.argmax(to_categorical(actual),axis=1),(prediction))
+	return (perc, mcc, prediction, actual)
+
+def eval_modelOBO(model, test_data, test_names):
+	'''
+	Takes a model (neural net), a set of test data, and a set of test names.
+	Returns perc: the precent of correct guesses by the model using a windown of size 1.
+	Returns mcc: the matthews correlation coefficient.
+	Returns prediction and actual.
+	'''
+	# Create the prediction from the model
+	prediction = model.predict(test_data)
+	prediction = [int(round(float(value))) for value in prediction]
+
+	actual = test_names
+	actual = [int(float(value)) for value in actual]
+    # Sum the number of correct guesses using a window: if the bin is one to either
+    # side of the true bin, it is considered correct
 	total_count = 0
 	correct_count = 0
 	for i in range(len(prediction)):
@@ -70,6 +97,7 @@ def eval_modelOBO(model, test_data, test_names):
 
 	# Find the matthew's coefficient
 	mcc = matthews_corrcoef(np.argmax(to_categorical(actual),axis=1),(prediction))
+	#mcc = 1
 	return (perc, mcc, prediction, actual)
 
 
@@ -120,18 +148,14 @@ def find_major(pred, act, drug, mic_class_dict):
 
 
 def find_errors(model, test_data, test_names, genome_names, class_dict, drug, mic_class_dict):
-	prediction = model.predict_classes(test_data)
+	if not os.path.exists(os.path.abspath(os.path.curdir)+'/roary_amr/errors'):
+		os.mkdir(os.path.abspath(os.path.curdir)+'/roary_amr/errors')
+	err_file = open(os.path.abspath(os.path.curdir)+'/roary_amr/errors/'+str(sys.argv[1])+'_feats_svm_errors.txt', 'a+')
 
-	if not os.path.exists(os.path.abspath(os.path.curdir)+'/amr_data/errors'):
-		os.mkdir(os.path.abspath(os.path.curdir)+'/amr_data/errors')
+	prediction = model.predict(test_data)
+	prediction = [int(round(float(value))) for value in prediction]
+	actual = [int(float(value)) for value in test_names]
 
-	err_file = open(os.path.abspath(os.path.curdir)+'/amr_data/errors/'+str(sys.argv[1])+'_feats_nn_errors.txt', 'a+')
-
-	actual = []
-	for row in range(test_names.shape[0]):
-		for col in range(test_names.shape[1]):
-			if(test_names[row,col]!=0):
-				actual = np.append(actual,col)
 	total_count = 0
 	wrong_count = 0
 	close_count = 0
@@ -164,13 +188,13 @@ def metrics_report_to_df(ytrue, ypred):
 if __name__ == "__main__":
 	##################################################################
 	# call with
-	#	time python neural_net.py <numfeats> <drug> <fold>
+	#	time python roary_svm.py <numfeats> <drug> <fold>
 	# to do all folds
-	#	for i in {1..5}; do python neural_net.py <numfeats> <drug> '$i'; done
+	#	for i in {1..5}; do python roary_svm.py <numfeats> <drug> '$i'; done
 	# to do all folds on waffles
-	#	sbatch -c 16 --mem 80G --partition NMLResearch --wrap='for i in {1..5}; do python neural_net.py <numfeats> <drug> "$i"; done'
+	#	sbatch -c 16 --mem 80G --partition NMLResearch --wrap='for i in {1..5}; do python roary_svm.py <numfeats> <drug> "$i"; done'
 	# OR
-	#   or use neural_net.snake (change the features num)
+	#   or use roary_svm.snake (change the features num)
 	##################################################################
 
 	feats = sys.argv[1]
@@ -183,47 +207,34 @@ if __name__ == "__main__":
 	print(drug, feats, fold)
 	print("************************************")
 
-	# Load data
-	mic_class_dict = joblib.load(os.path.abspath(os.path.curdir)+"/amr_data/mic_class_order_dict.pkl")
-	class_dict = mic_class_dict[drug]
-	num_classes = len(mic_class_dict[drug])
-	filepath = os.path.abspath(os.path.curdir)+'/amr_data/'+drug+'/'+str(feats)+'feats/fold'+str(fold)+'/'
-	genome_names = np.load(filepath+'genome_test.npy')
+	## Load data ###################################################
+	filepath = os.path.abspath(os.path.curdir)+'/roary_amr/'+drug+'/'+str(feats)+'feats/fold'+str(fold)+'/'
 
-	# Load training and testing sets
+	mic_class_dict = joblib.load("amr_data/mic_class_order_dict.pkl") # Matrix of classes for each drug
+	num_classes = len(mic_class_dict[drug])
+	genome_names = np.load(filepath+'/genome_test.npy')
+
+	matrix = np.load('roary_amr/'+drug+'/matrix.npy')
+	rows_mic = np.load('roary_amr/'+drug+'/matrix_rows_mic.npy')
+	rows_gen = np.load('roary_amr/'+drug+'/matrix_rows_genomes.npy')
+
 	x_train = np.load(filepath+'x_train.npy')
 	x_test  = np.load(filepath+'x_test.npy')
 	y_train = np.load(filepath+'y_train.npy')
+	y_train=y_train.astype('S11')
 	y_test  = np.load(filepath+'y_test.npy')
-	# Convert to relevant types for the neural net
-	y_train = y_train.astype('S11')
-	y_train = to_categorical(y_train, num_classes)
-	y_test  = to_categorical(y_test, num_classes)
+	###############################################################
 
-	## Model #######################################################
-	feats = int(feats)
-
-	patience = 16
-	early_stop = EarlyStopping(monitor='loss', patience=patience, verbose=0, min_delta=0.005, mode='auto')
-	model_save = ModelCheckpoint("best_model.hdf5",monitor='loss', verbose = 0, save_best_only =True, save_weights_only = False, mode ='auto', period =1)
-	reduce_LR = ReduceLROnPlateau(monitor='loss', factor= 0.1, patience=(patience/2), verbose = 0, min_delta=0.005,mode = 'auto', cooldown=0, min_lr=0)
-
-	model = Sequential()
-	model.add(Dense(feats,activation='relu',input_dim=(feats)))
-	model.add(Dropout(0.5))
-	model.add(Dense(int((feats+num_classes)/2), activation='relu', kernel_initializer='uniform'))
-	model.add(Dropout(0.5))
-	model.add(Dense(num_classes, kernel_initializer='uniform', activation='softmax'))
-
-	model.compile(loss='poisson', metrics=['accuracy'], optimizer='adam')
-	model.fit(x_train, y_train, epochs=100, verbose=1, callbacks=[early_stop, reduce_LR])
-	################################################################
+	# Model
+	model = HyperoptEstimator(classifier=svc("mySVC"), preprocessing=[], algo=tpe.suggest, max_evals=100, trial_timeout=120)
+	model.fit(x_train, y_train)
+	best_model = model.best_model()
 
 	# Find and record errors
-	find_errors(model, x_test, y_test, genome_names, class_dict, drug, mic_class_dict, loss_fn)
+	find_errors(model, x_test, y_test, genome_names, class_dict, drug, mic_class_dict)
 
 	## Score #######################################################
-	score = model.evaluate(x_test, y_test, verbose=0)
+	score = eval_model(model, x_test, y_test)
 	score_1d = eval_modelOBO(model, x_test, y_test)
 	y_true = score_1d[3]
 	y_pred = score_1d[2]
@@ -244,16 +255,15 @@ if __name__ == "__main__":
 	################################################################
 
 	## Save Everything #############################################
-	#model.save(filepath+'nn_model.hdf5')
-	conf_df.to_pickle(filepath+'nn_conf_df.pkl')
-	score_df.to_pickle(filepath+'nn_score_df.pkl')
-	rep_df.to_pickle(filepath+'nn_rep_df.pkl')
-	with open(filepath+'nn_out.txt','w') as f:
+	pickle.dump(model, open(filepath+'svm_model.dat', 'wb'))
+	conf_df.to_pickle(filepath+'svm_conf_df.pkl')
+	score_df.to_pickle(filepath+'svm_score_df.pkl')
+	rep_df.to_pickle(filepath+'svm_rep_df.pkl')
+	with open(filepath+'svm_out.txt','w') as f:
 		f.write("\nBase acc: {0}%\n".format(score[0]))
-		f.write("Window acc: {0}%\n".format(score_1d[0]))
+		f.write("1-d acc: {0}%\n".format(score_1d[0]))
 		f.write("MCC: {0}\n".format(round(score_1d[1],4)))
 		f.write("\nConfusion Matrix\n{0}\n".format(conf_df))		
 		f.write("\nClassification Report\n{0}\n".format(report))
-		f.write("Best performing model chosen hyper-parameters:\n{0}".format(model))
+		f.write("Best performing model chosen hyper-parameters:\n{0}".format(best_model))
 	################################################################
-
