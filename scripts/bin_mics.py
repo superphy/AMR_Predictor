@@ -1,13 +1,21 @@
+
 #!/usr/bin/env python
 
-"""mics.py
-Classes to parse MIC data
+"""bin_mics.py
+Convert MIC values into distinct classes. Save processed
+classes as pandas dataframes.
 """
 
-import re
+import os
+import logging
 import numpy as np
-import warnings
-from collections import Counter
+import pandas as pd
+import sys
+
+from dotenv import find_dotenv, load_dotenv
+from sklearn.externals import joblib
+
+from mic import MICPanel, MGPL
 
 __author__ = "Matthew Whiteside"
 __copyright__ = "Copyright 2018, Public Health Agency of Canada"
@@ -16,347 +24,256 @@ __version__ = "2.0"
 __maintainer__ = "Matthew Whiteside"
 __email__ = "matthew.whiteside@phac-aspc.gc.ca"
 
+# Manually define MIC ranges due to mixing of different systems
+mic_ranges = {
+    'MIC_AMP': {
+        'top': '>32.0000',
+        'bottom': '<=1.0000',
+    },
+    'MIC_AMC': {
+        'top': '>32.0000',
+        'bottom': '<=1.0000',
+    },
+    'MIC_FOX': {
+        'top': '>32.0000',
+        'bottom': '1.0000',
+    },
+    'MIC_CRO': {
+        'top': '64.0000',
+        'bottom': '<=0.2500',
+    },
+    'MIC_TIO': {
+        'top': '>8.0000',
+        'bottom': '0.2500',
+    },
+    'MIC_GEN': {
+        'top': '>16.0000',
+        'bottom': '<=0.2500',
+    },
+    'MIC_FIS': {
+        'top': '>256.0000',
+        'bottom': '<=16.0000',
+    },
+    'MIC_SXT': {
+        'top': '>64.0000',
+        'bottom': '<=0.1250',
+    },
+    'MIC_AZM': {
+        'top': '>16.0000',
+        'bottom': '<=1.0000',
+    },
+    'MIC_CHL': {
+        'top': '>32.0000',
+        'bottom': '<=2.0000',
+    },
+    'MIC_CIP': {
+        'top': '>4.0000',
+        'bottom': '<=0.0150',
+    },
+    'MIC_NAL': {
+        'top': '>32.0000',
+        'bottom': '1.0000',
+    },
+    'MIC_TET': {
+        'top': '>32.0000',
+        'bottom': '<=4.0000',
+    },
 
-class MICPanel:
-    """MIC Panel Class
-    Class to handle MIC inputs for a single drug
+}
+'''
+mic_ranges = {
+    'MIC_AMP': {
+        'top': '>=32.0000',
+        'bottom': '<=1.0000',
+    },
+    'MIC_AMC': {
+        'top': '>=32.0000',
+        'bottom': '<=1.0000',
+    },
+    'MIC_FOX': {
+        'top': '>=32.0000',
+        'bottom': '<=1.0000',
+    },
+    'MIC_CRO': {
+        'top': '>=64.0000',
+        'bottom': '<=0.2500',
+    },
+    'MIC_TIO': {
+        'top': '>8.0000',
+        'bottom': '0.2500',
+    },
+    'MIC_GEN': {
+        'top': '>=16.0000',
+        'bottom': '<=0.2500',
+    },
+    'MIC_FIS': {
+        'top': '>256.0000',
+        'bottom': '<=16.0000',
+    },
+    'MIC_SXT': {
+        'top': '>64.0000',
+        'bottom': '<=0.1250',
+    },
+    'MIC_AZM': {
+        'top': '>16.0000',
+        'bottom': '<=1.0000',
+    },
+    'MIC_CHL': {
+        'top': '>32.0000',
+        'bottom': '<=2.0000',
+    },
+    'MIC_CIP': {
+        'top': '>=4.0000',
+        'bottom': '<=0.0150',
+    },
+    'MIC_NAL': {
+        'top': '>32.0000',
+        'bottom': '1.0000',
+    },
+    'MIC_TET': {
+        'top': '>32.0000',
+        'bottom': '<=4.0000',
+    },
+}
+'''
+
+def main(excel_filepath):
+    """ Runs data processing scripts to turn MIC text values from Excel input data
+        into class categories
+    Args:
+        excel_filepath: Metadata Excel file. MIC columns will have prefix 'MIC_'
     """
+    logger = logging.getLogger(__name__)
+    logger.info('MIC binning')
 
-    def __init__(self):
+    # drugs = ["MIC_AMP", "MIC_AMC", "MIC_FOX", "MIC_CRO", "MIC_TIO", "MIC_GEN",
+    #     "MIC_FIS", "MIC_SXT", "MIC_AZM", "MIC_CHL", "MIC_CIP", "MIC_NAL", "MIC_TET"]
+    # convert = { key: lambda x: str(x) for key in drugs }
+   
+    # micsdf = pd.read_csv(excel_filepath, sep='\t', usecols=['run'] + drugs, skip_footer=1, skip_blank_lines=False, converters=convert)
+    # micsdf = micsdf.set_index('run')
 
-       self.panel = []
-       self.invalids = []
+    micsdf = pd.read_excel(excel_filepath)
+    micsdf = micsdf[["run","MIC_AMP", "MIC_AMC", "MIC_FOX", "MIC_CRO", "MIC_TIO", "MIC_GEN", "MIC_FIS", "MIC_SXT", "MIC_AZM", "MIC_CHL", "MIC_CIP", "MIC_NAL", "MIC_TET"]]
+    micsdf = micsdf.set_index('run')
+
+    classes = {}
+    class_orders = {}
+    for col in micsdf:
+        logger.debug('Creating MIC panel for {}'.format(col))
+        class_labels, class_order = bin(micsdf[col], col)
+
+        class_order = consolidate_bins(class_order)
+
+        drug = col.replace('MIC_', '')
+        classes[drug] = pd.Series(class_labels, index=micsdf.index)
+        class_orders[drug] = class_order
+
+        logger.debug("Final MIC distribution:\n{}".format(classes[drug].value_counts()))
+
+    c = pd.DataFrame(classes)
+
+    if not os.path.exists(os.path.abspath(os.path.curdir)+'/amr_data'):
+        os.mkdir(os.path.abspath(os.path.curdir)+'amr_data')
+    cfile  = os.path.abspath(os.path.curdir)+"/amr_data/mic_class_dataframe.pkl"#os.path.join(data_dir, 'interim', 'mic_class_dataframe.pkl')
+    cofile = os.path.abspath(os.path.curdir)+"/amr_data/mic_class_order_dict.pkl"#os.path.join(data_dir, 'interim', 'mic_class_order_dict.pkl')
+    joblib.dump(c, cfile)
+    joblib.dump(class_orders, cofile)
+
+def consolidate_bins(bins):
+    #print("before",bins)
+    index = 0
+    while index < len(bins)-1:
+        #a = int(''.join(filter(str.isdigit, bins[index])))
+        #b = int(''.join(filter(str.isdigit, bins[index+1])))
+
+        a = bins[index].split('=')[-1]
+        a = bins[index].split('<')[-1]
+        a = bins[index].split('>')[-1]
+
+        b = bins[index+1].split('=')[-1]
+        b = bins[index+1].split('<')[-1]
+        b = bins[index+1].split('>')[-1]
+
+        #print(a,b)
+
+        if a==b:
+            #bins = bins.delete(index)
+            del bins[index]
+            if index == 0:
+                bins[index] = "<="+str(a)
+            elif index == len(bins)-1:
+                bins[index] = ">="+str(a)
+        index+=1
+    print('MIC values will be mapped to: ', bins)
+    #print("after",bins)
+    return bins
+
+'''
+    for col in micsdf:
+        new_bins = []
+        # Get the column index of the drug
+        col_index = micsdf.columns.get_loc(col)
+        # Set invalid entries to be NaN for easy deletion
+        for index, row in micsdf.iterrows():
+            x =row[col_index]
+            x = str(x)
+            if x !='nan' and x != '-': x = int(''.join(filter(str.isdigit, x)))
+            if x !='nan' and x != '-' and x not in new_bins:
+                new_bins.append(x)
+
+        new_bins = np.asarray(new_bins)
+        new_bins = np.sort(new_bins)
+
+        print(col, new_bins)
+'''
+
+def bin(mic_series, drug):
+
+    logger = logging.getLogger(__name__)
+
+    panel = MICPanel()
+    values, counts = panel.build(mic_series)
+
+    logger.debug('Panel value frequency:')
+    for m,c in zip(values, counts):
+        logger.debug("{}, {}".format(m, c))
 
 
-    @property
-    def invalid_label(self):
-        return('invalid')
+    # Initialize MIC bins
+    panel.set_range(mic_ranges[drug]['top'], mic_ranges[drug]['bottom'])
 
-    @property
-    def size(self):
-        return len(self.panel)
-
-
-    def build(self, sample):
-        """Use list of MIC values from test sample
-        to initialize panel values in object
-        Args:
-            sample(list): List of MIC strings observed in panel
-        Returns:
-            list:
-                list of panel value strings
-                list of frequency counts
-        """
-
-        allmics = []
-        record = Counter()
-        i = 1
-        for m in sample:
-            try:
-                mgpl = MGPL(m)         
-            except ValueError as err:
-                raise Exception('Unrecognized MIC format in element {}, {}.\n\t({})'.format(i, m, err))
-            
-            mval = str(mgpl)
-            
-            if not mval in record:
-                allmics.append(mgpl)
-            record[mval] += 1
-
-            i += 1
-        
-        
-        micvals = []
-        for m in allmics:
-            if not m.isna:
-                micvals.append(m)
-        micvals.sort()
-
-        # Only the lowest and highest values should have signs
-        if '>' in micvals[0].sign:
-            raise ValueError('MIC value logic error in lowest mic: {}'.format(micvals[0]))
-
-        if '<' in micvals[-1].sign:
-            raise ValueError('MIC value logic error in highest mic: {}'.format(micvals[-1]))
-
-        for m in micvals[1:-1]:
-            if m.sign != '=':
-                warnings.warn('MIC value logic error in middle mic: {}'.format(m))
-
-        self.panel = micvals
-        self.lookup = { str(val): idx for idx, val in enumerate(self.panel) }
-        self.class_labels = [ str(c) for c in self.panel ]
-        self.top_mgpl = micvals[-1]
-        self.bottom_mgpl = micvals[0]
-
-        counts = [ record[c] for c in self.class_labels ]
-
-        return (self.class_labels, counts)
-
-
-    def find(self, m):
-        """Return ordered index of MIC value
-        Args:
-            m(str|int|float): MIC value, e.g. >=32, 2.0, <0.1
-        Returns:
-            list
-                index(int): -1 if not found, or index in sorted panel list containing matching MIC value
-                isna(bool):  True if MIC is a missing value e.g. '-' or 'NA'
-        """
-
-        # Convert to consistent representation
-        mgpl = str(MGPL(m))
-
-        if mgpl == 'NA':
-            return (-1, True)
-        if mgpl in self.lookup:
-            return (self.lookup[mgpl], False)
-        else:
-            return (-1, False)
-
-
-    def transform(self, m):
-        """Return transformed MIC bin label
-        Unlike regular 'find', if top value is has > symbol, and m is > than top value,
-        method will return top value index, rather than -1.
-        Similarly for the bottom value.
-        Args:
-            m(str|int|float): MIC value, e.g. >=32, 2.0, <0.1
-        Returns:
-            list
-                index(int): None if not found, or MIC bin string
-                isna(bool):  True if MIC is a missing value e.g. '-' or 'NA'
-        """
-
-        # Convert to consistent representation
-        try:
-            mgpl = MGPL(m)
-        except ValueError as err:
-            mlabel = str(m)
-            warnings.warn('Unrecognized MIC format: {}. Assigning as invalid'.format(mlabel))
-            self.invalids.append(mlabel)
-            return (self.invalid_label, False)
+    # Iterate through MIC values and assign class labels
+    #logger.debug('MIC values will be mapped to: {}'.format(panel.class_labels))
+    classes = []
+    for m in mic_series:
+        mgpl = MGPL(m)
         mlabel = str(mgpl)
 
-        if mlabel == 'NA':
-            return (None, True)
-        if mlabel in self.lookup:
-            return (mlabel, False)
+        if mgpl.isna:
+            classes.append(np.nan)
         else:
-            # Encountered unrecognized MIC label
-
-            # Is this greater than the top label?
-            if (self.top_mgpl.sign == '>=' or self.top_mgpl.sign == '>') and mgpl > self.top_mgpl:
-                return (str(self.top_mgpl), False)
-            # Or less than bottom label?
-            elif (self.bottom_mgpl.sign == '<=' or self.bottom_mgpl.sign == '<') and mgpl < self.bottom_mgpl:
-                return (str(self.bottom_mgpl), False)
-            # Or equal to top label?
-            elif self.top_mgpl.sign == '>=' and self.top_mgpl.raw == mgpl.raw:
-                return (str(self.top_mgpl), False)
-            # Or equal to bottom label?
-            elif self.bottom_mgpl.sign == '<=' and self.bottom_mgpl.raw == mgpl.raw:
-                return (str(self.bottom_mgpl), False)
+            if not mlabel in panel.class_mapping:
+                raise Exception('Mapping error')
             else:
-                # Something in between
-                warnings.warn('Unknown MIC value: {}. Assigning as invalid'.format(m))
-                self.invalids.append(mlabel)
-                return(self.invalid_label, False)
+                classes.append(panel.class_mapping[mlabel])
+
+
+    return(classes, panel.class_labels)
 
 
 
-    def set_range(self, top, bottom):
-        """Initialize ordered class labels for MICs in panel
-        Top and bottom values define max and min MIC.
-        Internal incongruent range MIC values (e.g. >8) will
-        be assigned special class: invalid
-        
-        Args:
-            top(str): Max panel value
-            bottom(str): Min panel value
-        Returns:
-            None
-        """
 
-        top_mgpl = MGPL(top)
-        top_label = str(top_mgpl)
-        if top_mgpl.isna or not top_label in self.lookup:
-            raise ValueError('Invalid max MICPanel value {}'.format(top))
-        top_i = self.lookup[str(top_mgpl)]
+if __name__ == '__main__':
+    log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    logging.basicConfig(level=logging.DEBUG, format=log_fmt)
 
-        bottom_mgpl = MGPL(bottom)
-        bottom_label = str(bottom_mgpl)
-        if bottom_mgpl.isna or not bottom_label in self.lookup:
-            raise ValueError('Invalid min MICPanel value {}'.format(bottom))
-        bottom_i = self.lookup[str(bottom_mgpl)]
+    # Load environment
+    project_dir = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir)
+    load_dotenv(find_dotenv())
 
-
-        self.class_mapping = {}
-        self.class_labels = [bottom_label]
-
-        for m in self.panel:
-            mgpl = str(m)
-            i = self.lookup[mgpl]
-
-            if i <= bottom_i:
-                self.class_mapping[mgpl] = bottom_label
-                
-            elif i >= top_i:
-                self.class_mapping[mgpl] = top_label
-
-            else:
-                if m.sign != '=':
-                    # Internal range
-                    self.class_mapping[mgpl] = self.invalid_label
-                else:
-                    if top_mgpl.sign == '>=' and m.raw == top_mgpl.raw:
-                        self.class_mapping[mgpl] = top_label
-                    elif bottom_mgpl.sign == '<=' and m.raw == bottom_mgpl.raw:
-                        self.class_mapping[mgpl] = bottom_label
-                    else:
-                        self.class_mapping[mgpl] = mgpl
-                        self.class_labels.append(mgpl)
-
-        self.class_labels.append(top_label)
-
-        
-
-class MGPL:
-    """MGPL Class
-    Represents one mg/L reading from MIC dilution
-    e.g. <=0.15, 8, >32 are all valid MIC dilutions
-    """
-
-    def __init__(self, mic):
-
-        sign, val, isna = self.parse(mic)
-        if not isna and np.isnan(val):
-            # Set nan as empty value (often these are empty cells)
-            warnings.warn('Invalid MIC value: {}'.format(mic))
-            sign = None
-            val = None
-            isna = True
-        self._sign = sign
-        self._raw = val
-        self._isna = isna
-
-
-    def __repr__(self):
-        if self._isna:
-            return 'NA'
-        elif self._sign != '=':
-            return self._sign + "{:01.4f}".format(self._raw)
-        else:
-            return "{:01.4f}".format(self._raw)
-
-
-    # Specialized sorting functions
-    # that assume > is only used on highest
-    # and < is only is only used on lowest value
-    def mycmp(self, other):
-
-        if self.isna or other.isna:
-            raise ValueError('MGPL sorting on empty values undefined')
-
-        c = 0
-        if self.raw < other.raw:
-            c = -1
-        elif self.raw > other.raw:
-            c = 1
-
-        if c == 0:
-            if self.sign == '>=':
-                if other.sign == '>':
-                    return -1
-                elif other.sign == '>=':
-                    return 0
-                else:
-                    return 1
-            elif self.sign == '>':
-                if other.sign == '>':
-                    return 0
-                else:
-                    return 1
-            elif self.sign == '<=':
-                if other.sign == '<':
-                    return 1
-                elif other.sign == '<=':
-                    return 0
-                else:
-                    return -1
-            elif self.sign == '<':
-                if other.sign == '<':
-                    return 0
-                else:
-                    return -1
-            elif '>' in other.sign:
-                return -1
-            elif '<' in other.sign:
-                return 1
-        else:
-            return c
-
-    def __lt__(self, other):
-        return self.mycmp(other) < 0
-    def __gt__(self, other):
-        return self.mycmp(other) > 0
-    def __eq__(self, other):
-        return self.mycmp(other) == 0
-    def __le__(self, other):
-        return self.mycmp(other) <= 0
-    def __ge__(self, other):
-        return self.mycmp(other) >= 0
-    def __ne__(self, other):
-        return self.mycmp(other) != 0
-
-
-    @property
-    def isna(self):
-        return self._isna
-
-    @property
-    def sign(self):
-        return self._sign
-
-    @property
-    def raw(self):
-        return self._raw
-
-
-    def parse(self, mic):
-        """Parse string MIC to extract sign and float components
-        Args:
-            mic(string): e.g. >=32.0
-        Returns list:
-            (sign(string), value(float))
-        """
-
-        if mic == '-' or mic == 'NA':
-            return (None, None, True)
-        elif isinstance(mic, int):
-            return ('=', float(mic), False)
-        elif isinstance(mic, float):
-            return ('=', mic, False)
-        elif isinstance(mic, str):
-            mic = mic.replace(' mg/L', '')
-            sign = '='
-            match = re.search(r'^(?P<sign>=|>=|<=|>|<|==)?\s*(?P<value>\d*\.\d+|\d+)', mic)
-            if match:
-                if match.group('sign'):
-                    sign = match.group('sign')
-                    if sign == '==':
-                        sign = '='
-
-                if match.group('value'):
-                    value = float(match.group('value'))
-                    if np.isnan(value):
-                        raise ValueError('Invalid MIC. Cannot convert to float: {}'.format(mic))
-                else:
-                    raise ValueError('Invalid MIC. No value: {}'.format(mic))
-            else:
-                raise ValueError('Invalid MIC. Unrecognized format: {}'.format(mic))
-
-            return (sign, value, False)
-
-        else:
-            raise ValueError("Unrecognized MIC type")
+    #main(snakemake.input[0])
+    #print(snakemake.input[0])
+    #print(sys.argv[1])
+    main(sys.argv[1])
+    #main('amr_data/no_ecoli_GenotypicAMR_Master.xlsx')
