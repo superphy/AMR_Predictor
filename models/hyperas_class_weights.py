@@ -1,5 +1,11 @@
 #!/usr/bin/env python
 
+'''hyperas_class_weights.py
+Authors: Janice Moat & Rylan Steinkey
+Train a neural net, using hyperopt to optimize its parameters.
+Includes optimization of class weights.
+'''
+
 import numpy as np
 from numpy.random import seed
 import pandas as pd
@@ -63,6 +69,7 @@ def eval_model(model, test_data, test_names):
 		act = actual[i]
 		if pred==act or pred==act+1 or pred==act-1:
 			correct_count+=1
+
 	# Calculate the percent of correct guesses
 	perc = (correct_count*100)/total_count
 	perc = Decimal(perc)
@@ -104,7 +111,6 @@ def find_major(pred, act, drug, mic_class_dict):
 		resist = 16
 	if(drug == 'SXT' or drug =='TIO'):
 		susc = 2
-
 	if(drug == 'AZM' or drug == 'NAL'):
 		resist = 32
 	if(drug == 'CRO' or drug == 'SXT'):
@@ -132,6 +138,7 @@ def find_errors(model, test_data, test_names, genome_names, class_dict, drug, mi
 		for col in range(test_names.shape[1]):
 			if(test_names[row,col]!=0):
 				actual = np.append(actual,col)
+
 	total_count = 0
 	wrong_count = 0
 	close_count = 0
@@ -156,8 +163,6 @@ def data():
 	from keras.utils import to_categorical
 	import collections
 
-	# Matrix of experimental MIC values
-	df = joblib.load(os.path.abspath(os.path.curdir)+"/amr_data/mic_class_dataframe.pkl")
 	# Matrix of classes for each drug
 	mic_class_dict = joblib.load(os.path.abspath(os.path.curdir)+"/amr_data/mic_class_order_dict.pkl")
 
@@ -220,15 +225,21 @@ def create_model(x_train, y_train, x_test, y_test):
 	model.fit(x_train, y_train, epochs=100, verbose=0, callbacks=[early_stop, reduce_LR], class_weight=class_weight)
 
 	score, acc = model.evaluate(x_test, y_test, verbose=0)
-	#print('Test accuracy:', acc)
 	return {'loss': -acc, 'status': STATUS_OK, 'model': model}
 
 
-def metrics_report_to_df(ytrue, ypred, label):
-	precision, recall, fscore, support = metrics.precision_recall_fscore_support(ytrue, ypred, labels=label)
+def metrics_report_to_df(ytrue, ypred):
+	'''
+	Given the set of true values and set of predicted values, returns  a table
+	(dataframe) of the precision, recall, fscore, and support  for each class,
+	including avg/total.
+	'''
+	# Analyze the predicted values
+	precision, recall, fscore, support = metrics.precision_recall_fscore_support(ytrue, ypred, labels=mic_class_dict[drug])
+	# Create a df for the report
 	classification_report = pd.concat(map(pd.DataFrame, [precision, recall, fscore, support]), axis=1)
-	#classification_report.set_axis(mic_class_dict[drug], axis='index', inplace=True)
-	classification_report.columns = ["precision", "recall", "f1-score", "support"] # Add row w "avg/total"
+	classification_report.columns = ["precision", "recall", "f1-score", "support"]
+	# Add a row for the average/total
 	classification_report.loc['avg/Total', :] = metrics.precision_recall_fscore_support(ytrue, ypred, average='weighted')
 	classification_report.loc['avg/Total', 'support'] = classification_report['support'].sum()
 	return(classification_report)

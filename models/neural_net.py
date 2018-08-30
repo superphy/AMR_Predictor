@@ -1,5 +1,11 @@
 #!/usr/bin/env python
 
+'''neural_net.py
+Authors: Janice Moat & Rylan Steinkey
+Train a neural net, using hyperopt to optimize its parameters.
+Includes optimization of class weights.
+'''
+
 import numpy as np
 from numpy.random import seed
 
@@ -104,7 +110,6 @@ def find_major(pred, act, drug, mic_class_dict):
 		resist = 16
 	if(drug == 'SXT' or drug =='TIO'):
 		susc = 2
-
 	if(drug == 'AZM' or drug == 'NAL'):
 		resist = 32
 	if(drug == 'CRO' or drug == 'SXT'):
@@ -132,6 +137,7 @@ def find_errors(model, test_data, test_names, genome_names, class_dict, drug, mi
 		for col in range(test_names.shape[1]):
 			if(test_names[row,col]!=0):
 				actual = np.append(actual,col)
+
 	total_count = 0
 	wrong_count = 0
 	close_count = 0
@@ -179,7 +185,7 @@ if __name__ == "__main__":
 
 	# Useful to have in the slurm output
 	print("************************************")
-	print("xgboost.py")
+	print("neural_net.py")
 	print(drug, feats, fold)
 	print("************************************")
 
