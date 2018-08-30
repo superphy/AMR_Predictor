@@ -81,7 +81,8 @@ if __name__ == "__main__":
     kmer_size = int(sys.argv[2])            # Set this to your kmer length.
     matrix_dtype = sys.argv[3]              # Set the data type for the matrix.
                                             #  ->Note uint8 has max kmercount of 256  
-    results_path = str(sys.argv[4])                             
+    results_path = str(sys.argv[4])
+    save_path = str(sys.argv[5])                             
     #####################################################################
     
     # Initialize the kmer matrix
@@ -115,11 +116,11 @@ if __name__ == "__main__":
             row_index += 1
 
     # Save the matrix and its dictionaries
-    if not os.path.exists(os.path.abspath(os.path.curdir)+'/unfiltered'):
-        os.mkdir(os.path.abspath(os.path.curdir)+'/unfiltered')
-    np.save(os.path.abspath(os.path.curdir)+'/unfiltered/kmer_matrix.npy', kmer_matrix)
-    np.save(os.path.abspath(os.path.curdir)+'/unfiltered/dict_kmer_rows.npy', row_names)
-    np.save(os.path.abspath(os.path.curdir)+'/unfiltered/dict_kmer_cols.npy', col_names)
+    if not os.path.exists(os.path.abspath(os.path.curdir)+'/'+save_path):
+        os.mkdir(os.path.abspath(os.path.curdir)+'/'+save_path)
+    np.save(os.path.abspath(os.path.curdir)+'/'+save_path+'kmer_matrix.npy', kmer_matrix)
+    np.save(os.path.abspath(os.path.curdir)+'/'+save_path+'dict_kmer_rows.npy', row_names)
+    np.save(os.path.abspath(os.path.curdir)+'/'+save_path+'dict_kmer_cols.npy', col_names) 
 
     print("end: create matrix (parallel)")
 
