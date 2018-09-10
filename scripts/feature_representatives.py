@@ -40,10 +40,11 @@ if __name__ == "__main__":
 	df = joblib.load((os.path.abspath(os.path.curdir)+"/non_grdi/amr_data/mic_class_dataframe.pkl")) # Matrix of experimental MIC values
 	mic_class_dict = joblib.load((os.path.abspath(os.path.curdir)+"/non_grdi/amr_data/mic_class_order_dict.pkl")) # Matrix of classes for each drug
 
-	drugs = ["AMP","AMC","AZM","CHL","CIP","CRO","FIS","FOX","GEN","NAL","SXT","TET","TIO"]
-	#drugs = ['AMP']
+	#drugs = ["AMP","AMC","AZM","CHL","CIP","CRO","FIS","FOX","GEN","NAL","SXT","TET","TIO"]
+	drugs = ['AMP']
 
 	for drug in drugs:
+
 		print("*******",drug,"*******")
 		kmer_matrix = np.load((os.path.abspath(os.path.curdir)+'/non_grdi/amr_data/'+drug+'/kmer_matrix.npy'))
 		kmer_cols = np.load((os.path.abspath(os.path.curdir)+'/non_grdi/amr_data/'+drug+'/kmer_cols.npy'))
@@ -55,11 +56,54 @@ if __name__ == "__main__":
 		#kmer_matrix = sk_obj.fit_transform(kmer_matrix, kmer_rows_mic)
 
 		fvals, pvals = f_classif(kmer_matrix, kmer_rows_mic)
+
+		""" use this loop to find a good cutoff for later
 		for i in range(50):
 			pcutoff = 10**(-i)
 			fmask = pvals < pcutoff
 			print(pcutoff, '->', np.sum(fmask))
+		"""
+		pcutoff = 10**(-43)
+		fmask = pvals < pcutoff
+		#print('fmask:', np.sum(fmask))
+		#print("Before:", kmer_matrix.shape)
 
+		kmer_matrix = kmer_matrix[:,fmask]
+
+		#kmer_matrix = [[1,2,2,3,3],[2,2,2,3,3],[2,2,2,3,3]]
+		#print("After:", kmer_matrix.shape)
+		#kmer_matrix = np.asarray(kmer_matrix)
+		#print(kmer_matrix)
+		kmer_matrix = kmer_matrix.transpose()
+		copy_mask = np.zeros(kmer_matrix.shape[0])
+		copy_count = 0
+		break_counter = 0
+		for cnti, i in enumerate(kmer_matrix):
+			#print(i)
+			for cntj, j in enumerate(kmer_matrix):
+				if (cnti!=cntj):
+					if(exact_same(i,j)):
+						#copy_count += 1
+						#any first instance of a duplicate row receives a 2, meaning it will be kept as a master copy, any other identical row is marked 1 for deletion
+						#so if we ever see a 2 we automatically mark the other for deletion, if we have 2 0's i.e. two unseen, one is the master and the other is deleted
+						if(copy_mask[cnti]==0 and copy_mask[cntj]==0):
+							copy_mask[cnti]=2
+							copy_mask[cntj]=1
+						elif(copy_mask[cnti]==2):
+							copy_mask[cntj]=1
+						elif(copy_mask[cntj]==2):
+							copy_mask[cnti]=1
+			#break_counter+=1
+			#if(break_counter==10):
+				#break
+		#print(copy_mask)
+		copy_mask = [i!=1 for i in copy_mask]
+		#print(copy_mas
+		print("before mask:",kmer_matrix.shape)
+		kmer_matrix = kmer_matrix[copy_mask,:]
+		print("after mask:",kmer_matrix.shape)
+		np.save('no_dup_feats/+'drug'+kmer_matrix.npy', kmer_matrix.transpose())
+		#print("Found {} copies".format(copy_count))
 		#kmer_matrix.loc[:,fmask]
 
 		#kmer_matrix = kmer_matrix.transpose()
