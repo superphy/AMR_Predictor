@@ -63,8 +63,8 @@ rule make_matrix:
   output:
     touch("touchfile.txt")
   run:
-    #shell("python scripts/parallel_matrix.py {NUM_INPUT_FILES} {KMER_SIZE} {MATRIX_DTYPE} jellyfish_results/ unfiltered/")
-    #shell("python scripts/convert_dict.py")
+    shell("python scripts/parallel_matrix.py {NUM_INPUT_FILES} {KMER_SIZE} {MATRIX_DTYPE} jellyfish_results/ unfiltered/")
+    shell("python scripts/convert_dict.py")
     shell("python scripts/bin_mics.py {MIC_DATA_FILE}")
-    #shell("python scripts/filter.py")
-    #shell("python scripts/amr_prep.py")
+    shell("python scripts/filter.py")
+    shell("python scripts/amr_prep.py")
