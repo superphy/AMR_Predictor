@@ -7,6 +7,7 @@ from sklearn.feature_selection import SelectKBest, f_classif
 import concurrent.futures
 import os
 import sys
+import random
 
 def encode_categories(data, class_dict):
 	'''
@@ -76,13 +77,13 @@ if __name__ == "__main__":
 		elif(drug == 'SXT'):
 			pcutoff = 10**(-21)
 		fmask = pvals < pcutoff
-		#print('fmask:', np.sum(fmask))
-		#print("Before:", kmer_matrix.shape)
+		print('fmask:', np.sum(fmask))
+		print("Before:", kmer_matrix.shape)
 
 		kmer_matrix = kmer_matrix[:,fmask]
 
 		#kmer_matrix = [[1,2,2,3,3],[2,2,2,3,3],[2,2,2,3,3]]
-		#print("After:", kmer_matrix.shape)
+		print("After:", kmer_matrix.shape)
 		#kmer_matrix = np.asarray(kmer_matrix)
 		#print(kmer_matrix)
 		kmer_matrix = kmer_matrix.transpose()
@@ -111,7 +112,11 @@ if __name__ == "__main__":
 		copy_mask = [i!=1 for i in copy_mask]
 		#print(copy_mas
 		#print("before mask:",kmer_matrix.shape)
+		print('copy_mask:', np.sum(copy_mask))
+		print("Before cpmask:", kmer_matrix.shape)
 		kmer_matrix = kmer_matrix[copy_mask,:]
+		print("After cpmask:", kmer_matrix.shape)
+
 		#print("after mask:",kmer_matrix.shape)
 		#np.save('no_dup_feats/'+drug+'_non_grdi_kmer_matrix.npy', kmer_matrix.transpose())
 		non_grdi_kmer_matrix = kmer_matrix
@@ -126,9 +131,12 @@ if __name__ == "__main__":
 
 		kmer_rows_mic = encode_categories(kmer_rows_mic, mic_class_dict[drug])
 
+		print("before fmask:", kmer_matrix.shape)
 		kmer_matrix = kmer_matrix[:, fmask]
 		kmer_matrix = kmer_matrix.transpose()
+		print("After fmask:", kmer_matrix.shape)
 		kmer_matrix = kmer_matrix[copy_mask,:]
+		print("After cpmask:", kmer_matrix.shape)
 
 		copy_mask = np.zeros(kmer_matrix.shape[0])
 		copy_count = 0
@@ -150,8 +158,12 @@ if __name__ == "__main__":
 							copy_mask[cnti]=1
 
 		copy_mask = [i!=1 for i in copy_mask]
+		print('copy_mask:', np.sum(copy_mask))
+		print("Before cpmask:", kmer_matrix.shape)
 		kmer_matrix = kmer_matrix[copy_mask,:]
+		print("After cpmask:", kmer_matrix.shape)
 		non_grdi_kmer_matrix = non_grdi_kmer_matrix[copy_mask, :]
+		print("After cpmask for non_grdi:", non_grdi_kmer_matrix.shape)
 		kmer_matrix = kmer_matrix.transpose()
 		non_grdi_kmer_matrix = non_grdi_kmer_matrix.transpose()
 
