@@ -8,7 +8,7 @@ RAW_GENOMES_PATH = "genomes/raw/"
 # Location of the MIC data file (excel spreadsheet)
 #MIC_DATA_FILE = "amr_data/no_ecoli_GenotypicAMR_Master.xlsx" # location of MIC data file
 #MIC_DATA_FILE = "amr_data/GRDI_AMR_Master.xlsx"
-MIC_DATA_FILE = "amr_data/GenotypicAMR_Master.tsv"
+MIC_DATA_FILE = "amr_data/no_coli_GenotypicAMR_Master.tsv"
 
 # The number of input genomes. The number of rows must match the
 # nubmer of rows in the MIC data file. The names of the genomes
