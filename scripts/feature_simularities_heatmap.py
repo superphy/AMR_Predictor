@@ -74,19 +74,6 @@ if __name__ == "__main__":
 			if(np.sum(fmask) < 30000):
 				break
 
-		"""
-		pcutoff = 10**(-43)
-		if(drug == 'AZM'):
-			pcutoff = 10**(-25)
-		elif(drug == 'CIP'):
-			pcutoff = 10**(-32)
-		elif(drug == 'NAL'):
-			pcutoff = 10**(-37)
-		elif(drug == 'GEN'):
-			pcutoff = 10**(-39)
-		elif(drug == 'SXT'):
-			pcutoff = 10**(-21)
-		"""
 		pcutoff = pcutoff*10
 		fmask = pvals < pcutoff
 		print(pcutoff)
