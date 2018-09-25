@@ -9,5 +9,6 @@ Machine learning methods to predict the anti-microbial resistance of Salmonella.
 5. Run snakemake -j X #Where X is the number of cores you want to run it on
    e.g.snakemake -j 64 
 6. Run the test of your choosing, e.g. xgb.snake
+
 Note that most tests will be hyperparameter optimized and may take some time to run.
 
