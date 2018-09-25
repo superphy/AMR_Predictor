@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 
+'''hyp.py
+Authors: Janice Moat & Rylan Steinkey
+Train a neural net, using hyperopt to optimize its parameters.
+'''
+ 
 import numpy as np
 from numpy.random import seed
 import pandas as pd
@@ -64,6 +69,7 @@ def eval_model(model, test_data, test_names):
 		act = actual[i]
 		if pred==act or pred==act+1 or pred==act-1:
 			correct_count+=1
+
 	# Calculate the percent of correct guesses
 	perc = (correct_count*100)/total_count
 	perc = Decimal(perc)
@@ -105,7 +111,6 @@ def find_major(pred, act, drug, mic_class_dict):
 		resist = 16
 	if(drug == 'SXT' or drug =='TIO'):
 		susc = 2
-
 	if(drug == 'AZM' or drug == 'NAL'):
 		resist = 32
 	if(drug == 'CRO' or drug == 'SXT'):
@@ -133,6 +138,7 @@ def find_errors(model, test_data, test_names, genome_names, class_dict, drug, mi
 		for col in range(test_names.shape[1]):
 			if(test_names[row,col]!=0):
 				actual = np.append(actual,col)
+
 	total_count = 0
 	wrong_count = 0
 	close_count = 0
@@ -156,8 +162,6 @@ def find_errors(model, test_data, test_names, genome_names, class_dict, drug, mi
 def data():
 	from keras.utils import to_categorical
 
-	# Matrix of experimental MIC values
-	df = joblib.load(os.path.abspath(os.path.curdir)+"/amr_data/mic_class_dataframe.pkl")
 	# Matrix of classes for each drug
 	mic_class_dict = joblib.load(os.path.abspath(os.path.curdir)+"/amr_data/mic_class_order_dict.pkl")
 
@@ -216,10 +220,17 @@ def create_model(x_train, y_train, x_test, y_test):
 
 
 def metrics_report_to_df(ytrue, ypred):
+	'''
+	Given the set of true values and set of predicted values, returns  a table
+	(dataframe) of the precision, recall, fscore, and support  for each class,
+	including avg/total.
+	'''
+	# Analyze the predicted values
 	precision, recall, fscore, support = metrics.precision_recall_fscore_support(ytrue, ypred, labels=mic_class_dict[drug])
+	# Create a df for the report
 	classification_report = pd.concat(map(pd.DataFrame, [precision, recall, fscore, support]), axis=1)
-	#classification_report.set_axis(mic_class_dict[drug], axis='index', inplace=True)
-	classification_report.columns = ["precision", "recall", "f1-score", "support"] # Add row w "avg/total"
+	classification_report.columns = ["precision", "recall", "f1-score", "support"]
+	# Add a row for the average/total
 	classification_report.loc['avg/Total', :] = metrics.precision_recall_fscore_support(ytrue, ypred, average='weighted')
 	classification_report.loc['avg/Total', 'support'] = classification_report['support'].sum()
 	return(classification_report)
@@ -228,14 +239,15 @@ def metrics_report_to_df(ytrue, ypred):
 if __name__ == "__main__":
 	##################################################################
 	# call with
-	#	time python hyperas.py <numfeats> <drug> <fold>
+	#	time python hyp.py <numfeats> <drug> <fold>
 	# to do all folds
-	#	for i in {1..5}; do python hyperas.py <numfeats> <drug> '$i'; done
+	#	for i in {1..5}; do python hyp.py <numfeats> <drug> '$i'; done
 	# to do all folds on waffles
-	#	sbatch -c 16 --mem 80G --partition NMLResearch --wrap='for i in {1..5}; do python hyperas.py <numfeats> <drug> "$i"; done'
+	#	sbatch -c 16 --mem 80G --partition NMLResearch --wrap='for i in {1..5}; do python hyp.py <numfeats> <drug> "$i"; done'
 	# OR
-	#   or use hyperas.snake (change the features num)
+	#   or use hyp.snake (change the features num)
 	##################################################################
+
 	feats = sys.argv[1]
 	drug  = sys.argv[2]
 	fold  = sys.argv[3]
@@ -247,10 +259,10 @@ if __name__ == "__main__":
 	print("************************************")
 
 	# Load data
+	filepath = os.path.abspath(os.path.curdir)+'/amr_data/'+drug+'/'+str(feats)+'feats/fold'+str(fold)+'/'
 	mic_class_dict = joblib.load(os.path.abspath(os.path.curdir)+"/amr_data/mic_class_order_dict.pkl")
 	class_dict = mic_class_dict[drug]
 	num_classes = len(mic_class_dict[drug])
-	filepath = os.path.abspath(os.path.curdir)+'/amr_data/'+drug+'/'+str(feats)+'feats/fold'+str(fold)+'/'
 	genome_names = np.load(filepath+'genome_test.npy')
 
 	# Split data, get best model

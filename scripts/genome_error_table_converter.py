@@ -24,7 +24,8 @@ if __name__ == '__main__':
         dup_count = 0
         for line in file:
             first_char = line[:1]
-            if(first_char=='D'):
+            if(first_char=='D' and line.count(' ')==5):
+                print(line)
                 drug, genome, pred, act, off_by_one, major = line.split(' ')
                 garb, drug = drug.split(':')
                 garb, genome = genome.split(':')

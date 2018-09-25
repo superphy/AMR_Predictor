@@ -1,0 +1,59 @@
+
+#################################################################
+
+# Location of the raw genome
+FNAME = "SRR2567088"
+RAW_GENOME = "predict/raw/"
+
+# Kmer length that you want to count 
+KMER_SIZE = 11
+
+# The number of input genomes
+NUM_INPUT_FILES = 1
+
+# Data type of the resulting kmer matrix. Use uint8 if counts are
+# all under 256. Else use uint16 (kmer counts under 65536)
+MATRIX_DTYPE = 'uint8'
+
+#################################################################
+
+rule all:
+  input:
+    "test.txt"
+
+rule clean:
+  input:
+    RAW_GENOME+FNAME+".fasta"
+  output:
+    "predict/clean/"+FNAME+".fasta"#,
+  threads:
+    2
+  run:
+    shell("python scripts/clean.py {input} predict/clean/")
+
+rule count:
+  input:
+    "predict/clean/"+FNAME+".fasta"
+  output:
+    "predict_jellyfish_results/"+FNAME+".jf"
+  threads:
+    2
+  run:
+    shell("jellyfish count -m {KMER_SIZE} -s 100M -t {threads} {input} -o {output}")
+
+rule dump:
+  input:
+    "predict_jellyfish_results/"+FNAME+".jf"
+  output:
+    "predict_jellyfish_results/"+FNAME+".fa"
+  run:
+    shell("jellyfish dump 'predict_jellyfish_results/{FNAME}.jf' > {output}")
+
+rule matrix:
+  input:
+    a = "predict_jellyfish_results/"+FNAME+".fa",
+    b = "predict_jellyfish_results/"
+  output:
+    touch("test.txt")
+  run:
+    shell("python scripts/predict_make_matrix.py {NUM_INPUT_FILES} {KMER_SIZE} {MATRIX_DTYPE} {input.b} predict_matrix/")

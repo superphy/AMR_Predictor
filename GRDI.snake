@@ -1,4 +1,3 @@
-
 #################################################################
 
 # Location of the raw genomes
@@ -7,14 +6,13 @@ RAW_GENOMES_PATH = "genomes/raw/"
 
 # Location of the MIC data file (excel spreadsheet)
 #MIC_DATA_FILE = "amr_data/no_ecoli_GenotypicAMR_Master.xlsx" # location of MIC data file
-#MIC_DATA_FILE = "amr_data/GRDI_AMR_Master.xlsx"
-MIC_DATA_FILE = "amr_data/no_coli_GenotypicAMR_Master.tsv"
+MIC_DATA_FILE = "amr_data/GRDI_AMR_Master.xlsx"
 
 # The number of input genomes. The number of rows must match the
 # nubmer of rows in the MIC data file. The names of the genomes
 # must also be consistent, but need not be in the same order.
-NUM_INPUT_FILES = 2260
-#NUM_INPUT_FILES = 7961
+#NUM_INPUT_FILES = 2260
+NUM_INPUT_FILES = 1433
 
 # Kmer length that you want to count
 KMER_SIZE = 11
@@ -65,8 +63,9 @@ rule make_matrix:
   params:
     class_labels="amr_data/class_ranges.yaml"
   run:
-    shell("python scripts/parallel_matrix.py {NUM_INPUT_FILES} {KMER_SIZE} {MATRIX_DTYPE} jellyfish_results/ unfiltered/")
+    shell("python scripts/parallel_matrix.py {NUM_INPUT_FILES} {KMER_SIZE} {MATRIX_DTYPE} jellyfish_results/")
     shell("python scripts/convert_dict.py")
-    shell("python scripts/bin_mics.py {MIC_DATA_FILE}")
+    shell("python scripts/bin_mics_grdi.py {MIC_DATA_FILE}")
     shell("python scripts/filter.py")
-    shell("python scripts/amr_prep.py")
+    shell("python scripts/amr_prep_grdi.py")
+

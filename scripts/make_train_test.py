@@ -48,6 +48,7 @@ if __name__ == "__main__":
 		matrix = np.load(os.path.abspath(os.path.curdir)+'/amr_data/'+drug+'/kmer_matrix.npy')
 		rows_mic = np.load(os.path.abspath(os.path.curdir)+'/amr_data/'+drug+'/kmer_rows_mic.npy')
 		rows_gen = np.load(os.path.abspath(os.path.curdir)+'/amr_data/'+drug+'/kmer_rows_genomes.npy')
+		cols = np.load(os.path.abspath(os.path.curdir)+'/amr_data/'+drug+'/kmer_cols.npy')
 
 		#X = SelectKBest(f_classif, k=int(NUM_FEATS)).fit_transform(matrix, rows_mic)
 		X = matrix
@@ -75,6 +76,12 @@ if __name__ == "__main__":
 			sk_obj = SelectKBest(f_classif, k=int(NUM_FEATS))
 			x_train = sk_obj.fit_transform(X[train], Y[train])
 			x_test  = sk_obj.transform(X[test])
+
+			feat_cols = cols.reshape(1,-1)
+			feat_cols = sk_obj.transform(feat_cols)
+			print(feat_cols)
+			print(len(feat_cols[0]))
+
 			y_train = Y[train]
 			y_test = Y[test]
 
@@ -93,5 +100,6 @@ if __name__ == "__main__":
 			np.save(filepath+'y_test.npy', y_test)
 			np.save(filepath+'genome_train.npy', Z[train])
 			np.save(filepath+'genome_test.npy', Z[test])
+			np.save(filepath+'kmer_seqs.npy', feat_cols[0])
 
 			loop+=1
