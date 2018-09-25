@@ -208,7 +208,7 @@ def create_model(x_train, y_train, x_test, y_test):
 	# We have 6 classes, so output layer has 6
 	model.add(Dense(num_classes, kernel_initializer='uniform', activation='softmax'))
 
-	model.compile(loss='categorical_crossentropy', metrics=['accuracy'], optimizer='adam')
+	model.compile(loss='poisson', metrics=['accuracy'], optimizer='adam')
 	model.fit(x_train, y_train, epochs=100, verbose=0, callbacks=[early_stop, reduce_LR])
 
 	score, acc = model.evaluate(x_test, y_test, verbose=0)
@@ -264,6 +264,7 @@ if __name__ == "__main__":
 	score = best_model.evaluate(test_data, test_names)
 	score_1d = eval_model(best_model, test_data, test_names)
 	y_true = score_1d[3]
+	y_true = y_true.astype(int)
 	y_pred = score_1d[2]
 	sc = {'base acc': [score[1]], '1d acc': [score_1d[0]], 'mcc':[score_1d[1]]}
 	score_df = DataFrame(sc)

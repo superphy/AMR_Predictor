@@ -179,7 +179,6 @@ def find_errors(model, test_data, test_names, genome_names, class_dict, drug, mi
 def metrics_report_to_df(ytrue, ypred):
 	precision, recall, fscore, support = metrics.precision_recall_fscore_support(ytrue, ypred, labels=mic_class_dict[drug])
 	classification_report = pd.concat(map(pd.DataFrame, [precision, recall, fscore, support]), axis=1)
-	#classification_report.set_axis(mic_class_dict[drug], axis='index', inplace=True)
 	classification_report.columns = ["precision", "recall", "f1-score", "support"] # Add row w "avg/total"
 	classification_report.loc['avg/Total', :] = metrics.precision_recall_fscore_support(ytrue, ypred, average='weighted')
 	classification_report.loc['avg/Total', 'support'] = classification_report['support'].sum()
@@ -189,13 +188,13 @@ def metrics_report_to_df(ytrue, ypred):
 if __name__ == "__main__":
 	##################################################################
 	# call with
-	#	time python xgboost.py <numfeats> <drug> <fold>
+	#	time python xgb.py <numfeats> <drug> <fold>
 	# to do all folds
-	#	for i in {1..5}; do python xgboost.py <numfeats> <drug> '$i'; done
+	#	for i in {1..5}; do python xgb.py <numfeats> <drug> '$i'; done
 	# to do all folds on waffles
-	#	sbatch -c 16 --mem 80G --partition NMLResearch --wrap='for i in {1..5}; do python xgboost.py <numfeats> <drug> "$i"; done'
+	#	sbatch -c 16 --mem 80G --partition NMLResearch --wrap='for i in {1..5}; do python xgb.py <numfeats> <drug> "$i"; done'
 	# OR
-	#   or use xgboost.snake (change the features num)
+	#   or use xgb.snake (change the features num)
 	##################################################################
 
 	feats = sys.argv[1]
@@ -204,7 +203,7 @@ if __name__ == "__main__":
 
 	# Useful to have in the slurm output
 	print("************************************")
-	print("xgboost.py")
+	print("xgb.py")
 	print(drug, feats, fold)
 	print("************************************")
 

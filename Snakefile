@@ -15,7 +15,7 @@ MIC_DATA_FILE = "amr_data/GRDI_AMR_Master.xlsx"
 #NUM_INPUT_FILES = 2260
 NUM_INPUT_FILES = 7961
 
-# Kmer length that you want to count 
+# Kmer length that you want to count
 KMER_SIZE = 11
 
 # Data type of the resulting kmer matrix. Use uint8 if counts are
@@ -56,11 +56,13 @@ rule fa_dump:
   shell:
     "jellyfish dump {input} > {output}"
 
-rule make_matrix: 
+rule make_matrix:
   input:
     expand("jellyfish_results/{id}.fa", id=ids)
   output:
     touch("touchfile.txt")
+  params:
+    class_labels="amr_data/class_ranges.yaml"
   run:
     shell("python scripts/parallel_matrix.py {NUM_INPUT_FILES} {KMER_SIZE} {MATRIX_DTYPE} jellyfish_results/")
     shell("python scripts/convert_dict.py")

@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python
 
 import numpy as np
@@ -125,7 +126,7 @@ def find_errors(model, test_data, test_names, genome_names, class_dict, drug, mi
 	if not os.path.exists(os.path.abspath(os.path.curdir)+'/amr_data/errors'):
 		os.mkdir(os.path.abspath(os.path.curdir)+'/amr_data/errors')
 
-	err_file = open(os.path.abspath(os.path.curdir)+'/amr_data/errors/'+str(sys.argv[1])+'_feats_sigmoid_errors.txt', 'a+')
+	err_file = open(os.path.abspath(os.path.curdir)+'/amr_data/errors/'+str(sys.argv[1])+'_feats_softmax_errors.txt', 'a+')
 
 	actual = []
 	for row in range(test_names.shape[0]):
@@ -210,7 +211,7 @@ if __name__ == "__main__":
 	model.add(Dropout(0.5))
 	model.add(Dense(int((feats+num_classes)/2), activation='relu', kernel_initializer='uniform'))
 	model.add(Dropout(0.5))
-	model.add(Dense(num_classes, kernel_initializer='uniform', activation='sigmoid'))
+	model.add(Dense(num_classes, kernel_initializer='uniform', activation='softmax'))
 
 	model.compile(loss='poisson', metrics=['accuracy'], optimizer='adam')
 	model.fit(x_train, y_train, epochs=100, verbose=1, callbacks=[early_stop, reduce_LR])
@@ -275,9 +276,9 @@ if __name__ == "__main__":
 	print("Base: {} 1d: {}".format(score[1], score_1d[0]))
 
 
-	np.save(filepath+'sigmoid_prob_matrix.npy', prob_matrix)
+	np.save(filepath+'softmax_prob_matrix.npy', prob_matrix)
 
-	with open(filepath+'sigmoid_out.txt','w') as f:
+	with open(filepath+'softmax_out.txt','w') as f:
 		f.write("1st Guess: {}, 2nd Guess: {}, 3rd Guess: {}, 4th Guess: {}".format(first_guess/size, second_guess/size, third_guess/size, fourth_guess/size))
 		f.write("Base: {} 1d: {}".format(score[1], score_1d[0]))
 
@@ -287,16 +288,19 @@ if __name__ == "__main__":
 	sc = {'base acc': [score[1]], '1d acc': [score_1d[0]], 'mcc':[score_1d[1]]}
 	score_df = DataFrame(sc)
 	################################################################
+
 	## Confusion Matrix ############################################
 	labels = np.arange(0,num_classes)
 	conf = confusion_matrix(y_true, y_pred, labels=labels)
 	conf_df = DataFrame(conf, index=mic_class_dict[drug]) # Turn the results into a pandas dataframe (df)
 	conf_df.set_axis(mic_class_dict[drug], axis='columns', inplace=True) # Label the axis
 	################################################################
+
 	## Classification Report #######################################
 	report = classification_report(y_true, y_pred, target_names=mic_class_dict[drug])
 	rep_df = metrics_report_to_df(y_true, y_pred)
 	################################################################
+
 	## Save Everything #############################################
 	#model.save(filepath+'nn_model.hdf5')
 	conf_df.to_pickle(filepath+'sigmoid_conf_df.pkl')
@@ -310,3 +314,4 @@ if __name__ == "__main__":
 		f.write("\nClassification Report\n{0}\n".format(report))
 		f.write("Best performing model chosen hyper-parameters:\n{0}".format(model))
 	################################################################
+'''
