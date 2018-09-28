@@ -3,6 +3,7 @@
 import numpy as np
 import sys
 from copy import deepcopy
+import os
 
 def find_index(kmer):
 	for i, col in enumerate(heatmap_cols):
