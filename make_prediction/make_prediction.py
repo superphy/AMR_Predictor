@@ -41,23 +41,24 @@ def encode_categories(data, class_dict):
 		arry = np.append(arry,temp)
 	return arry
 
-
 if __name__ == "__main__":
-		debug_counter=0
-		df = joblib.load("/amr_data/mic_class_dataframe.pkl") # Matrix of experimental MIC values
-		mic_class_dict = joblib.load("/amr_data/mic_class_order_dict.pkl") # Matrix of classes for each drug
-		#df_cols = df.columns
-		df_cols = ['AMP']
-		for drug in df_cols:
-			print("\n****************",drug,"***************")
-			num_classes = len(mic_class_dict[drug])
-			matrix = np.load('/amr_data/'+drug+'/kmer_matrix.npy')
+				debug_counter=0
+				df = joblib.load("amr_data/mic_class_dataframe.pkl") # Matrix of experimental MIC values
+				mic_class_dict = joblib.load("amr_data/mic_class_order_dict.pkl") # Matrix of classes for each drug
+				#df_cols = df.columns
+				df_cols = ['AMP']
+				for drug in df_cols:
+						print("\n****************",drug,"***************")
+						num_classes = len(mic_class_dict[drug])
+						matrix = np.load('amr_data/'+drug+'/kmer_matrix.npy')
 
-			sk_obj = pickle.load("make_prediction/models/"+drug+"_xgb_features.skobj")
-			matrix = sk_obj.transform(matrix)
+						with open("make_prediction/models/"+drug+"_xgb_features.skobj", 'rb') as sk_handle:
+								sk_obj = pickle.load(sk_handle)
+						matrix = sk_obj.transform(matrix)
 
-			model = pickle.load("make_prediction/models/"+drug+"_xgb_model.dat")
+						with open('make_prediction/models/'+drug+'_xgb_model.dat', 'rb') as model_handle:
+								model = pickle.load(model_handle)
 
-			prediction = model.predict(matrix)
-			prediction = [int(round(float(value))) for value in prediction]
-			print(prediction)
+						prediction = model.predict(matrix)
+						prediction = [int(round(float(value))) for value in prediction]
+						print(prediction)
