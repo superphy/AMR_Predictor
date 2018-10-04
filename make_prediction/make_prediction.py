@@ -170,7 +170,7 @@ if __name__ == "__main__":
 			#loading the model
 			with open('make_prediction/models/'+drug+'_xgb_model.dat', 'rb') as model_handle:
 			#with open('/Drives/L/Bioinformatics-Lethbridge/salmonella_data/jan/skmer/amr_data/AMP/270feats/fold3/xgb_model.dat', 'rb') as model_handle:
-			model = pickle.load(model_handle)
+				model = pickle.load(model_handle)
 			matrix = matrix.transpose()
 			#applying the feature mask
 			matrix = matrix[feat_mask]
