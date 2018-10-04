@@ -128,57 +128,56 @@ def eval_modelOBO(model, test_data, test_names):
 	return (perc, mcc, prediction, actual)
 
 if __name__ == "__main__":
-				df = joblib.load("non_grdi/amr_data/mic_class_dataframe.pkl") # Matrix of experimental MIC values
-				mic_class_dict = joblib.load("non_grdi/amr_data/mic_class_order_dict.pkl") # Matrix of classes for each drug
-				#df_cols = df.columns
-				df_cols = ['AMP']
-				for drug in df_cols:
-						print("\n****************",drug,"***************")
-						num_classes = len(mic_class_dict[drug])
-						matrix = np.load('non_grdi/amr_data/'+drug+'/kmer_matrix.npy')
-						kmer_rows_mic = np.load('non_grdi/amr_data/'+drug+'/kmer_rows_mic.npy')
+	df = joblib.load("non_grdi/amr_data/mic_class_dataframe.pkl") # Matrix of experimental MIC values
+	mic_class_dict = joblib.load("non_grdi/amr_data/mic_class_order_dict.pkl") # Matrix of classes for each drug
+	#df_cols = df.columns
+	df_cols = ['AMP']
+	for drug in df_cols:
+			print("\n****************",drug,"***************")
+			num_classes = len(mic_class_dict[drug])
+			matrix = np.load('non_grdi/amr_data/'+drug+'/kmer_matrix.npy')
+			kmer_rows_mic = np.load('non_grdi/amr_data/'+drug+'/kmer_rows_mic.npy')
+			"""
+			with open("make_prediction/models/"+drug+"_xgb_features.skobj", 'rb') as sk_handle:
+					sk_obj = pickle.load(sk_handle)
+			matrix = sk_obj.transform(matrix)
+			"""
 
-						"""
-						with open("make_prediction/models/"+drug+"_xgb_features.skobj", 'rb') as sk_handle:
-								sk_obj = pickle.load(sk_handle)
-						matrix = sk_obj.transform(matrix)
-						"""
+			#generating a list of all possible kmer sequences
+			chars = 'AGCT'
+			count = 11
+			size = 4**count
+			all_feats = np.empty(size,dtype='object')
+			for i, item in enumerate(itertools.product(chars, repeat = count)):
+				all_feats[i]=("".join(item))
 
-						#generating a list of all possible kmer sequences
-						chars = 'AGCT'
-						count = 11
-						size = 4**count
-						all_feats = np.empty(size,dtype='object')
-						for i, item in enumerate(itertools.product(chars, repeat = count)):
-							all_feats[i]=("".join(item))
+			#converting bytes to strings
+			all_feats = [str(i) for i in all_feats]
 
-						#converting bytes to strings
-						all_feats = [str(i) for i in all_feats]
+			#loading the indexes of the top 270 features found when making the model
+			topf = np.load("make_prediction/models/"+drug+"_xgb_features.npy")
 
-						#loading the indexes of the top 270 features found when making the model
-						topf = np.load("make_prediction/models/"+drug+"_xgb_features.npy")
-
-						#generating a mask to apply to the matrix to reduce it to the correct feature count
-						feat_mask = np.zeros(size)
-						topf = [all_feats[i] for i in topf]
-						for i, element in enumerate(all_feats):
-							if(element in topf):
-								feat_mask[i] = 1
-						feat_mask = [i==1 for i in feat_mask]
+			#generating a mask to apply to the matrix to reduce it to the correct feature count
+			feat_mask = np.zeros(size)
+			topf = [all_feats[i] for i in topf]
+			for i, element in enumerate(all_feats):
+				if(element in topf):
+					feat_mask[i] = 1
+			feat_mask = [i==1 for i in feat_mask]
 
 						
-						assert(np.sum(feat_mask)==270 and len(topf)==270)
-						#loading the model
-						with open('make_prediction/models/'+drug+'_xgb_model.dat', 'rb') as model_handle:
-						#with open('/Drives/L/Bioinformatics-Lethbridge/salmonella_data/jan/skmer/amr_data/AMP/270feats/fold3/xgb_model.dat', 'rb') as model_handle:
-							model = pickle.load(model_handle)
-						matrix = matrix.transpose()
-						#applying the feature mask
-						matrix = matrix[feat_mask]
-						matrix = matrix.transpose()
-						kmer_rows_mic = encode_categories(kmer_rows_mic, mic_class_dict[drug])
-						print(eval_model(model,matrix, kmer_rows_mic)[0])
-						print(eval_modelOBO(model, matrix, kmer_rows_mic)[0])
-						#prediction = model.predict(matrix)
-						#prediction = [int(round(float(value))) for value in prediction]
+			assert(np.sum(feat_mask)==270 and len(topf)==270)
+			#loading the model
+			with open('make_prediction/models/'+drug+'_xgb_model.dat', 'rb') as model_handle:
+			#with open('/Drives/L/Bioinformatics-Lethbridge/salmonella_data/jan/skmer/amr_data/AMP/270feats/fold3/xgb_model.dat', 'rb') as model_handle:
+			model = pickle.load(model_handle)
+			matrix = matrix.transpose()
+			#applying the feature mask
+			matrix = matrix[feat_mask]
+			matrix = matrix.transpose()
+			kmer_rows_mic = encode_categories(kmer_rows_mic, mic_class_dict[drug])
+			print(eval_model(model,matrix, kmer_rows_mic)[0])
+			print(eval_modelOBO(model, matrix, kmer_rows_mic)[0])
+			#prediction = model.predict(matrix)
+			#prediction = [int(round(float(value))) for value in prediction]
 
