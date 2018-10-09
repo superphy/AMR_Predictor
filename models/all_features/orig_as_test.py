@@ -233,7 +233,8 @@ if __name__ == "__main__":
 		#sm = SMOTE(random_state=42, k_neighbors = 1)
 		#X, Y = sm.fit_sample(X, Y)
 		#for train,test in cv.split(X,Y, Z):
-		if(1==1):
+		#Testing block
+		for i in range(1):
 			split_counter +=1
 			#Y[train] = encode_categories(Y[train], mic_class_dict[drug])
 			#Y[test]  = encode_categories(Y[test], mic_class_dict[drug])
