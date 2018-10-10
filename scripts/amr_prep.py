@@ -15,9 +15,9 @@ if __name__ == "__main__":
 	mic_class_dict = joblib.load(os.path.abspath(os.path.curdir)+"/amr_data/mic_class_order_dict.pkl")
 
 	# Load the filtered kmer matrix and its row and col lookups
-	kmer_matrix = np.load(os.path.abspath(os.path.curdir)+"/filtered/filtered_matrix.npy")
-	kmer_cols = np.load(os.path.abspath(os.path.curdir)+"/filtered/filtered_cols.npy")
-	kmer_rows = np.load(os.path.abspath(os.path.curdir)+"/filtered/filtered_rows.npy")
+	kmer_matrix = np.load(os.path.abspath(os.path.curdir)+"/unfiltered/kmer_matrix.npy")
+	kmer_cols = np.load(os.path.abspath(os.path.curdir)+"/unfiltered/kmer_cols.npy")
+	kmer_rows = np.load(os.path.abspath(os.path.curdir)+"/unfiltered/kmer_rows.npy")
 
 	# For each drug
 	for drug in df_cols:
