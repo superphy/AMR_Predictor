@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from Bio import SeqIO
+from Bio import Seq, SeqIO
 from pathlib import Path
 import numpy as np
 import os
@@ -9,6 +9,7 @@ import itertools
 import re
 from concurrent.futures import ProcessPoolExecutor
 from multiprocessing import cpu_count
+
 
 def get_files_to_analyze(file_or_directory):
     """
@@ -53,8 +54,8 @@ def make_row(filename):
     for record in SeqIO.parse(thefile, "fasta"):
         # Retrieve the sequence as a string
         kmerseq = record.seq
-        kmerseq = kmerseq._get_seq_str_and_check_alphabet(kmerseq)  
-                
+        kmerseq = kmerseq._get_seq_str_and_check_alphabet(kmerseq)
+
         # Retrieve the kmer count as an int
         kmercount = record.id
         kmercount = int(kmercount)
@@ -77,34 +78,38 @@ if __name__ == "__main__":
 
     #####################################################################
     ## Input values
-    num_input_genomes = int(sys.argv[1])    # Set this to your number of input files.
-    kmer_size = int(sys.argv[2])            # Set this to your kmer length.
-    matrix_dtype = sys.argv[3]              # Set the data type for the matrix.
-                                            #  ->Note uint8 has max kmercount of 256  
-    results_path = str(sys.argv[4])
-    save_path = str(sys.argv[5])                             
+    kmer_size = int(sys.argv[1])            # Set this to your kmer length.
+    matrix_dtype = sys.argv[2]              # Set the data type for the matrix.
+                                            #  ->Note uint8 has max kmercount of 256
+    results_path = str(sys.argv[3])
+    save_path = str(sys.argv[4])
     #####################################################################
-    
-    # Initialize the kmer matrix
-    num_rows    = num_input_genomes
-    num_cols    = 4**kmer_size
-    kmer_matrix = np.zeros((num_rows,num_cols), dtype=matrix_dtype)
 
     # Initialize the dictionaries of row and col names
     col_names = {}
     row_names = {}
 
     # Create the column dictionary of sequences and their col index
-    chars = "AGCT"
+    chars = "ACGT"
     i = 0
     for item in itertools.product(chars, repeat=kmer_size):
-        col_names["".join(item)] = i
-        i += 1
+        dna = "".join(item)
+        revcomp = Seq.reverse_complement(dna)
+        if revcomp < dna:
+            dna = revcomp
+        if not dna in col_names:
+            col_names[dna] = i
+            i += 1
 
     # Get a list of all files and reshape it to use with concurrent futures
     files = get_files_to_analyze(results_path)
     x = np.asarray(files)
     y = x.reshape((len(x),1))
+
+    # Initialize the kmer matrix
+    num_rows    = len(x)
+    num_cols    = i
+    kmer_matrix = np.zeros((num_rows,num_cols), dtype=matrix_dtype)
 
     # Use concurent futures to get multiple rows at the same time
     # Then place completed rows into the matrix and update the row dictionary
@@ -120,10 +125,24 @@ if __name__ == "__main__":
         os.mkdir(os.path.abspath(os.path.curdir)+'/'+save_path)
     np.save(os.path.abspath(os.path.curdir)+'/'+save_path+'kmer_matrix.npy', kmer_matrix)
     np.save(os.path.abspath(os.path.curdir)+'/'+save_path+'dict_kmer_rows.npy', row_names)
-    np.save(os.path.abspath(os.path.curdir)+'/'+save_path+'dict_kmer_cols.npy', col_names) 
+    np.save(os.path.abspath(os.path.curdir)+'/'+save_path+'dict_kmer_cols.npy', col_names)
 
     print("end: create matrix (parallel)")
 
+    # Convert dict to array
+    row_array = np.empty([num_rows], dtype='S11')
+    col_array = np.empty([num_cols], dtype='S11')
 
+    # Walk through row dictionary, place genome in correct index
+    for key, index in row_names.items():
+    	row_array[index] = key
 
+    # Walk through col dictionary, place sequence in correct index
+    for key, index in col_names.items():
+    	col_array[index] = key
 
+    print("end: convert dict to npy")
+
+    # Save the np arrays
+    np.save(os.path.abspath(os.path.curdir)+'/'+save_path+'kmer_rows.npy', row_array)
+    np.save(os.path.abspath(os.path.curdir)+'/'+save_path+'kmer_cols.npy', col_array)

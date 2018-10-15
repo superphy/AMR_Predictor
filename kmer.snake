@@ -3,8 +3,8 @@
 
 # Location of the raw genomes
 #RAW_GENOMES_PATH = "/mnt/moria/rylan/phenores_data/raw/genomes/"
-#RAW_GENOMES_PATH = "genomes/raw/"
-RAW_GENOMES_PATH = "test/genomes/"
+RAW_GENOMES_PATH = "genomes/raw/"
+#RAW_GENOMES_PATH = "test/genomes/"
 
 # Kmer length that you want to count
 KMER_SIZE = 11

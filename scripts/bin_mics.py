@@ -82,14 +82,12 @@ mic_ranges = {
 }
 
 
-def main(excel_filepath, class_label_filepath=None):
+def main(excel_filepath, class_label_filepath):
     """ Runs data processing scripts to turn MIC text values from Excel input data
         into class categories
-        There are two modes
-            1. Only max and min are defined, all other observed MIC classes are assigned a bin provided
-            they are not incompatible (i.e. >8 in a panel where the MIC values range from 1 - 32)
-            2. All class labels are defined, observed MIC classes in data are mapped to these classes. An error
-            is thrown if no mapped classes is found. To use this version, provde a class_label_filepath above.
+
+            class labels are defined, observed MIC classes in data are mapped to these classes. An error
+            is thrown if no mapped classes is found. Provde a class_label_filepath.
             The class_label file will outline all classes in YAML format:
                 AMP:
                     - 0.5
@@ -100,7 +98,7 @@ def main(excel_filepath, class_label_filepath=None):
                 AMP: [0.5, 1.0, 2.0, ...]
     Args:
         excel_filepath: Metadata Excel file. MIC columns will have prefix 'MIC_'
-        class_label_filepath: If this is provided, the class labels will be loaded, instead of inferred from data
+        class_label_filepath: MIC classes in yaml format
     """
 
     logger = logging.getLogger(__name__)
