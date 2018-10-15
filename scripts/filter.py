@@ -26,7 +26,7 @@ delete_this = [1]*num_cols
 # Walk through the columns
 col_index = 0
 while col_index < num_cols:
-	if col_index%100000 == 0: print("col milestone: ", col_index)
+	#if col_index%100000 == 0: print("col milestone: ", col_index)
 	# Count the number of empty spots in the column
 	empty_count = np.bincount(matrix[:,col_index])[0]
 	# Calculate the number of filled spots in the column
