@@ -3,6 +3,7 @@
 
 # Location of the MIC data
 PUBLIC_MIC_SPREADSHEET_PATH = "amr_data/no_ecoli_GenotypicAMR_Master.xlsx"
+GRDI_MIC_SPREADSHEET_PATH = "amr_data/ResolvedCIPARS_SRL (1).xlsx"
 
 #################################################################
 
@@ -73,7 +74,7 @@ def transform(input, log, output,
 
 rule all:
   input:
-    "amr_data/public_mic_class_dataframe.pkl"
+    "amr_data/public_mic_class_dataframe.pkl",
     "amr_data/grdi_mic_class_dataframe.pkl"
 
 rule public:
@@ -98,4 +99,7 @@ rule grdi:
         "amr_data/grdi_mic_class_dataframe.pkl",
         "amr_data/grdi_mic_class_order_dict.pkl"
     run:
-        transform(input, log, output, slice_cols=)
+        transform(input, log, output,
+            slice_cols=["SANumber","MIC_AMP", "MIC_AMC", "MIC_FOX", "MIC_CRO",
+            "MIC_TIO", "MIC_GEN", "MIC_SXT", "MIC_AZM", "MIC_CHL", "MIC_CIP",
+            "MIC_NAL", "MIC_TET"])
