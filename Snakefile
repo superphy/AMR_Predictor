@@ -36,6 +36,7 @@ rule count:
   threads:
     2
   shell:
+<<<<<<< HEAD
     "jellyfish count -C -m {KMER_SIZE} -s 100M -t {threads} {input} -o {output}"
 
 rule dump:
@@ -53,3 +54,28 @@ rule matrix:
         touch("touchfile.txt")
     shell:
         "python scripts/parallel_matrix.py {KMER_SIZE} {MATRIX_DTYPE} jellyfish_results/ unfiltered/"
+=======
+    "jellyfish count -m {KMER_SIZE} -s 100M -t {threads} {input} -o {output}"
+
+rule fa_dump:
+  input:
+    "jellyfish_results/{id}.jf"
+  output:
+    "jellyfish_results/{id}.fa"
+  shell:
+    "jellyfish dump {input} > {output}"
+
+rule make_matrix:
+  input:
+    expand("jellyfish_results/{id}.fa", id=ids)
+  output:
+    touch("touchfile.txt")
+  params:
+    class_labels="amr_data/class_ranges.yaml"
+  run:
+    shell("python scripts/parallel_matrix.py {NUM_INPUT_FILES} {KMER_SIZE} {MATRIX_DTYPE} jellyfish_results/ unfiltered/")
+    shell("python scripts/convert_dict.py")
+    shell("python scripts/bin_mics.py {MIC_DATA_FILE}")
+    #shell("python scripts/filter.py")
+    shell("python scripts/amr_prep.py")
+>>>>>>> master

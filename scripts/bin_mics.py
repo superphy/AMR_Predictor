@@ -1,14 +1,17 @@
+<<<<<<< HEAD
 #!/usr/bin/env python
 """bin_mics.py
 Convert MIC values into distinct classes. Save processed
 classes as pandas dataframes.
 """
 
+=======
+>>>>>>> master
 import os
 import logging
+import re
 import numpy as np
 import pandas as pd
-import yaml
 import sys
 
 from dotenv import find_dotenv, load_dotenv
@@ -22,6 +25,7 @@ __license__ = "APL"
 __version__ = "2.0"
 __maintainer__ = "Matthew Whiteside"
 __email__ = "matthew.whiteside@phac-aspc.gc.ca"
+
 
 # Manually define MIC ranges due to mixing of different systems
 mic_ranges = {
@@ -85,19 +89,38 @@ def main(excel_filepath, class_label_filepath):
     """ Runs data processing scripts to turn MIC text values from Excel input data
         into class categories
 
+<<<<<<< HEAD
             class labels are defined, observed MIC classes in data are mapped to these classes. An error
             is thrown if no mapped classes is found. Provde a class_label_filepath.
+=======
+        There are two modes
+            1. Only max and min are defined, all other observed MIC classes are assigned a bin provided
+            they are not incompatible (i.e. >8 in a panel where the MIC values range from 1 - 32)
+            2. All class labels are defined, observed MIC classes in data are mapped to these classes. An error
+            is thrown if no mapped classes is found. To use this version, provde a class_label_filepath above.
+>>>>>>> master
             The class_label file will outline all classes in YAML format:
+
+
                 AMP:
                     - 0.5
                     - 1.0
                     - 2.0
                     - ...
+
                 - or -
+
                 AMP: [0.5, 1.0, 2.0, ...]
+
+
     Args:
         excel_filepath: Metadata Excel file. MIC columns will have prefix 'MIC_'
+<<<<<<< HEAD
         class_label_filepath: MIC classes in yaml format
+=======
+        class_label_filepath: If this is provided, the class labels will be loaded, instead of inferred from data
+
+>>>>>>> master
     """
 
     logger = logging.getLogger(__name__)
@@ -105,7 +128,6 @@ def main(excel_filepath, class_label_filepath):
 
     #micsdf = pd.read_excel(excel_filepath)
     micsdf = pd.read_csv(excel_filepath, sep='\t')
-    print(micsdf)
 
     micsdf = micsdf[
         ["run", "MIC_AMP", "MIC_AMC", "MIC_FOX", "MIC_CRO", "MIC_TIO", "MIC_GEN", "MIC_FIS", "MIC_SXT", "MIC_AZM",
@@ -115,7 +137,6 @@ def main(excel_filepath, class_label_filepath):
 
     # micsdf = micsdf[
     #     ["SANumber", "MIC_AMP", "MIC_AMC"]]
-    # micsdf = micsdf.set_index('SANumber')
 
     mic_class_labels = None
     if class_label_filepath:
@@ -140,7 +161,7 @@ def main(excel_filepath, class_label_filepath):
 
     c = pd.DataFrame(classes)
 
-
+    
     cfile  = os.path.abspath(os.path.curdir)+"/amr_data/mic_class_dataframe.pkl"#os.path.join(data_dir, 'interim', 'mic_class_dataframe.pkl')
     cofile = os.path.abspath(os.path.curdir)+"/amr_data/mic_class_order_dict.pkl"#os.path.join(data_dir, 'interim', 'mic_class_order_dict.pkl')
     #cfile = snakemake.output[0]
@@ -163,8 +184,10 @@ def bin(mic_series, drug):
 
 
     # Initialize MIC bins
-    panel.set_range(mic_ranges[drug]['top'], mic_ranges[drug]['bottom'])
 
+    panel.set_range(mic_ranges[drug]['top'], mic_ranges[drug]['bottom'])
+    logger.debug('Top MIC range: {}'.format(mic_ranges[drug]['top']))
+    logger.debug('Bottom MIC range: {}'.format(mic_ranges[drug]['bottom']))
     # Iterate through MIC values and assign class labels
     logger.debug('MIC values will be mapped to: {}'.format(panel.class_labels))
     classes = []
@@ -222,6 +245,6 @@ if __name__ == '__main__':
     # Check for class file
     clfp = None
     #if hasattr(snakemake.params, 'class_labels') and snakemake.params.class_labels:
-    #    clfp = snakemake.params.class_labels
+        #clfp = snakemake.params.class_labels
 
     main(sys.argv[1], clfp)
