@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 """bin_mics.py
 Convert MIC values into distinct classes. Save processed
 classes as pandas dataframes.
