@@ -21,7 +21,7 @@ rule all:
 
 rule encode_mics:
     input:
-        "grdi_genomes/unfiltered/kmer_rows.npy",
+        "grdi_unfiltered/kmer_rows.npy",
         "amr_data/grdi_mic_class_dataframe.pkl",
         "amr_data/grdi_mic_class_order_dict.pkl"
     params:
@@ -39,9 +39,9 @@ rule encode_mics:
 
 rule select:
     input:
-        'grdi_genomes/unfiltered/kmer_matrix.npy',
-        'grdi_genomes/unfiltered/kmer_cols.npy',
-        'grdi_genomes/unfiltered/kmer_rows.npy',
+        'grdi_unfiltered/kmer_matrix.npy',
+        'grdi_unfiltered/kmer_cols.npy',
+        'grdi_unfiltered/kmer_rows.npy',
         'amr_data/{drug}/y_grdi.pkl',
         'amr_data/{drug}/{feat}features/X_train.pkl'
     output:
