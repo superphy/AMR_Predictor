@@ -12,22 +12,22 @@ import numpy as np
 import pandas as pd
 import pickle
 
-from scripts.feature_selection import dropna_and_encode_rows
+from src.feature_selection import dropna_and_encode_rows
 
 rule all:
     input:
-        expand('amr_data/{drug}/{feat}features/grdi_xgb_report.txt', drug=DRUGS,
+        expand('data/{drug}/{feat}features/grdi_xgb_report.txt', drug=DRUGS,
             feat=FEATURES_SIZES),
 
 rule encode_mics:
     input:
-        "grdi_unfiltered/kmer_rows.npy",
-        "amr_data/grdi_mic_class_dataframe.pkl",
-        "amr_data/grdi_mic_class_order_dict.pkl"
+        "data/grdi_unfiltered/kmer_rows.npy",
+        "data/grdi_mic_class_dataframe.pkl",
+        "data/grdi_mic_class_order_dict.pkl"
     params:
         d="{drug}"
     output:
-        "amr_data/{drug}/y_grdi.pkl"
+        "data/{drug}/y_grdi.pkl"
     run:
         rows = np.load(input[0])
         micdf = pd.read_pickle(input[1])
@@ -39,14 +39,14 @@ rule encode_mics:
 
 rule select:
     input:
-        'grdi_unfiltered/kmer_matrix.npy',
-        'grdi_unfiltered/kmer_cols.npy',
-        'grdi_unfiltered/kmer_rows.npy',
-        'amr_data/{drug}/y_grdi.pkl',
-        'amr_data/{drug}/{feat}features/X_train.pkl'
+        'data/grdi_unfiltered/kmer_matrix.npy',
+        'data/grdi_unfiltered/kmer_cols.npy',
+        'data/grdi_unfiltered/kmer_rows.npy',
+        'data/{drug}/y_grdi.pkl',
+        'data/{drug}/{feat}features/X_train.pkl'
     output:
-        'amr_data/{drug}/{feat}features/X_grdi.pkl',
-        'amr_data/{drug}/{feat}features/y_grdi_xref.pkl'
+        'data/{drug}/{feat}features/X_grdi.pkl',
+        'data/{drug}/{feat}features/y_grdi_xref.pkl'
     run:
 
         kmer = np.load(input[0])
@@ -79,13 +79,13 @@ rule select:
 
 rule test:
     input:
-        'amr_data/{drug}/{feat}features/X_grdi.pkl',
-        'amr_data/{drug}/{feat}features/y_grdi_xref.pkl',
-        'amr_data/{drug}/{feat}features/xgb_model.pkl'
+        'data/{drug}/{feat}features/X_grdi.pkl',
+        'data/{drug}/{feat}features/y_grdi_xref.pkl',
+        'data/{drug}/{feat}features/xgb_model.pkl'
     params:
         d="{drug}"
     output:
-        'amr_data/{drug}/{feat}features/grdi_xgb_report.txt'
+        'data/{drug}/{feat}features/grdi_xgb_report.txt'
     run:
         X_grdi = pd.read_pickle(input[0])
         y_grdi = pd.read_pickle(input[1])

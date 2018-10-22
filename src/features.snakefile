@@ -17,24 +17,24 @@ from sklearn.model_selection import train_test_split
 
 rule all:
     input:
-        expand('amr_data/{drug}/{feat}features/X_train.pkl', drug=DRUGS,
+        expand('data/{drug}/{feat}features/X_train.pkl', drug=DRUGS,
             feat=FEATURES_SIZES),
-        expand('amr_data/{drug}/{feat}features/X_test.pkl', drug=DRUGS,
+        expand('data/{drug}/{feat}features/X_test.pkl', drug=DRUGS,
             feat=FEATURES_SIZES),
-        expand('amr_data/{drug}/{feat}features/y_train.pkl', drug=DRUGS,
+        expand('data/{drug}/{feat}features/y_train.pkl', drug=DRUGS,
             feat=FEATURES_SIZES),
-        expand('amr_data/{drug}/{feat}features/y_test.pkl', drug=DRUGS,
+        expand('data/{drug}/{feat}features/y_test.pkl', drug=DRUGS,
             feat=FEATURES_SIZES)
         #expand('amr_data/{drug}/y.pkl', drug=DRUGS, feat=FEATURES_SIZES)
 
 rule encode_mics:
     input:
-        "amr_data/public_mic_class_dataframe.pkl",
-        "amr_data/public_mic_class_order_dict.pkl"
+        "data/public_mic_class_dataframe.pkl",
+        "data/public_mic_class_order_dict.pkl"
     params:
         d="{drug}"
     output:
-        "amr_data/{drug}/y.pkl"
+        "data/{drug}/y.pkl"
     run:
         micdf = pd.read_pickle(input[0])
         orddict = pickle.load(open(input[1], 'rb'))
@@ -45,19 +45,19 @@ rule encode_mics:
 
 rule select:
     input:
-        'unfiltered/kmer_matrix.npy',
-        'unfiltered/kmer_cols.npy',
-        'unfiltered/kmer_rows.npy',
-        'amr_data/{drug}/y.pkl'
+        'data/unfiltered/kmer_matrix.npy',
+        'data/unfiltered/kmer_cols.npy',
+        'data/unfiltered/kmer_rows.npy',
+        'data/{drug}/y.pkl'
     params:
         fmax=0.99,
         fmin=0.01,
         n="{feat}"
     output:
-        'amr_data/{drug}/{feat}features/X_train.pkl',
-        'amr_data/{drug}/{feat}features/X_test.pkl',
-        'amr_data/{drug}/{feat}features/y_train.pkl',
-        'amr_data/{drug}/{feat}features/y_test.pkl'
+        'data/{drug}/{feat}features/X_train.pkl',
+        'data/{drug}/{feat}features/X_test.pkl',
+        'data/{drug}/{feat}features/y_train.pkl',
+        'data/{drug}/{feat}features/y_test.pkl'
     run:
 
         kmer = np.load(input[0])

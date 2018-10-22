@@ -2,9 +2,7 @@
 #################################################################
 
 # Location of the raw genomes
-#RAW_GENOMES_PATH = "/mnt/moria/rylan/phenores_data/raw/genomes/"
-RAW_GENOMES_PATH = "genomes/raw/"
-#RAW_GENOMES_PATH = "test/genomes/"
+RAW_GENOMES_PATH = "data/genomes/raw/"
 
 # Kmer length that you want to count
 KMER_SIZE = 11
@@ -19,21 +17,21 @@ ids, = glob_wildcards(RAW_GENOMES_PATH+"{id}.fasta")
 
 rule all:
   input:
-    "touchfile.txt"
+    ".touchfile.txt"
 
 rule clean:
   input:
     RAW_GENOMES_PATH+"{id}.fasta"
   output:
-    "genomes/clean/{id}.fasta"
+    "data/genomes/clean/{id}.fasta"
   run:
-    shell("python scripts/clean.py {input} genomes/clean/")
+    shell("python src/clean.py {input} data/genomes/clean/")
 
 rule count:
   input:
-    "genomes/clean/{id}.fasta"
+    "data/genomes/clean/{id}.fasta"
   output:
-    temp("jellyfish_results/{id}.jf")
+    temp("data/jellyfish_results/{id}.jf")
   threads:
     2
   shell:
@@ -41,16 +39,16 @@ rule count:
 
 rule dump:
     input:
-        "jellyfish_results/{id}.jf"
+        "data/jellyfish_results/{id}.jf"
     output:
-        "jellyfish_results/{id}.fa"
+        "data/jellyfish_results/{id}.fa"
     shell:
         "jellyfish dump {input} > {output}"
 
 rule matrix:
     input:
-        expand("jellyfish_results/{id}.fa", id=ids)
+        expand("data/jellyfish_results/{id}.fa", id=ids)
     output:
-        touch("touchfile.txt")
+        touch(".touchfile.txt")
     shell:
-        "python scripts/parallel_matrix.py {KMER_SIZE} {MATRIX_DTYPE} jellyfish_results/ unfiltered/"
+        "python src/parallel_matrix.py {KMER_SIZE} {MATRIX_DTYPE} data/jellyfish_results/ data/unfiltered/"

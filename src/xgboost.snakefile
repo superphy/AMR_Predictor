@@ -15,22 +15,22 @@ from hyperopt import tpe
 
 rule all:
     input:
-        expand('amr_data/{drug}/{feat}features/xgb_model.pkl', drug=DRUGS,
+        expand('data/{drug}/{feat}features/xgb_model.pkl', drug=DRUGS,
             feat=FEATURES_SIZES),
-        expand('amr_data/{drug}/{feat}features/xgb_report.txt', drug=DRUGS,
+        expand('data/{drug}/{feat}features/xgb_report.txt', drug=DRUGS,
             feat=FEATURES_SIZES)
 
 rule train:
     input:
-        'amr_data/{drug}/{feat}features/X_train.pkl',
-        'amr_data/{drug}/{feat}features/X_test.pkl',
-        'amr_data/{drug}/{feat}features/y_train.pkl',
-        'amr_data/{drug}/{feat}features/y_test.pkl'
+        'data/{drug}/{feat}features/X_train.pkl',
+        'data/{drug}/{feat}features/X_test.pkl',
+        'data/{drug}/{feat}features/y_train.pkl',
+        'data/{drug}/{feat}features/y_test.pkl'
     params:
         d="{drug}"
     output:
-        'amr_data/{drug}/{feat}features/xgb_model.pkl',
-        'amr_data/{drug}/{feat}features/xgb_report.txt'
+        'data/{drug}/{feat}features/xgb_model.pkl',
+        'data/{drug}/{feat}features/xgb_report.txt'
     run:
         X_train = pd.read_pickle(input[0])
         X_test = pd.read_pickle(input[1])
@@ -40,7 +40,7 @@ rule train:
         print(X_train.head())
         print(y_train.head())
 
-        # Due to bug in Hyperopt-Sklearn, indexed/named matrices produce error 
+        # Due to bug in Hyperopt-Sklearn, indexed/named matrices produce error
         param_search = HyperoptEstimator( classifier=xgboost_classification('xbc'), preprocessing=[], algo=tpe.suggest, trial_timeout=2000 )
     	param_search.fit( X_train.values, y_train.values )
     	model = param_search.best_model()['learner']

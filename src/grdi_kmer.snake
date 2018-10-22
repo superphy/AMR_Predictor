@@ -2,9 +2,7 @@
 #################################################################
 
 # Location of the raw genomes
-#RAW_GENOMES_PATH = "/mnt/moria/rylan/phenores_data/raw/genomes/"
-RAW_GENOMES_PATH = "grdi_genomes/raw/"
-#RAW_GENOMES_PATH = "test/genomes/"
+RAW_GENOMES_PATH = "data/grdi_genomes/raw/"
 
 # Kmer length that you want to count
 KMER_SIZE = 11
@@ -19,21 +17,21 @@ ids, = glob_wildcards(RAW_GENOMES_PATH+"{id}.fasta")
 
 rule all:
   input:
-    "grdi_touchfile.txt"
+    ".grdi_touchfile.txt"
 
 rule clean:
   input:
     RAW_GENOMES_PATH+"{id}.fasta"
   output:
-    "grdi_genomes/clean/{id}.fasta"
+    "data/grdi_genomes/clean/{id}.fasta"
   run:
-    shell("python scripts/clean.py {input} grdi_genomes/clean/")
+    shell("python src/clean.py {input} data/grdi_genomes/clean/")
 
 rule count:
   input:
-    "grdi_genomes/clean/{id}.fasta"
+    "data/grdi_genomes/clean/{id}.fasta"
   output:
-    temp("grdi_jellyfish_results/{id}.jf")
+    temp("data/grdi_jellyfish_results/{id}.jf")
   threads:
     2
   shell:
@@ -41,16 +39,16 @@ rule count:
 
 rule dump:
     input:
-        "grdi_jellyfish_results/{id}.jf"
+        "data/grdi_jellyfish_results/{id}.jf"
     output:
-        "grdi_jellyfish_results/{id}.fa"
+        "data/grdi_jellyfish_results/{id}.fa"
     shell:
         "jellyfish dump {input} > {output}"
 
 rule matrix:
     input:
-        expand("grdi_jellyfish_results/{id}.fa", id=ids)
+        expand("data/grdi_jellyfish_results/{id}.fa", id=ids)
     output:
-        touch("grdi_touchfile.txt")
+        touch(".grdi_touchfile.txt")
     shell:
-        "python scripts/parallel_matrix.py {KMER_SIZE} {MATRIX_DTYPE} grdi_jellyfish_results/ grdi_unfiltered/"
+        "python src/parallel_matrix.py {KMER_SIZE} {MATRIX_DTYPE} data/grdi_jellyfish_results/ data/grdi_unfiltered/"
