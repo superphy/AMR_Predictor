@@ -1,4 +1,14 @@
-
+rule all:
+    threads:
+        4096
+    run:
+        shell("snakemake -j {threads} -s src/kmer.snake")
+        shell("snakemake -j {threads} -s src/grdi_kmer.snake")
+        shell("snakemake -j {threads} -s src/mics.snakefile")
+        shell("snakemake -j {threads} -s src/features.snakefile")
+        shell("snakemake -j {threads} -s src/xgboost.snakefile")
+        shell("snakemake -j {threads} -s src/xgboost_grdi.snakefile")
+"""
 rule all:
     input:
         "data/AMP/500features/grdi_xgb_report.txt"
@@ -22,6 +32,10 @@ rule m_mics:
         "data/unfiltered/kmer_matrix.npy",
         "data/grdi_unfiltered/kmer_matrix.npy"
     output:
+        "data/public_mic_class_dataframe.pkl",
+        "data/public_mic_class_order_dict.pkl",
+        "data/grdi_mic_class_dataframe.pkl",
+        "data/grdi_mic_class_order_dict.pkl"
     threads:
         4096
     run:
@@ -56,3 +70,4 @@ rule m_predict:
         4096
     run:
         shell("snakemake -j {threads} -s src/xgboost_grdi.snakefile")
+"""
