@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 import pickle
 
-from src.feature_selection import dropna_and_encode_rows
+from feature_selection import dropna_and_encode_rows
 
 rule all:
     input:

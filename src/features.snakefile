@@ -12,7 +12,7 @@ import numpy as np
 import logging
 import pickle
 
-from scripts.feature_selection import select, dropna_and_encode_rows
+from feature_selection import select, dropna_and_encode_rows
 from sklearn.model_selection import train_test_split
 
 rule all:

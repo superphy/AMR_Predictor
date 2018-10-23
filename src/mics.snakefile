@@ -13,7 +13,7 @@ import logging
 import pickle
 import yaml
 
-from src.mic import MICPanel
+from mic import MICPanel
 
 def transform(input, log, output,
     slice_cols=["run", "MIC_AMP", "MIC_AMC", "MIC_FOX", "MIC_CRO",

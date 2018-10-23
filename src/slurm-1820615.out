@@ -1,0 +1,29 @@
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 96
+Rules claiming more threads will be scaled down.
+Job counts:
+	count	jobs
+	1	all
+	1	matrix
+	2
+
+[Tue Oct 23 16:48:52 2018]
+rule matrix:
+    output: .touchfile.txt
+    jobid: 1
+
+python: can't open file 'src/parallel_matrix.py': [Errno 2] No such file or directory
+    [Tue Oct 23 16:48:52 2018]
+    Error in rule matrix:
+        jobid: 1
+        output: .touchfile.txt
+
+RuleException:
+CalledProcessError in line 54 of /Drives/K/gkempenaar/AMR_Predictor/src/kmer.snake:
+Command ' set -euo pipefail;  python src/parallel_matrix.py 11 uint8 data/jellyfish_results/ data/unfiltered/ ' returned non-zero exit status 2.
+  File "/Drives/K/gkempenaar/AMR_Predictor/src/kmer.snake", line 54, in __rule_matrix
+  File "/opt/miniconda3/lib/python3.6/concurrent/futures/thread.py", line 55, in run
+Shutting down, this might take some time.
+Exiting because a job execution failed. Look above for error message
+Complete log: /Drives/K/gkempenaar/AMR_Predictor/src/.snakemake/log/2018-10-23T164852.869884.snakemake.log
