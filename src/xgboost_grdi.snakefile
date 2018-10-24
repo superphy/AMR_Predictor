@@ -12,7 +12,12 @@ import numpy as np
 import pandas as pd
 import pickle
 
-from src.feature_selection import dropna_and_encode_rows
+from feature_selection import dropna_and_encode_rows
+
+from decimal import Decimal
+import collections
+from sklearn.metrics import matthews_corrcoef, classification_report, precision_recall_fscore_support
+from model_evaluators import xgb_tester
 
 rule all:
     input:
@@ -96,6 +101,12 @@ rule test:
         model = pickle.load(open(input[2], 'rb'))
         y_pred = model.predict( X_grdi.values )
         acc = sum(y_grdi == y_pred)/len(y_grdi)
-        print(acc)
+
+        acc_0d, mcc, pred, act = xgb_tester(model, X_grdi.values, y_grdi, 0)
+        acc_1d= xgb_tester(model, X_grdi.values, y_grdi, 1)[0]
+
+        print("Direct: {} 1D: {} MCC: {}".formate(acc_0d, acc_1d, mcc))
+
+        #print(acc)
         with open(output[0], 'w') as outfh:
             outfh.write("Xgboost accuracy for drug {}: {}\n".format(params.d, acc))
