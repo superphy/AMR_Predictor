@@ -1,8 +1,10 @@
 #!/usr/bin/env python
+
+import numpy as np
 from decimal import Decimal
 import collections
 from sklearn.metrics import matthews_corrcoef, classification_report, precision_recall_fscore_support
-import numpy as np
+from keras.utils import np_utils, to_categorical
 
 def ann_1d(model, test_data, test_names):
     '''
