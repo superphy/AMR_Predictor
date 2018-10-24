@@ -1,8 +1,6 @@
 # AMR_Predictor
 Machine learning methods to predict the anti-microbial resistance of Salmonella.
 
-#UNDER DEVELOPEMENT, CHECK EXPERIMENTAL FOR FUNCTIONAL CODE.
-
 ## Setup
 1. Clone repository
 2. [Download anaconda or miniconda (python 3.7)](https://conda.io/miniconda.html (python 3.7)), instructions for that [are here](https://conda.io/docs/user-guide/install/index.html)
