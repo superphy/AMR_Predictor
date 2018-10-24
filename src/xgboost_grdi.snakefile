@@ -105,7 +105,7 @@ rule test:
         acc_0d, mcc, pred, act = xgb_tester(model, X_grdi.values, y_grdi, 0)
         acc_1d= xgb_tester(model, X_grdi.values, y_grdi, 1)[0]
 
-        print("Direct: {} 1D: {} MCC: {}".formate(acc_0d, acc_1d, mcc))
+        print("Direct: {} 1D: {} MCC: {}".format(acc_0d, acc_1d, mcc))
 
         #print(acc)
         with open(output[0], 'w') as outfh:
