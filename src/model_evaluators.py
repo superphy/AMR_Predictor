@@ -2,6 +2,7 @@
 from decimal import Decimal
 import collections
 from sklearn.metrics import matthews_corrcoef, classification_report, precision_recall_fscore_support
+import numpy as np
 
 def ann_1d(model, test_data, test_names):
     '''
