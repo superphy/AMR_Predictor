@@ -12,6 +12,8 @@ import pickle
 from hpsklearn import HyperoptEstimator, xgboost_classification
 from hyperopt import tpe
 
+from model_evaluators import xgb_tester
+
 
 rule all:
     input:
@@ -48,6 +50,12 @@ rule train:
         pickle.dump(model, open(output[0], 'wb'))
         y_pred = model.predict( X_test.values )
         acc = sum(y_test == y_pred)/len(y_test)
+
+        acc_0d, mcc, pred, act = xgb_tester(model, X_test.values, y_test, 0)
+        acc_1d= xgb_tester(model, X_test.values, y_test, 1)[0]
         print(acc)
+        print("*************************************************")
+        print("Direct: {} 1D: {} MCC: {}".format(acc_0d, acc_1d, mcc))
+
         with open(output[1], 'w') as outfh:
             outfh.write("Xgboost accuracy for drug {}: {}\n".format(params.d, acc))

@@ -14,9 +14,6 @@ import pickle
 
 from feature_selection import dropna_and_encode_rows
 
-from decimal import Decimal
-import collections
-from sklearn.metrics import matthews_corrcoef, classification_report, precision_recall_fscore_support
 from model_evaluators import xgb_tester
 
 rule all:
@@ -105,6 +102,7 @@ rule test:
         acc_0d, mcc, pred, act = xgb_tester(model, X_grdi.values, y_grdi, 0)
         acc_1d= xgb_tester(model, X_grdi.values, y_grdi, 1)[0]
 
+        print("*************************************************")
         print("Direct: {} 1D: {} MCC: {}".format(acc_0d, acc_1d, mcc))
 
         #print(acc)
