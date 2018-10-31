@@ -13,17 +13,19 @@ from sklearn.feature_selection import SelectKBest, f_classif
 from sklearn.metrics import matthews_corrcoef, classification_report, precision_recall_fscore_support
 import collections
 from sklearn.externals import joblib
+import sys
 
 from model_evaluators import *
 from data_transformers import *
 
 if __name__ == "__main__":
 	#leave at 0 features for no feature selection
-	num_feats = sys.argv[1]
+	num_feats = int(sys.argv[1])
+	print("Features: ", num_feats)
 	df = joblib.load("data/public_mic_class_dataframe.pkl") # Matrix of experimental MIC values
 	mic_class_dict = joblib.load("data/public_mic_class_order_dict.pkl") # Matrix of classes for each drug
 	df_cols = df.columns
-	df_cols=['AMP']
+	df_cols = [sys.argv[2]]
 	for drug in df_cols:
 			print("\n****************",drug,"***************")
 			num_classes = len(mic_class_dict[drug])
@@ -48,14 +50,20 @@ if __name__ == "__main__":
 
 				if(num_feats!=0):
 					sk_obj = SelectKBest(f_classif, k=num_feats)
-					X[train] = sk_obj.fit_transform(X[train], Y[train])
-					X[test]  = sk_obj.transform(X[test])
+					x_train = sk_obj.fit_transform(X[train], Y[train])
+					x_test  = sk_obj.transform(X[test])
+				else:
+					x_train = X[train]
+					x_test = X[test]					
+
+				y_test = Y[test]
+				y_train = Y[train]				
 
 				model = XGBClassifier(learning_rate=1, n_estimators=10, objective='multi:softmax', silent=True, nthread=num_threads)
-				model.fit(X[train],Y[train])
+				model.fit(x_train,y_train)
 
-				results = xgb_tester(model, X[test], Y[test], 0)
-				OBOResults = xgb_tester(model, X[test], Y[test], 1)
+				results = xgb_tester(model, x_test, y_test, 0)
+				OBOResults = xgb_tester(model, x_test, y_test, 1)
 
 				window_scores.append(OBOResults[0])
 				mcc_scores.append(results[1])
