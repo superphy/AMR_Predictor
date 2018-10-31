@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python
 
 """
@@ -11,9 +12,10 @@ from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit
 from sklearn.feature_selection import SelectKBest, f_classif
 from sklearn.metrics import matthews_corrcoef, classification_report, precision_recall_fscore_support
 import collections
+from sklearn.externals import joblib
 
-import model_evaluators
-import data_transformers
+from model_evaluators import *
+from data_transformers import *
 
 df = joblib.load("data/public_mic_class_dataframe.pkl") # Matrix of experimental MIC values
 mic_class_dict = joblib.load("data/public_mic_class_order_dict.pkl") # Matrix of classes for each drug
@@ -22,8 +24,8 @@ df_cols=['AMP']
 for drug in df_cols:
 		print("\n****************",drug,"***************")
 		num_classes = len(mic_class_dict[drug])
-		X = np.load('/data/'+drug+'/kmer_matrix.npy')
-		print("load shape:",matrix.shape)
+		X = np.load('data/'+drug+'/kmer_matrix.npy')
+		print("load shape:", X.shape)
 		Y = np.load('data/'+drug+'/kmer_rows_mic.npy')
 		Z = np.load('data/'+drug+'/kmer_rows_genomes.npy')
 
@@ -51,8 +53,8 @@ for drug in df_cols:
 			model = XGBClassifier(learning_rate=1, n_estimators=10, objective='multi:softmax', silent=True, nthread=num_threads)
 			model.fit(X[train],Y[train])
 
-			results = eval_model(model, X[test], Y[test])
-			OBOResults = eval_modelOBO(model, X[test], Y_[test])
+			results = xgb_tester(model, X[test], Y[test], 0)
+			OBOResults = xgb_tester(model, X[test], Y[test], 1)
 
 			window_scores.append(OBOResults[0])
 			mcc_scores.append(results[1])
@@ -61,6 +63,7 @@ for drug in df_cols:
 			report = precision_recall_fscore_support(results[3], results[2], average=None, labels=labels)
 			report_scores.append(report)
 			cvscores.append(results[0])
+			
 
 		print("Avg base acc:   %.2f%%   (+/- %.2f%%)" % (np.mean(cvscores), np.std(cvscores)))
 		print("Avg window acc: %.2f%%   (+/- %.2f%%)" % (np.mean(window_scores), np.std(window_scores)))
