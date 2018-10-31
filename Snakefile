@@ -47,7 +47,7 @@ rule kmer_count:
   threads:
     2
   shell:
-    "jellyfish count -m {KMER_SIZE} -s 100M -t {threads} {input} -o {output}"
+    "jellyfish count -C -m {KMER_SIZE} -s 100M -t {threads} {input} -o {output}"
 
 rule fa_dump:
   input:
