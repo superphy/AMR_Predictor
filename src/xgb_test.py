@@ -31,10 +31,7 @@ if __name__ == "__main__":
 			X = np.load('data/'+drug+'/kmer_matrix.npy')
 			print("load shape:", X.shape)
 			Y = np.load('data/'+drug+'/kmer_rows_mic.npy')
-			Z = np.load('data/'+drug+'/kmer_rows_genomes.npy')
-
-			kmer_cols = np.load('data/unfiltered/kmer_cols.npy')
-			print("columns in initial load: ", len(kmer_cols))
+			Z = np.load('data/'+drug+'/kmer_rows_genomes.npy'))
 
 			num_threads = 64
 
@@ -46,6 +43,8 @@ if __name__ == "__main__":
 			split_counter = 0
 
 			for train,test in cv.split(X,Y,Z):
+				kmer_cols = np.load('data/unfiltered/kmer_cols.npy')
+				print("columns in initial load: ", len(kmer_cols))
 				split_counter +=1
 				Y[train] = encode_categories(Y[train], mic_class_dict[drug])
 				Y[test]  = encode_categories(Y[test], mic_class_dict[drug])
