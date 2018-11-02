@@ -31,7 +31,7 @@ if __name__ == "__main__":
 			X = np.load('data/'+drug+'/kmer_matrix.npy')
 			print("load shape:", X.shape)
 			Y = np.load('data/'+drug+'/kmer_rows_mic.npy')
-			Z = np.load('data/'+drug+'/kmer_rows_genomes.npy'))
+			Z = np.load('data/'+drug+'/kmer_rows_genomes.npy')
 
 			num_threads = 64
 
