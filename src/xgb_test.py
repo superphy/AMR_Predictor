@@ -75,7 +75,7 @@ if __name__ == "__main__":
 				top_five_mask = [i>=fifth_largest for i in feat_array]
 				print("Top 5: ", kmer_cols[:,top_five_mask])
 				print("Top 5: ", feat_array[top_five_mask])
-				
+
 				results = xgb_tester(model, x_test, y_test, 0)
 				OBOResults = xgb_tester(model, x_test, y_test, 1)
 
@@ -86,7 +86,6 @@ if __name__ == "__main__":
 				report = precision_recall_fscore_support(results[3], results[2], average=None, labels=labels)
 				report_scores.append(report)
 				cvscores.append(results[0])
-				break
 
 			print("Avg base acc:   %.2f%%   (+/- %.2f%%)" % (np.mean(cvscores), np.std(cvscores)))
 			print("Avg window acc: %.2f%%   (+/- %.2f%%)" % (np.mean(window_scores), np.std(window_scores)))
