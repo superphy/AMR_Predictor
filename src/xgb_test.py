@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python
 
 """
@@ -34,7 +33,10 @@ if __name__ == "__main__":
 			Y = np.load('data/'+drug+'/kmer_rows_mic.npy')
 			Z = np.load('data/'+drug+'/kmer_rows_genomes.npy')
 
-			num_threads = 144
+			kmer_cols = np.load('data/unfiltered/kmer_cols.npy')
+			print("columns in initial load: ", len(kmer_cols))
+
+			num_threads = 64
 
 			cv = StratifiedKFold(n_splits=5, random_state=913824)
 			cvscores = []
@@ -52,16 +54,28 @@ if __name__ == "__main__":
 					sk_obj = SelectKBest(f_classif, k=num_feats)
 					x_train = sk_obj.fit_transform(X[train], Y[train])
 					x_test  = sk_obj.transform(X[test])
+					kmer_cols = kmer_cols.reshape(1, -1)
+					kmer_cols = sk_obj.transform(kmer_cols)
+					print("xtrain after feat select: ", x_train.shape)
+					print("features after feat select: ", kmer_cols.shape)
 				else:
 					x_train = X[train]
-					x_test = X[test]					
+					x_test = X[test]
 
 				y_test = Y[test]
-				y_train = Y[train]				
+				y_train = Y[train]
 
 				model = XGBClassifier(learning_rate=1, n_estimators=10, objective='multi:softmax', silent=True, nthread=num_threads)
 				model.fit(x_train,y_train)
 
+				feat_array = np.asarray(model.feature_importances_)
+				sort_feat_array = sorted(feat_array)
+				sort_feat_array.reverse()
+				fifth_largest = sort_feat_array[4]
+				top_five_mask = [i>=fifth_largest for i in feat_array]
+				print("Top 5: ", kmer_cols[:,top_five_mask])
+				print("Top 5: ", feat_array[top_five_mask])
+				
 				results = xgb_tester(model, x_test, y_test, 0)
 				OBOResults = xgb_tester(model, x_test, y_test, 1)
 
@@ -72,7 +86,7 @@ if __name__ == "__main__":
 				report = precision_recall_fscore_support(results[3], results[2], average=None, labels=labels)
 				report_scores.append(report)
 				cvscores.append(results[0])
-
+				break
 
 			print("Avg base acc:   %.2f%%   (+/- %.2f%%)" % (np.mean(cvscores), np.std(cvscores)))
 			print("Avg window acc: %.2f%%   (+/- %.2f%%)" % (np.mean(window_scores), np.std(window_scores)))

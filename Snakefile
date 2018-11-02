@@ -3,11 +3,13 @@ rule all:
         4096
     run:
         shell("snakemake -j {threads} -s src/kmer.snake")
-        shell("snakemake -j {threads} -s src/grdi_kmer.snake")
+        #shell("snakemake -j {threads} -s src/grdi_kmer.snake")
         shell("snakemake -j {threads} -s src/mics.snakefile")
-        shell("snakemake -j {threads} -s src/features.snakefile")
-        shell("snakemake -j {threads} -s src/xgboost.snakefile")
-        shell("snakemake -j {threads} -s src/xgboost_grdi.snakefile")
+        #shell("snakemake -j {threads} -s src/features.snakefile")
+        #shell("snakemake -j {threads} -s src/xgboost.snakefile")
+        #shell("snakemake -j {threads} -s src/xgboost_grdi.snakefile")
+	shell("python src/amr_prep.py")
+	shell("python src/xgb_test.py 2000 AMP")
 """
 rule all:
     input:

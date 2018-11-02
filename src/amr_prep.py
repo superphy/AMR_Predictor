@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
 	# For each drug
 	#delete this, hardcoded for testing
-	df_cols = ['AMP']
+	#df_cols = ['AMP']
 	for drug in df_cols:
 		print("start: prepping amr data for ",drug)
 
