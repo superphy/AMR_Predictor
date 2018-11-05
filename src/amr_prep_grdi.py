@@ -90,9 +90,12 @@ if __name__ == "__main__":
 			if x not in new_df_rows:
 				mask[i] = 0
 		bool_mask = [bool(x) for x in mask]
-
+		bool_mask = np.asarray(bool_mask)
+		kmer_rows = np.asarray(kmer_rows)
 		#print(kmer_matrix.shape)
 		new_kmer_matrix = kmer_matrix[bool_mask, :]
+		print(kmer_rows)
+		print(bool_mask)
 		new_kmer_rows   = kmer_rows[bool_mask]
 		#print(new_kmer_matrix.shape)
 
@@ -102,7 +105,7 @@ if __name__ == "__main__":
 		# Lookup the MIC value for each genome and replace the genome
 		# name with that value, and save it as a separate np array
 		for i in range(new_kmer_rows.shape[0]):
-			gen = new_kmer_rows[i].decode('utf-8')
+			gen = new_kmer_rows[i]#.decode('utf-8')
 			row_index = np.where(new_df_rows==gen)
 			mic_val = new_df.iloc[row_index][0]
 			new_kmer_rows[i] = mic_val

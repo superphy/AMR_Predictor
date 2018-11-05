@@ -21,18 +21,18 @@ if __name__ == "__main__":
 	#leave at 0 features for no feature selection
 	num_feats = int(sys.argv[1])
 	#print("Features: ", num_feats)
-	df = joblib.load("data/public_mic_class_dataframe.pkl") # Matrix of experimental MIC values
-	mic_class_dict = joblib.load("data/public_mic_class_order_dict.pkl") # Matrix of classes for each drug
+	df = joblib.load("data/grdi_mic_class_dataframe.pkl") # Matrix of experimental MIC values
+	mic_class_dict = joblib.load("data/grdi_mic_class_order_dict.pkl") # Matrix of classes for each drug
 	df_cols = df.columns
 	df_cols = [sys.argv[2]]
 	for drug in df_cols:
 			print("\n****************",drug,"***************")
 			print("Features: ", num_feats)
 			num_classes = len(mic_class_dict[drug])
-			X = np.load('data/'+drug+'/kmer_matrix.npy')
+			X = np.load('data/grdi_'+drug+'/kmer_matrix.npy')
 			#print("load shape:", X.shape)
-			Y = np.load('data/'+drug+'/kmer_rows_mic.npy')
-			Z = np.load('data/'+drug+'/kmer_rows_genomes.npy')
+			Y = np.load('data/grdi_'+drug+'/kmer_rows_mic.npy')
+			Z = np.load('data/grdi_'+drug+'/kmer_rows_genomes.npy')
 
 			num_threads = 64
 
@@ -44,7 +44,7 @@ if __name__ == "__main__":
 			split_counter = 0
 
 			for train,test in cv.split(X,Y,Z):
-				kmer_cols = np.load('data/unfiltered/kmer_cols.npy')
+				kmer_cols = np.load('data/grdi_unfiltered/kmer_cols.npy')
 				#print("columns in initial load: ", len(kmer_cols))
 				split_counter +=1
 				Y[train] = encode_categories(Y[train], mic_class_dict[drug])
@@ -68,11 +68,11 @@ if __name__ == "__main__":
 				model = XGBClassifier(learning_rate=1, n_estimators=10, objective='multi:softmax', silent=True, nthread=num_threads)
 				model.fit(x_train,y_train)
 
-				feat_array = np.asarray(model.feature_importances_)
-				sort_feat_array = sorted(feat_array)
-				sort_feat_array.reverse()
-				fifth_largest = sort_feat_array[4]
-				top_five_mask = [i>=fifth_largest for i in feat_array]
+				#feat_array = np.asarray(model.feature_importances_)
+				#sort_feat_array = sorted(feat_array)
+				#sort_feat_array.reverse()
+				#fifth_largest = sort_feat_array[4]
+				#top_five_mask = [i>=fifth_largest for i in feat_array]
 				#print("Top 5: ", kmer_cols[:,top_five_mask])
 				#print("Top 5: ", feat_array[top_five_mask])
 
