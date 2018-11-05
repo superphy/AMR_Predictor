@@ -34,9 +34,9 @@ if __name__ == "__main__":
 			pub_rows_mic = np.load('data/'+drug+'/kmer_rows_mic.npy')
 			pub_rows_genomes = np.load('data/'+drug+'/kmer_rows_genomes.npy')
 
-			grdi_matrix = np.load('data/'+drug+'/kmer_matrix.npy')
-			grdi_rows_mic = np.load('data/'+drug+'/kmer_rows_mic.npy')
-			grdi_rows_genomes = np.load('data/'+drug+'/kmer_rows_genomes.npy')
+			grdi_matrix = np.load('data/grdi_'+drug+'/kmer_matrix.npy')
+			grdi_rows_mic = np.load('data/grdi_'+drug+'/kmer_rows_mic.npy')
+			grdi_rows_genomes = np.load('data/grdi_'+drug+'/kmer_rows_genomes.npy')
 
 			num_threads = 64
 
