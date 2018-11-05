@@ -12,6 +12,7 @@ Machine learning methods to predict the anti-microbial resistance of Salmonella.
 
    `snakemake -j X`
 8. For grdi, run the following command, where 'X' is the number of cores you wish to use
+
    `snakemake -j X -s grdi.snakefile`
 
 
