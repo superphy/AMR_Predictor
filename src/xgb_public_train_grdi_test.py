@@ -63,19 +63,19 @@ if __name__ == "__main__":
 				sk_obj = SelectKBest(f_classif, k=num_feats)
 				x_train = sk_obj.fit_transform(x_train, y_train)
 				x_test  = sk_obj.transform(x_test)
-				kmer_cols = kmer_cols.reshape(1, -1)
-				kmer_cols = sk_obj.transform(kmer_cols)
+				#kmer_cols = kmer_cols.reshape(1, -1)
+				#kmer_cols = sk_obj.transform(kmer_cols)
 				#print("xtrain after feat select: ", x_train.shape)
 				#print("features after feat select: ", kmer_cols.shape)
 
 			model = XGBClassifier(learning_rate=1, n_estimators=10, objective='multi:softmax', silent=True, nthread=num_threads)
 			model.fit(x_train,y_train)
 
-			feat_array = np.asarray(model.feature_importances_)
-			sort_feat_array = sorted(feat_array)
-			sort_feat_array.reverse()
-			fifth_largest = sort_feat_array[4]
-			top_five_mask = [i>=fifth_largest for i in feat_array]
+			#feat_array = np.asarray(model.feature_importances_)
+			#sort_feat_array = sorted(feat_array)
+			#sort_feat_array.reverse()
+			#fifth_largest = sort_feat_array[4]
+			#top_five_mask = [i>=fifth_largest for i in feat_array]
 			#print("Top 5: ", kmer_cols[:,top_five_mask])
 			#print("Top 5: ", feat_array[top_five_mask])
 
