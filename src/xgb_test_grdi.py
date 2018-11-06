@@ -64,10 +64,13 @@ if __name__ == "__main__":
 
 				y_test = Y[test]
 				y_train = Y[train]
+				
+				if(drug == "TET" or drug == "SXT"):
+					objective = 'binary:logistic'
+				objective = 'multi:softmax'
 
-				model = XGBClassifier(learning_rate=1, n_estimators=10, objective='multi:softmax', silent=True, nthread=num_threads)
-				model.fit(x_train,y_train)
-
+				model = XGBClassifier(learning_rate=1, n_estimators=10, objective=objective, silent=True, nthread=num_threads)
+                                model.fit(x_train,y_train)
 				#feat_array = np.asarray(model.feature_importances_)
 				#sort_feat_array = sorted(feat_array)
 				#sort_feat_array.reverse()
