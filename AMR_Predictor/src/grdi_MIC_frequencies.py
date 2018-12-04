@@ -14,27 +14,25 @@ import collections
 from sklearn.externals import joblib
 import sys
 import pandas as pd
-import seaborn as sns
 import pickle
 import operator
-from figures import *
 
 from model_evaluators import *
 from data_transformers import *
 
 #function to load a dictionary into a pandas dataframe and scrub out irrelevant information
-def create_MIC_dataframe(dictionary, drug, avg_reports):
+def create_MIC_dataframe(dictionary, drug):
 	df_mic = pd.DataFrame.from_dict(dictionary, orient='index').reset_index() #create dataframe from dictionary
-	df_mic = df_mic.rename(columns={'index':'MIC', 0:'Count'}) #rename columns
+	df_mic = df_mic.rename(columns={'index':'MIC(mg/L)', 0:'No. Genomes'}) #rename columns
 	df_mic["Drug"] = drug #add column for drug
-	df_mic['MIC'] = df_mic['MIC'].replace({'<':''}, regex=True) #Strip symbols
-	df_mic['MIC'] = df_mic['MIC'].replace({'>':''}, regex=True)
-	df_mic['MIC'] = df_mic['MIC'].replace({'=':''}, regex=True)
-	df_mic["MIC"] = pd.to_numeric(df_mic["MIC"]) #convert frequencies to float
-	df_mic = df_mic.sort_values(by=['MIC']) #sort frequencies
 
-	#Create the graph
-	make_MIC_bar_graph(df_mic, drug, avg_reports)
+	df_mic['MIC(mg/L)'] = df_mic['MIC(mg/L)'].replace({'<':''}, regex=True) #Strip symbols
+	df_mic['MIC(mg/L)'] = df_mic['MIC(mg/L)'].replace({'>':''}, regex=True)
+	df_mic['MIC(mg/L)'] = df_mic['MIC(mg/L)'].replace({'=':''}, regex=True)
+
+	df_mic["MIC(mg/L)"] = pd.to_numeric(df_mic["MIC(mg/L)"]) #convert frequencies to float
+	df_mic = df_mic.sort_values(by=['MIC(mg/L)']) #sort frequencies
+	df_mic.to_pickle("data/dataframes/grdi_" + drug + "_df_mic.pkl")
 
 if __name__ == "__main__":
 	#leave at 0 features for no feature selection
@@ -130,5 +128,7 @@ if __name__ == "__main__":
 			avg_reports = np.mean(report_scores,axis=0)
 			avg_reports = np.transpose(avg_reports)
 			avg_reports = np.around(avg_reports, decimals=2)
-			create_MIC_dataframe(d, drug, avg_reports)
+			result_df = pd.DataFrame(data=avg_reports, columns=['Precision', 'Recall', 'F-Score', 'Supports'])
+			result_df.to_pickle("data/avg_reports/grdi_" + drug + "_df_reports.pkl")
+			create_MIC_dataframe(d, drug)
 			print(avg_reports)

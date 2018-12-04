@@ -16,50 +16,23 @@ import sys
 import pandas as pd
 import pickle
 import operator
-#from figures import *
-
-def ensure_str(ele):
-	if(type(ele) is str):
-		return ele
-	else:
-		return ele.decode('utf-8')
-
-def strip_symb(pred):
-	pred = pred.split("'")[1]
-	pred = (str(pred).split("=")[-1])
-	pred = ((pred).split(">")[-1])
-	pred = ((pred).split("<")[-1])
-	return int(round(float(pred)))
-		
 
 from model_evaluators import *
 from data_transformers import *
 
 #function to load a dictionary into a pandas dataframe and scrub out irrelevant information
-def create_MIC_dataframe(dictionary, drug, avg_reports):
-	#dictionary = {k.decode(): v.decode() for k,v in dictionary.items()}
+def create_MIC_dataframe(dictionary, drug):
 	df_mic = pd.DataFrame.from_dict(dictionary, orient='index').reset_index() #create dataframe from dictionary
-	df_mic = df_mic.rename(columns={'index':'MIC', 0:'Count'}) #rename columns
+	df_mic = df_mic.rename(columns={'index':'MIC(mg/L)', 0:'No. Genomes'}) #rename columns
 	df_mic["Drug"] = drug #add column for drug
-	
-	#df_mic.values[:,0] =  [ensure_str(i) for i in df_mic.values[:,0]]
-	
-	df_mic['MIC'] = df_mic['MIC'].replace({'<':''}, regex=True) #Strip symbols
-	df_mic['MIC'] = df_mic['MIC'].replace({'>':''}, regex=True)
-	df_mic['MIC'] = df_mic['MIC'].replace({'=':''}, regex=True)
-	
-	print(df_mic)
 
-	#print(df_mic.values[:,0])
-	
-	#df_mic.values[:,0] =  [strip_symb(i) for i in df_mic.values[:,0]]
-	
-	df_mic["MIC"] = pd.to_numeric(df_mic["MIC"]) #convert frequencies to float
-	df_mic = df_mic.sort_values(by=['MIC']) #sort frequencies
-	df_mic.to_pickle("data/dataframes/" + drug + "_df_mic.pkl")
+	df_mic['MIC(mg/L)'] = df_mic['MIC(mg/L)'].replace({'<':''}, regex=True) #Strip symbols
+	df_mic['MIC(mg/L)'] = df_mic['MIC(mg/L)'].replace({'>':''}, regex=True)
+	df_mic['MIC(mg/L)'] = df_mic['MIC(mg/L)'].replace({'=':''}, regex=True)
 
-	#Create the graph
-	#make_public_MIC_bar_graph(df_mic, drug, avg_reports)
+	df_mic["MIC(mg/L)"] = pd.to_numeric(df_mic["MIC(mg/L)"]) #convert frequencies to float
+	df_mic = df_mic.sort_values(by=['MIC(mg/L)']) #sort frequencies
+	df_mic.to_pickle("data/dataframes/public_" + drug + "_df_mic.pkl")
 
 if __name__ == "__main__":
 	#leave at 0 features for no feature selection
@@ -150,5 +123,5 @@ if __name__ == "__main__":
 			avg_reports = np.around(avg_reports, decimals=2)
 			result_df = pd.DataFrame(data=avg_reports, columns=['Precision', 'Recall', 'F-Score', 'Supports'])
 			result_df.to_pickle("data/avg_reports/public_" + drug + "_df_reports.pkl")
-			create_MIC_dataframe(d, drug, avg_reports)
+			create_MIC_dataframe(d, drug)
 			print(avg_reports)
