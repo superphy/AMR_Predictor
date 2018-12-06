@@ -24,8 +24,6 @@ from hyperopt import tpe
 from model_evaluators import *
 from data_transformers import *
 
-
-<<<<<<< HEAD
 def get_data(dataset, drug):
 	path  = ""
 	if dataset == grdi:
@@ -34,30 +32,6 @@ def get_data(dataset, drug):
 
 	X = np.load(("data/{}{}/kmer_matrix.npy").format(path,drug))
 	Y = np.load(("data/{}{}/kmer_rows_mic.npy").format(path,drug))
-
-=======
-def get_data(train, predict_for):
-	X = []
-	Y = []
-	if(train in ('kmer, omnilog')):
-		X = np.load('data/filtered/'+predict_for+'/'+train+'_matrix.npy')
-		Y = np.load('data/filtered/'+predict_for+'/'+train+'_rows_'+predict_for+'.npy')
-
-	elif(train in ('uk', 'us','uk_us')):
-		X = np.load('data/uk_us_unfiltered/kmer_matrix.npy')
-		Y = np.load('data/uk_us_unfiltered/kmer_rows_Class.npy')
-
-		if(train!='uk_us'):
-			dataset_array = np.load('data/uk_us_unfiltered/kmer_rows_Dataset.npy')
-			if(train=='us'):
-				us_mask = np.asarray([i =='Test' for i in dataset_array])
-				X = X[us_mask]
-				Y = Y[us_mask]
-			else:
-				uk_mask  = np.asarray([i =='Train'  for i in dataset_array])
-				X = X[uk_mask]
-				Y = Y[uk_mask]
->>>>>>> 624b0fa0cc82d46bdb1251dc6e702a196acef7be
 	else:
 		raise Exception('did not receive a valid -x or -y name, run model.py --help for more info')
 	return X, Y
