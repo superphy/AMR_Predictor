@@ -20,12 +20,12 @@ def remove_mic(X, Y):
 
 for data in datasets:
 	for drug in drugs:
-		 X = np.load(("data/{}{}/kmer_matrix.npy").format(data, drug))
-		 Y = np.load(("data/{}{}/kmer_rows_mic.npy").format(data, drug))
+		 X = np.load(("data/{}{}/kmer_matrix.npy".format(data, drug)))
+		 Y = np.load(("data/{}{}/kmer_rows_mic.npy".format(data, drug)))
 		 X, Y = remove_mic(X, Y)
 
 		 #create save location for new matrix/rows with removed MIC classes
 		 if not os.path.exists(os.path.abspath(os.path.curdir)+'/data/filtered/'):
-		 	os.mkdir(os.path.abspath(os.path.curdir)+'/data/filtered/{}{}').format(data, drug)
-		 np.save('data/filtered/{}{}/kmer_matrix.npy', X).format(data, drug)
-		 np.save('data/filtered/{}{}/kmer_rows_mic.npy', Y).format(data, drug)
+		 	os.mkdir(os.path.abspath(os.path.curdir)+'/data/filtered/{}{}'.format(data, drug))
+		 np.save('data/filtered/{}{}/kmer_matrix.npy'.format(data, drug), X)
+		 np.save('data/filtered/{}{}/kmer_rows_mic.npy'.format(data, drug,), Y)
