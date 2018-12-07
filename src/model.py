@@ -25,22 +25,27 @@ from model_evaluators import *
 from data_transformers import *
 
 def get_data(dataset, drug):
+	#choose which dataset to use
 	path  = ""
-	if dataset == grdi:
+	if dataset == "grdi":
 		path = "grdi_"
-	
+	elif dataset == "kh":
+		path = "kh_"
+	else:
+		if dataset != "public":
+			raise Exception('did not receive a valid -x or -y name, run model.py --help for more info')
 
+	#load kmer matrix and MIC classes
 	X = np.load(("data/{}{}/kmer_matrix.npy").format(path,drug))
 	Y = np.load(("data/{}{}/kmer_rows_mic.npy").format(path,drug))
-	else:
-		raise Exception('did not receive a valid -x or -y name, run model.py --help for more info')
+
 	return X, Y
 
 def usage():
 	print("usage: model.py -x uk -y us -f 3000 -a Host\n\nOptions:")
 	print(
-	"-x, --x_train     Which set to train on [us, uk, uk_us, omnilog, kmer]",
-	"-y, --y_train     Which set to test on [us, uk, uk_us, omnilog, kmer]",
+	"-x, --train       Which set to train on [us, uk, uk_us, omnilog, kmer]",
+	"-y, --test        Which set to test on [us, uk, uk_us, omnilog, kmer]",
 	"                  Note that not passing a -y causes cross validation on the train set",
 	"-f, --features    Number of features to train on, set to 0 to use all",
 	"-a, --attribute   What to make the prediction on [Host, Serotype, Otype, Htype]",
@@ -74,14 +79,14 @@ if __name__ == "__main__":
 	out = 'print'
 
 	try:
-		opts, args =  getopt.getopt(sys.argv[1:],"hx:y:f:a:m:o:p",["help","x_train=","y_train=","features=","attribute=","model=","out="])
+		opts, args =  getopt.getopt(sys.argv[1:],"hx:y:f:a:m:o:p",["help","train=","test=","features=","attribute=","model=","out="])
 	except getopt.GetoptError:
 		usage()
 		sys.exit(2)
 	for opt, arg, in opts:
-		if opt in ('-x', '--x_train'):
+		if opt in ('-x', '--train'):
 			train = arg
-		elif opt in ('-y', '--y_train'):
+		elif opt in ('-y', '--test'):
 			test = arg
 		elif opt in ('-f', '--features'):
 			num_feats = int(arg)
@@ -120,12 +125,12 @@ if __name__ == "__main__":
 			num_feats = 0
 
 
-	if((num_feats == 0 or num_feats>190) and train=='omnilog'):
-		num_feats = 190
+	#if((num_feats == 0 or num_feats>190) and train=='omnilog'):
+		#num_feats = 190
 
 	num_classes = len(le.classes_)
 
-	num_threads = 64
+	num_threads = 8
 
 	cv = StratifiedKFold(n_splits=5, random_state=913824)
 	cvscores = []
@@ -154,6 +159,7 @@ if __name__ == "__main__":
 			x_train = sk_obj.fit_transform(x_train, y_train)
 			x_test  = sk_obj.transform(x_test)
 
+			## TODO:
 		if(model_type == 'XGB'):
 			if(num_classes==2):
 				objective = 'binary:logistic'
@@ -233,16 +239,12 @@ if __name__ == "__main__":
 		t_string = test_string
 		for row in result_df.values:
 			running_sum+=(row[1]*row[3]/(len(y_test)))
-	if(train_string == 'uk_us'):
-		train_string = 'ukus'
-	if(t_string == 'uk_us'):
-		t_string = 'ukus'
+
 	print("Predicting for", predict_for)
 	print("on {} features using a {} trained on {} data, tested on {}".format(num_feats, model_type, train_string, t_string))
 	print("Accuracy:", running_sum)
-	if(out=='print'):
-		print(result_df)
-	else:
+	print(result_df)
+	if out != "print":
 		if not (out.endswith('/')):
 			out = out + '/'
 		out = out+predict_for+'_'+str(num_feats)+'feats_'+model_type+'trainedOn'+train_string+'_testedOn'+t_string+'.pkl'
