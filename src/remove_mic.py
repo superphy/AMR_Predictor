@@ -3,7 +3,7 @@ import os
 import collections
 
 drugs=["AMP","AMC","AZM","CHL","CIP","CRO","FIS","FOX","GEN","NAL","SXT","TET","TIO"]
-datasets = ["", "grdi_"]
+datasets = ["", "grdi_", "kh_"]
 
 #remove MIC classes that are less than 5
 def remove_mic(X, Y):

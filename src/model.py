@@ -36,8 +36,8 @@ def get_data(dataset, drug):
 			raise Exception('did not receive a valid -x or -y name, run model.py --help for more info')
 
 	#load kmer matrix and MIC classes
-	X = np.load(("data/{}{}/kmer_matrix.npy").format(path,drug))
-	Y = np.load(("data/{}{}/kmer_rows_mic.npy").format(path,drug))
+	X = np.load(("data/filtered/{}{}/kmer_matrix.npy").format(path,drug))
+	Y = np.load(("data/filtered/{}{}/kmer_rows_mic.npy").format(path,drug))
 
 	return X, Y
 
