@@ -52,6 +52,7 @@ def usage():
 	"-m, --model       Which model to use [XGB, SVM, ANN], defaults to XGB",
 	"-o, --out         Where to save result DF, defaults to print to std out",
 	"-p,               Add this flag to do hyperparameter optimization, XGB/SVM only",
+	"-i,               Saves all features and their importance in data/features",
 	"-h, --help        Prints this menu",
 	sep = '\n')
 	return
@@ -77,7 +78,9 @@ if __name__ == "__main__":
 	model_type = 'XGB'
 	hyper_param = 0
 	out = 'print'
+	imp_feats = 0
 
+	OBO_acc = np.zeros((2,5))
 	try:
 		opts, args =  getopt.getopt(sys.argv[1:],"hx:y:f:a:m:o:p",["help","train=","test=","features=","attribute=","model=","out="])
 	except getopt.GetoptError:
@@ -98,6 +101,10 @@ if __name__ == "__main__":
 			out = arg
 		elif opt == '-p':
 			hyper_param = 1
+		elif opt == '-i':
+			imp_feats = 1
+			if not os.path.exists(os.path.abspath(os.path.curdir)+'/data/features'):
+				os.mkdir(os.path.abspath(os.path.curdir)+'/data/features')
 		elif opt in ('-h', '--help'):
 			usage()
 			sys.exit()
@@ -109,24 +116,23 @@ if __name__ == "__main__":
 	y_train = []
 	y_test = []
 
+	# this encodes the classes into integers for the models, 1,2,4,8 becomes 0,1,2,3
 	le = preprocessing.LabelEncoder()
+
+	#if no -y is passed in we want to do a 5 fold cross validation on the data
 	if test =='cv':
-		X, Y = get_data(train, predict_for)
+		X, Y = get_data(train, predict_for) # pull entire data set to be split later
 		Y = le.fit_transform(Y)
 		if(num_feats>= X.shape[1]):
 			num_feats = 0
 	else: #we are not cross validating
-		x_train, y_train = get_data(train, predict_for)
-		x_test, y_test = get_data(test, predict_for)
-		le.fit(np.concatenate((y_train,y_test)))
-		y_train = le.transform(y_train)
+		x_train, y_train = get_data(train, predict_for) # pull training set
+		x_test, y_test = get_data(test, predict_for) # pull testing set
+		le.fit(np.concatenate((y_train,y_test))) # need to fit on both sets of labels, so everything is accounted for (finding what the replacements are)
+		y_train = le.transform(y_train) # just applying the label encoder on the 2 sets (actually replacing things)
 		y_test = le.transform(y_test)
 		if(num_feats>= x_train.shape[1]):
 			num_feats = 0
-
-
-	#if((num_feats == 0 or num_feats>190) and train=='omnilog'):
-		#num_feats = 190
 
 	num_classes = len(le.classes_)
 
@@ -143,23 +149,43 @@ if __name__ == "__main__":
 	test_string = test
 
 	model_data = [[train, test]]
+	#if we are only using one set, we need to split it into multiple folds for training and testing
 	if(test == 'cv'):
 		model_data = cv.split(X,Y)
 
 	for train,test in model_data:
-		#split_counter +=1
+		split_counter +=1
 		if(test_string=='cv'):
 			x_train = X[train]
 			x_test = X[test]
 			y_test = Y[test]
 			y_train = Y[train]
 
+		cols = []
+		#feature selection
 		if(num_feats!=0):
 			sk_obj = SelectKBest(f_classif, k=num_feats)
 			x_train = sk_obj.fit_transform(x_train, y_train)
 			x_test  = sk_obj.transform(x_test)
+		"""
+		#uncomment this section if you want to save datasets for hyp.property
+		np.save('x_test.npy', x_test)
+		np.save('x_train.npy', x_train)
+		np.save('y_test.npy', y_test)
+		np.save('y_train.npy', y_train)
+		"""
+		if(imp_feats):
+			cols = np.load('data/unfiltered/kmer_cols.npy')
+			feat_indices = np.zeros(len(cols))
+			feat_indices = [i for i in range(len(cols))]
 
-			## TODO:
+			#creating an array of features that are persiting past feature selection
+			feat_indices = sk_obj.transform(feat_indices.reshape(1,-1))
+			feat_indices = feat_indices.flatten()
+			top_feat_mask  = np.zeros(len(cols))
+			top_feat_mask = np.asarray([i in feat_indices for i in range(len(cols))])
+			cols = cols[top_feat_mask]
+
 		if(model_type == 'XGB'):
 			if(num_classes==2):
 				objective = 'binary:logistic'
@@ -170,6 +196,11 @@ if __name__ == "__main__":
 			else:
 				model = XGBClassifier(learning_rate=1, n_estimators=10, objective=objective, silent=True, nthread=num_threads)
 			model.fit(x_train,y_train)
+
+			if(imp_feats):
+				feat_save = 'data/features/'+predict_for+'_'+str(num_feats)+'feats_'+model_type+'trainedOn'+train_string+'_testedOn'+test_string+'_fold'+str(split_counter)+'.npy'
+				np.save(feat_save, np.vstack((cols.flatten(), model.feature_importances_)))
+
 		elif(model_type == 'SVM'):
 			from sklearn import svm
 			if(hyper_param):
@@ -177,7 +208,13 @@ if __name__ == "__main__":
 			else:
 				model = svm.SVC()
 			model.fit(x_train,y_train)
+			if(imp_feats):
+				raise Exception('You can only pull feature importances from XGB, remove the -i or -m flags')
 		elif(model_type == 'ANN'):
+			if(hyper_param):
+				raise Exception('This script does not support hyperas for ANN hyperparameter optimization, see src/hyp.py')
+			if(imp_feats):
+				raise Exception('You can only pull feature importances from XGB, remove the -i or -m flags')
 			from keras.layers.core import Dense, Dropout, Activation
 			from keras.models import Sequential
 			from keras.utils import np_utils, to_categorical
@@ -193,9 +230,9 @@ if __name__ == "__main__":
 
 			model = Sequential()
 			model.add(Dense(num_feats,activation='relu',input_dim=(num_feats)))
-			model.add(Dropout(0.16))
-			model.add(Dense(62, activation='relu', kernel_initializer='uniform'))
-			model.add(Dropout(0.44))
+			model.add(Dropout(0.50))
+			model.add(Dense(((num_feats+num_classes)/2), activation='relu', kernel_initializer='uniform'))
+			model.add(Dropout(0.50))
 			model.add(Dense(num_classes, kernel_initializer='uniform', activation='softmax'))
 
 			if(num_classes==2):
@@ -210,24 +247,35 @@ if __name__ == "__main__":
 
 		if(model_type == 'ANN'):
 			results = ann_1d(model, x_test, y_test, 0)
-			#OBOResults = ann_1d(model, x_test, y_test, 1)
+			OBOResults = ann_1d(model, x_test, y_test, 1)
 		else:
 			results = xgb_tester(model, x_test, y_test, 0)
-			#OBOResults = xgb_tester(model, x_test, y_test, 1)
+			OBOResults = xgb_tester(model, x_test, y_test, 1)
 
-		#window_scores.append(OBOResults[0])
+		OBO_acc[1, split_counter-1] = OBOResults[0]
+		if(model_type == ANN):
+			OBO_acc[0, split_counter-1] = y_test.shape[0]
+		else:
+			OBO_acc[0, split_counter-1] = len(y_test)
 		mcc_scores.append(results[1])
 
 		labels = np.arange(0,num_classes)
 		report = precision_recall_fscore_support(results[3], results[2], average=None, labels=labels)
+
 		report_scores.append(report)
 		cvscores.append(results[0])
+
 
 	np.set_printoptions(suppress=True)
 	avg_reports = np.mean(report_scores,axis=0)
 	avg_reports = np.transpose(avg_reports)
 	avg_reports = np.around(avg_reports, decimals=2)
-	result_df = pd.DataFrame(data = avg_reports, index = le.classes_, columns = ['Precision','Recall', 'F-Score','Supports'])
+	OBO_array = np.zeros((avg_reports.shape[0],1))
+	OBO_sum = 0
+	for i in range(5):
+		OBO_sum += OBO_acc[1,i]/100 * OBO_acc[0,i]
+	OBO_array[0,0] = OBO_sum/(np.sum(OBO_acc[0]))
+	result_df = pd.DataFrame(data = np.hstack((avg_reports,OBO_array)), index = le.classes_, columns = ['Precision','Recall', 'F-Score','Supports', '1D Acc'])
 	running_sum = 0
 	t_string = ''
 	if(test_string == 'cv'):

@@ -91,3 +91,6 @@ test/
 unfiltered/
 jellyfish_results/
 amr_data/
+*touchfile*
+data/Resolved*
+*slurm*

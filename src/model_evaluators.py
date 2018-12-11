@@ -6,7 +6,7 @@ import collections
 from sklearn.metrics import matthews_corrcoef, classification_report, precision_recall_fscore_support
 from keras.utils import np_utils, to_categorical
 
-def ann_1d(model, test_data, test_names):
+def ann_1d(model, test_data, test_names, dilution):
 	'''
 	Takes a model (neural net), a set of test data, and a set of test names.
 	Returns perc: the percent of correct guesses by the model using a window of size 1.
@@ -32,7 +32,7 @@ def ann_1d(model, test_data, test_names):
 		total_count +=1
 		pred = prediction[i]
 		act = actual[i]
-		if pred==act or pred==act+1 or pred==act-1:
+		if abs(pred-act)<=dilution :
 			correct_count+=1
 	# Calculate the percent of correct guesses
 	perc = (correct_count*100)/total_count
