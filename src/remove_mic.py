@@ -4,8 +4,8 @@ import collections
 
 drugs=["AMP","AMC","AZM","CHL","CIP","CRO","FIS","FOX","GEN","NAL","SXT","TET","TIO"]
 datasets = ["", "grdi_", "kh_"]
-if not os.path.exists(os.path.abspath(os.path.curdir)+'/data/filtered/':
-   os.mkdir(os.path.abspath(os.path.curdir)+'/data/filtered/'
+if not os.path.exists(os.path.abspath(os.path.curdir)+'/data/filtered/'):
+   os.mkdir(os.path.abspath(os.path.curdir)+'/data/filtered/')
 #remove MIC classes that are less than 5
 def remove_mic(X, Y):
 	counts = collections.Counter(Y)
