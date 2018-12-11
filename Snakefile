@@ -3,73 +3,13 @@ rule all:
         4096
     run:
         shell("snakemake -j {threads} -s src/kmer.snake")
-        #shell("snakemake -j {threads} -s src/grdi_kmer.snake")
         shell("snakemake -j {threads} -s src/mics.snakefile")
-        #shell("snakemake -j {threads} -s src/features.snakefile")
-        #shell("snakemake -j {threads} -s src/xgboost.snakefile")
-        #shell("snakemake -j {threads} -s src/xgboost_grdi.snakefile")
-	shell("python src/amr_prep.py")
-	shell("python src/xgb_test.py 2000 AMP")
-"""
-rule all:
-    input:
-        "data/AMP/500features/grdi_xgb_report.txt"
-
-rule m_public_kmers:
-    output:
-        "data/unfiltered/kmer_matrix.npy"
-    threads:
-        4096
-    run:
-        shell("snakemake -j {threads} -s src/kmer.snake")
-rule m_grdi_kmers:
-    output:
-        "data/grdi_unfiltered/kmer_matrix.npy"
-    threads:
-        4096
-    run:
         shell("snakemake -j {threads} -s src/grdi_kmer.snake")
-rule m_mics:
-    input:
-        "data/unfiltered/kmer_matrix.npy",
-        "data/grdi_unfiltered/kmer_matrix.npy"
-    output:
-        "data/public_mic_class_dataframe.pkl",
-        "data/public_mic_class_order_dict.pkl",
-        "data/grdi_mic_class_dataframe.pkl",
-        "data/grdi_mic_class_order_dict.pkl"
-    threads:
-        4096
-    run:
-        shell("snakemake -j {threads} -s src/mics.snakefile")
-rule m_feature_selection:
-    input:
-        "data/public_mic_class_dataframe.pkl",
-        "data/public_mic_class_order_dict.pkl",
-        "data/grdi_mic_class_dataframe.pkl",
-        "data/grdi_mic_class_order_dict.pkl"
-    output:
-        'data/AMP/500features/X_train.pkl'
-    threads:
-        4096
-    run:
-        shell("snakemake -j {threads} -s src/features.snakefile")
-rule m_model_maker:
-    input:
-        'data/AMP/500features/X_train.pkl'
-    output:
-        "data/AMP/500features/xgb_report.txt"
-    threads:
-        4096
-    run:
-        shell("snakemake -j {threads} -s src/xgboost.snakefile")
-rule m_predict:
-    input:
-        "data/AMP/500features/xgb_report.txt"
-    output:
-        "data/AMP/500features/grdi_xgb_report.txt"
-    threads:
-        4096
-    run:
-        shell("snakemake -j {threads} -s src/xgboost_grdi.snakefile")
-"""
+        shell("python src/amr_prep.py")
+        shell("python src/amr_prep_grdi.py")
+        shell("python src/ken_hei.py")
+        shell("python src/amr_prep.py")
+        shell("for i in AMP AMC FOX CRO TIO GEN FIS SXT AZM CHL CIP NAL TET; do python src/ken_hei.py $i; done")
+        shell("for i in AMP AMC FOX CRO TIO GEN FIS SXT AZM CHL CIP NAL TET; for j in public grdi_ kh_ ; do python src/remove_mic.py $i $j; done ; done" )
+        shell("snakemake -j {threads} -s src/run_tests.smk")
+        #call the figures thing here once it works for 1d accuracy
