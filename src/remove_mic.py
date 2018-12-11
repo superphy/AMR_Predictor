@@ -21,6 +21,8 @@ def remove_mic(X, Y):
 
 for data in datasets:
 	for drug in drugs:
+		if(data=='grdi_' and drug =='FIS'):
+			continue
 		 X = np.load(("data/{}{}/kmer_matrix.npy".format(data, drug)))
 		 Y = np.load(("data/{}{}/kmer_rows_mic.npy".format(data, drug)))
 		 X, Y = remove_mic(X, Y)
