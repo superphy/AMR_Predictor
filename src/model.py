@@ -38,7 +38,7 @@ def get_data(dataset, drug):
 	#load kmer matrix and MIC classes
 	X = np.load(("data/filtered/{}{}/kmer_matrix.npy").format(path,drug))
 	Y = np.load(("data/filtered/{}{}/kmer_rows_mic.npy").format(path,drug))
-
+	Y = [remove_symbols(i) for i in Y]
 	return X, Y
 
 def usage():
@@ -251,9 +251,10 @@ if __name__ == "__main__":
 		else:
 			results = xgb_tester(model, x_test, y_test, 0)
 			OBOResults = xgb_tester(model, x_test, y_test, 1)
-
+		print('OBO', OBOResults[0], len(y_test))
+		print('OBN', results[0], len(y_test))
 		OBO_acc[1, split_counter-1] = OBOResults[0]
-		if(model_type == ANN):
+		if(model_type == 'ANN'):
 			OBO_acc[0, split_counter-1] = y_test.shape[0]
 		else:
 			OBO_acc[0, split_counter-1] = len(y_test)

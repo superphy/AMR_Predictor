@@ -30,3 +30,9 @@ def encode_categories(data, class_dict):
 				temp = index
 		arry = np.append(arry,temp)
 	return arry
+
+def remove_symbols(act):
+	act = (str(act).split("=")[-1])
+	act = ((act).split(">")[-1])
+	act = ((act).split("<")[-1])
+	return int(round(float(act)))
