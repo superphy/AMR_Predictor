@@ -35,8 +35,8 @@ def remove_symbols(act):
 	act = (str(act).split("=")[-1])
 	act = ((act).split(">")[-1])
 	act = ((act).split("<")[-1])
-	if (act.endswith("'"):
+	if (act.endswith("'")):
 		act = act[:-1]
-	if (act.startswith("b"):
-		act = act[:-2]
+	if (act.startswith("b")):
+		act = act[2:]
 	return int(round(float(act)))
