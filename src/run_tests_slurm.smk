@@ -12,7 +12,7 @@ rule all:
     shell:
         "echo All tests deployed"
 
-rule public_drug:
+rule public1_drug:
     output:
         "results/public_{drug}"
     params:
@@ -20,7 +20,7 @@ rule public_drug:
     shell:
         'mkdir {output} && for j in SVM ANN XGB; do for i in $(seq 100 100 3000); do sbatch -c 15 --mem 60G --partition NMLResearch --wrap="python src/model.py -x public -a {params.drug} -o {output} -f $i -m $j"; done; done'
 
-rule grdi_drug:
+rule grdi2_drug:
     output:
         "results/grdi_{drug}"
     params:
@@ -28,7 +28,7 @@ rule grdi_drug:
     shell:
         'mkdir {output} && for j in SVM ANN XGB; do for i in $(seq 100 100 3000); do sbatch -c 15 --mem 60G --partition NMLResearch --wrap="python src/model.py -x grdi -a {params.drug} -o {output} -f $i -m $j"; done; done'
 
-rule kh_drug:
+rule kh3_drug:
     output:
         "results/kh_{drug}"
     params:
@@ -36,7 +36,7 @@ rule kh_drug:
     shell:
         'mkdir {output} && for j in SVM ANN XGB; do for i in $(seq 100 100 3000); do sbatch -c 15 --mem 60G --partition NMLResearch --wrap="python src/model.py -x kh -a {params.drug} -o {output} -f $i -m $j"; done; done'
 
-rule public_grdi_drug:
+rule public4_grdi_drug:
     output:
         "results/public_grdi_{drug}"
     params:
@@ -44,7 +44,7 @@ rule public_grdi_drug:
     shell:
         'mkdir {output} && for j in SVM ANN XGB; do for i in $(seq 100 100 3000); do sbatch -c 15 --mem 60G --partition NMLResearch --wrap="python src/model.py -x public -y grdi -a {params.drug} -o {output} -f $i -m $j"; done; done'
 
-rule grdi_public_drug:
+rule grdi5_public_drug:
     output:
         "results/grdi_public_{drug}"
     params:
@@ -52,7 +52,7 @@ rule grdi_public_drug:
     shell:
         'mkdir {output} && for j in SVM ANN XGB; do for i in $(seq 100 100 3000); do sbatch -c 15 --mem 60G --partition NMLResearch --wrap="python src/model.py -x grdi -y public -a {params.drug} -o {output} -f $i -m $j"; done; done'
 
-rule grdi_kh_drug:
+rule grdi6_kh_drug:
     output:
         "results/grdi_kh_{drug}"
     params:
@@ -60,7 +60,7 @@ rule grdi_kh_drug:
     shell:
         'mkdir {output} && for j in SVM ANN XGB; do for i in $(seq 100 100 3000); do sbatch -c 15 --mem 60G --partition NMLResearch --wrap="python src/model.py -x grdi -y kh -a {params.drug} -o {output} -f $i -m $j"; done; done'
 
-rule kh_grdi_drug:
+rule kh7_grdi_drug:
     output:
         "results/kh_grdi_{drug}"
     params:
