@@ -1,7 +1,7 @@
 drugs=["AMP","AMC","AZM","CHL","CIP","CRO","FIS","FOX","GEN","NAL","SXT","TET","TIO"]
 rule all:
     input:
-        expand("results/public_{drug}", drug = drugs)
+        expand("results/public_{drug}", drug = drugs),
         expand("results/grdi_{drug}", drug = drugs),
         expand("results/kh_{drug}", drug = drugs),
         expand("results/public_grdi_{drug}", drug = drugs),
