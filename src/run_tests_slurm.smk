@@ -1,20 +1,20 @@
 drugs=["AMP","AMC","AZM","CHL","CIP","CRO","FIS","FOX","GEN","NAL","SXT","TET","TIO"]
 rule all:
     input:
-        expand("results/public_{drug}", drug = drugs)
-        #expand("results/grdi_{drug}", drug = drugs),
-        #expand("results/kh_{drug}", drug = drugs),
-        #expand("results/public_grdi_{drug}", drug = drugs),
-        #expand("results/grdi_public_{drug}", drug = drugs),
-        #expand("results/grdi_kh_{drug}", drug = drugs),
-        #expand("results/kh_grdi_{drug}", drug = drugs)
+        expand("results/public1_{drug}", drug = drugs),
+        expand("results/grdi2_{drug}", drug = drugs),
+        expand("results/kh3_{drug}", drug = drugs),
+        expand("results/public4_grdi_{drug}", drug = drugs),
+        expand("results/grdi5_public_{drug}", drug = drugs),
+        expand("results/grdi6_kh_{drug}", drug = drugs),
+        expand("results/kh7_grdi_{drug}", drug = drugs)
 
     shell:
         "echo All tests deployed"
 
 rule public1_drug:
     output:
-        "results/public_{drug}"
+        "results/public1_{drug}"
     params:
         drug = "{drug}"
     shell:
@@ -22,7 +22,7 @@ rule public1_drug:
 
 rule grdi2_drug:
     output:
-        "results/grdi_{drug}"
+        "results/grdi2_{drug}"
     params:
         drug = "{drug}"
     shell:
@@ -30,7 +30,7 @@ rule grdi2_drug:
 
 rule kh3_drug:
     output:
-        "results/kh_{drug}"
+        "results/kh3_{drug}"
     params:
         drug = "{drug}"
     shell:
@@ -38,7 +38,7 @@ rule kh3_drug:
 
 rule public4_grdi_drug:
     output:
-        "results/public_grdi_{drug}"
+        "results/public4_grdi_{drug}"
     params:
         drug = "{drug}"
     shell:
@@ -46,7 +46,7 @@ rule public4_grdi_drug:
 
 rule grdi5_public_drug:
     output:
-        "results/grdi_public_{drug}"
+        "results/grdi5_public_{drug}"
     params:
         drug = "{drug}"
     shell:
@@ -54,7 +54,7 @@ rule grdi5_public_drug:
 
 rule grdi6_kh_drug:
     output:
-        "results/grdi_kh_{drug}"
+        "results/grdi6_kh_{drug}"
     params:
         drug = "{drug}"
     shell:
@@ -62,7 +62,7 @@ rule grdi6_kh_drug:
 
 rule kh7_grdi_drug:
     output:
-        "results/kh_grdi_{drug}"
+        "results/kh7_grdi_{drug}"
     params:
         drug = "{drug}"
     shell:
