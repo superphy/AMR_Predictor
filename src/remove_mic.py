@@ -23,7 +23,7 @@ if __name__ == "__main__":
 	   os.mkdir(os.path.abspath(os.path.curdir)+'/data/filtered/')
 
 	if(data=='grdi_' and drug =='FIS'):
-		continue
+		sys.exit()
 	X = np.load(("data/{}{}/kmer_matrix.npy".format(data, drug)))
 	Y = np.load(("data/{}{}/kmer_rows_mic.npy".format(data, drug)))
 	X, Y = remove_mic(X, Y)
