@@ -42,7 +42,7 @@ def get_data(dataset, drug):
 	return X, Y
 
 def usage():
-	print("usage: model.py -x uk -y us -f 3000 -a Host\n\nOptions:")
+	print("usage: model.py -x public -y grdi -f 3000 -a AMP\n\nOptions:")
 	print(
 	"-x, --train       Which set to train on [us, uk, uk_us, omnilog, kmer]",
 	"-y, --test        Which set to test on [us, uk, uk_us, omnilog, kmer]",
@@ -82,7 +82,7 @@ if __name__ == "__main__":
 
 	OBO_acc = np.zeros((2,5))
 	try:
-		opts, args =  getopt.getopt(sys.argv[1:],"hx:y:f:a:m:o:p",["help","train=","test=","features=","attribute=","model=","out="])
+		opts, args =  getopt.getopt(sys.argv[1:],"hx:y:f:a:m:o:pi",["help","train=","test=","features=","attribute=","model=","out="])
 	except getopt.GetoptError:
 		usage()
 		sys.exit(2)
@@ -115,26 +115,41 @@ if __name__ == "__main__":
 	x_test = []
 	y_train = []
 	y_test = []
+	if(train=='grdi' and predict_for == 'FIS'):
+		sys.exit()
 
 	# this encodes the classes into integers for the models, 1,2,4,8 becomes 0,1,2,3
 	le = preprocessing.LabelEncoder()
+	if(train=='grdi'):
+		mic_class_dict = joblib.load("data/grdi_mic_class_order_dict.pkl")
+	else:
+		mic_class_dict = joblib.load("data/public_mic_class_order_dict.pkl")
 
+	#le.fit([remove_symbols(i) for i in mic_class_dict['predict_for']])
+
+	mic_dict = [remove_symbols(i) for i in mic_class_dict[predict_for]]
+	le.fit(mic_dict)
 	#if no -y is passed in we want to do a 5 fold cross validation on the data
 	if test =='cv':
 		X, Y = get_data(train, predict_for) # pull entire data set to be split later
-		Y = le.fit_transform(Y)
+		Y = le.transform(Y)
+		#print(Y)
+		#Y = encode_categories(Y, mic_dict)
 		if(num_feats>= X.shape[1]):
 			num_feats = 0
 	else: #we are not cross validating
 		x_train, y_train = get_data(train, predict_for) # pull training set
 		x_test, y_test = get_data(test, predict_for) # pull testing set
-		le.fit(np.concatenate((y_train,y_test))) # need to fit on both sets of labels, so everything is accounted for (finding what the replacements are)
+		#le.fit(np.concatenate((y_train,y_test))) # need to fit on both sets of labels, so everything is accounted for (finding what the replacements are)
 		y_train = le.transform(y_train) # just applying the label encoder on the 2 sets (actually replacing things)
 		y_test = le.transform(y_test)
+		#y_train = encode_categories(y_train, mic_dict)
+		#y_test  = encode_categories(y_test, mic_dict)
 		if(num_feats>= x_train.shape[1]):
 			num_feats = 0
 
-	num_classes = len(le.classes_)
+	#num_classes = len(le.classes_)
+	num_classes = len(mic_class_dict[predict_for])
 
 	num_threads = 8
 
@@ -177,7 +192,7 @@ if __name__ == "__main__":
 		if(imp_feats):
 			cols = np.load('data/unfiltered/kmer_cols.npy')
 			feat_indices = np.zeros(len(cols))
-			feat_indices = [i for i in range(len(cols))]
+			feat_indices = np.asarray([i for i in range(len(cols))])
 
 			#creating an array of features that are persiting past feature selection
 			feat_indices = sk_obj.transform(feat_indices.reshape(1,-1))
@@ -276,7 +291,7 @@ if __name__ == "__main__":
 	for i in range(5):
 		OBO_sum += OBO_acc[1,i]/100 * OBO_acc[0,i]
 	OBO_array[0,0] = OBO_sum/(np.sum(OBO_acc[0]))
-	result_df = pd.DataFrame(data = np.hstack((avg_reports,OBO_array)), index = le.classes_, columns = ['Precision','Recall', 'F-Score','Supports', '1D Acc'])
+	result_df = pd.DataFrame(data = np.hstack((avg_reports,OBO_array)), index = mic_class_dict[predict_for], columns = ['Precision','Recall', 'F-Score','Supports', '1D Acc'])
 	running_sum = 0
 	t_string = ''
 	if(test_string == 'cv'):
