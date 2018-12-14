@@ -133,7 +133,6 @@ if __name__ == "__main__":
 	if test =='cv':
 		X, Y = get_data(train, predict_for) # pull entire data set to be split later
 		Y = le.transform(Y)
-		num_classes = len(np.unique(np.asarray(Y)))
 		#print(Y)
 		#Y = encode_categories(Y, mic_dict)
 		if(num_feats>= X.shape[1]):
@@ -146,13 +145,12 @@ if __name__ == "__main__":
 		y_test = le.transform(y_test)
 		#y_train = encode_categories(y_train, mic_dict)
 		#y_test  = encode_categories(y_test, mic_dict)
-		num_classes = len(np.unique(np.asarray(y_train)))
 		if(num_feats>= x_train.shape[1]):
 			num_feats = 0
 
 	#num_classes = len(le.classes_)
 	#num_classes = len(mic_class_dict[predict_for])
-	#num_classes = len(np.unique(np.asarray(y_train)))
+	num_classes = len(np.unique(np.asarray(y_train)))
 	#print(np.unique(y_train))
 	print(num_classes)
 	num_threads = 8
