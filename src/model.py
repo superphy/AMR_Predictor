@@ -134,7 +134,6 @@ if __name__ == "__main__":
 		X, Y = get_data(train, predict_for) # pull entire data set to be split later
 		Y = le.transform(Y)
 		num_classes = len(np.unique(np.asarray(Y)))
-		df_index = np.unique(np.asarray(Y))
 		#print(Y)
 		#Y = encode_categories(Y, mic_dict)
 		if(num_feats>= X.shape[1]):
@@ -148,7 +147,6 @@ if __name__ == "__main__":
 		#y_train = encode_categories(y_train, mic_dict)
 		#y_test  = encode_categories(y_test, mic_dict)
 		num_classes = len(np.unique(np.asarray(y_train)))
-		df_index = np.unique(np.asarray(y_train))
 		if(num_feats>= x_train.shape[1]):
 			num_feats = 0
 
@@ -300,7 +298,7 @@ if __name__ == "__main__":
 		OBO_sum += OBO_acc[1,i]/100 * OBO_acc[0,i]
 	OBO_array[0,0] = OBO_sum/(np.sum(OBO_acc[0]))
 	print(avg_reports.shape, OBO_array.shape)
-	result_df = pd.DataFrame(data = np.hstack((avg_reports,OBO_array)), index = df_index, columns = ['Precision','Recall', 'F-Score','Supports', '1D Acc'])
+	result_df = pd.DataFrame(data = np.hstack((avg_reports,OBO_array)), index = le.classes_, columns = ['Precision','Recall', 'F-Score','Supports', '1D Acc'])
 	running_sum = 0
 	t_string = ''
 	if(test_string == 'cv'):
