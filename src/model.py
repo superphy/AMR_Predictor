@@ -297,6 +297,7 @@ if __name__ == "__main__":
 	for i in range(5):
 		OBO_sum += OBO_acc[1,i]/100 * OBO_acc[0,i]
 	OBO_array[0,0] = OBO_sum/(np.sum(OBO_acc[0]))
+	print(avg_reports.shape, OBO_array.shape)
 	result_df = pd.DataFrame(data = np.hstack((avg_reports,OBO_array)), index = le.classes_, columns = ['Precision','Recall', 'F-Score','Supports', '1D Acc'])
 	running_sum = 0
 	t_string = ''
