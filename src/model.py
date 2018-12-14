@@ -149,7 +149,8 @@ if __name__ == "__main__":
 			num_feats = 0
 
 	#num_classes = len(le.classes_)
-	num_classes = len(mic_class_dict[predict_for])
+	#num_classes = len(mic_class_dict[predict_for])
+	num_classes = len(np.unique(y_train))
 
 	num_threads = 8
 
