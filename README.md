@@ -13,7 +13,7 @@ Machine learning methods to predict the anti-microbial resistance of Salmonella.
    `snakemake -j X`
 8. Run the following command to run all of the tests
 
-   `snakemake -s src/run_tests.smk` or `snakemake -s src/slurm_run_tests.smk`(if using slurm) 
+   `snakemake -s src/run_tests.smk` or `snakemake -s src/run_tests_slurm.smk`(if using slurm) 
 9. Run `for dir in results/*; do python src/figures.py $dir/; done` to save all the results as figures
 
 ### Manually Running Tests
