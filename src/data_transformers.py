@@ -39,4 +39,4 @@ def remove_symbols(act):
 		act = act[:-1]
 	if (act.startswith("b")):
 		act = act[2:]
-	return int(round(float(act)))
+	return int(round(1000 * float(act)))
