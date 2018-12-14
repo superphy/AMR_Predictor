@@ -150,9 +150,9 @@ if __name__ == "__main__":
 
 	#num_classes = len(le.classes_)
 	#num_classes = len(mic_class_dict[predict_for])
-	num_classes = len(np.unique(y_train))
-	print(np.unique(y_train))
-
+	num_classes = len(np.unique(np.asarray(y_train)))
+	#print(np.unique(y_train))
+	print(num_classes)
 	num_threads = 8
 
 	cv = StratifiedKFold(n_splits=5, random_state=913824)
@@ -204,7 +204,7 @@ if __name__ == "__main__":
 			cols = cols[top_feat_mask]
 
 		if(model_type == 'XGB'):
-			if(num_classes==2):
+			if(num_classes<=2):
 				objective = 'binary:logistic'
 			else:
 				objective = 'multi:softmax'
@@ -254,7 +254,7 @@ if __name__ == "__main__":
 			model.add(Dropout(0.50))
 			model.add(Dense(num_classes, kernel_initializer='uniform', activation='softmax'))
 
-			if(num_classes==2):
+			if(num_classes<=2):
 				loss = 'binary_crossentropy'
 			else:
 				loss = 'poisson'
