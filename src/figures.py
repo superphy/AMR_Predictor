@@ -81,19 +81,24 @@ if __name__ == "__main__":
                 acc += row[1]*row[3]/total
             for j, stat in enumerate([acc,model,num_feats,train,test,attribute]):
                 master_df.values[i,j] = stat
-                master_df.values[i,7] = acc_data.values[0,5]
+                master_df.values[i,6] = acc_data.values[0,4]
             if(i==0):
                 title_string = (("{} predictor trained on {}, tested on {}".format(attribute, train, test)))
 
     master_df['feats'] = pd.to_numeric(master_df['feats'])
     master_df['acc'] = pd.to_numeric(master_df['acc'])
+    master_df['1Dacc'] = pd.to_numeric(master_df['1Dacc'])
+
+
     print(master_df)
     print(master_df.dtypes)
-    base = sns.relplot(x="feats", y="acc", hue="model", kind="line", data=master_df)\
+    
+    base = sns.relplot(x="feats", y="acc", hue="model", kind="line", data=master_df)
     plt.rcParams["axes.titlesize"] = 8
     plt.title(title_string + ' (Direct)')
     plt.ylim(0,1)
     plt.savefig('figures/0D_'+(title_string.replace(" ",""))+'.png')
+
 
     window = sns.relplot(x="feats", y="1Dacc", hue="model", kind="line", data=master_df)
     plt.rcParams["axes.titlesize"] = 8
