@@ -248,7 +248,7 @@ if __name__ == "__main__":
 			model = Sequential()
 			model.add(Dense(num_feats,activation='relu',input_dim=(num_feats)))
 			model.add(Dropout(0.50))
-			model.add(Dense(((num_feats+num_classes)/2), activation='relu', kernel_initializer='uniform'))
+			model.add(Dense(int(((num_feats+num_classes)/2)), activation='relu', kernel_initializer='uniform'))
 			model.add(Dropout(0.50))
 			model.add(Dense(num_classes, kernel_initializer='uniform', activation='softmax'))
 
