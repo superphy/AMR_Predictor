@@ -71,4 +71,4 @@ rule grep_feats:
         for seq in top_feats:
             for root, dirs, files in os.walk("annotation/annotated_genomes/"):
                 for genome in dirs:
-                    shell("grep -B 1 {seq} annotation/annotated_genomes/{genome}/{genome}.ffns >> {output}")
+                    shell("echo '\n\nSearching_for_{seq}_in_{genome}' >> {output} && grep -B 1 {seq} annotation/annotated_genomes/{genome}/{genome}.ffns >> {output} || echo 'not found' >> {output}")
