@@ -34,7 +34,7 @@ rule prokka:
     input:
         GENOMES_PATH+"{id}.fasta"
     output:
-        "/annotation/annotated_genomes/{id}/{id}.ffn",
+        "annotation/annotated_genomes/{id}/{id}.ffn",
     threads:
         7
     shell:
