@@ -227,7 +227,7 @@ if __name__ == "__main__":
 				feat_save = 'data/features/'+predict_for+'_'+str(num_feats)+'feats_'+model_type+'trainedOn'+train_string+'_testedOn'+test_string+'_fold'+str(split_counter)+'.npy'
 				np.save(feat_save, np.vstack((cols.flatten(), model.feature_importances_)))
 			if(save_errors):
-				find_errors(model, x_test, y_test, z_test, mic_class_dict[drug], drug, mic_class_dict, 'data/errors/'+predict_for+'_'+str(num_feats)+'feats_'+model_type+'trainedOn'+train_string+'_testedOn'+test_string+'_fold'+str(split_counter)+'.npy')
+				find_errors(model, x_test, y_test, z_test, mic_class_dict[drug], drug, mic_class_dict, 'data/errors/'+predict_for+'_'+str(num_feats)+'feats_'+model_type+'trainedOn'+train_string+'_testedOn'+test_string+'_fold'+str(split_counter)+'.txt')
 
 		elif(model_type == 'SVM'):
 			from sklearn import svm
