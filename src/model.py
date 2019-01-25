@@ -49,7 +49,7 @@ def usage():
 	"-y, --test        Which set to test on [us, uk, uk_us, omnilog, kmer]",
 	"                  Note that not passing a -y causes cross validation on the train set",
 	"-f, --features    Number of features to train on, set to 0 to use all",
-	"-a, --attribute   What to make the prediction on [Host, Serotype, Otype, Htype]",
+	"-a, --attribute   What to make the prediction on [AMP, AMC, AZM, etc]",
 	"-m, --model       Which model to use [XGB, SVM, ANN], defaults to XGB",
 	"-o, --out         Where to save result DF, defaults to print to std out",
 	"-p,               Add this flag to do hyperparameter optimization, XGB/SVM only",
@@ -85,7 +85,7 @@ if __name__ == "__main__":
 
 	OBO_acc = np.zeros((2,5))
 	try:
-		opts, args =  getopt.getopt(sys.argv[1:],"hx:y:f:a:m:o:pi",["help","train=","test=","features=","attribute=","model=","out="])
+		opts, args =  getopt.getopt(sys.argv[1:],"hx:y:f:a:m:o:pie",["help","train=","test=","features=","attribute=","model=","out="])
 	except getopt.GetoptError:
 		usage()
 		sys.exit(2)
@@ -108,7 +108,7 @@ if __name__ == "__main__":
 			imp_feats = 1
 			if not os.path.exists(os.path.abspath(os.path.curdir)+'/data/features'):
 				os.mkdir(os.path.abspath(os.path.curdir)+'/data/features')
-		elif opt == 'e':
+		elif opt == '-e':
 			save_errors = 1
 		elif opt in ('-h', '--help'):
 			usage()
@@ -227,7 +227,7 @@ if __name__ == "__main__":
 				feat_save = 'data/features/'+predict_for+'_'+str(num_feats)+'feats_'+model_type+'trainedOn'+train_string+'_testedOn'+test_string+'_fold'+str(split_counter)+'.npy'
 				np.save(feat_save, np.vstack((cols.flatten(), model.feature_importances_)))
 			if(save_errors):
-				find_errors(model, x_test, y_test, z_test, mic_class_dict[drug], drug, mic_class_dict, 'data/errors/'+predict_for+'_'+str(num_feats)+'feats_'+model_type+'trainedOn'+train_string+'_testedOn'+test_string+'_fold'+str(split_counter)+'.txt')
+				find_errors(model, x_test, y_test, z_test, mic_class_dict[predict_for], predict_for, mic_class_dict, 'data/errors/'+predict_for+'_'+str(num_feats)+'feats_'+model_type+'trainedOn'+train_string+'_testedOn'+test_string+'_fold'+str(split_counter)+'.txt')
 
 		elif(model_type == 'SVM'):
 			from sklearn import svm
