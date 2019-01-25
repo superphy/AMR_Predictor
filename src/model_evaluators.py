@@ -130,7 +130,7 @@ def find_major(pred, act, drug, mic_class_dict):
 	return "NonMajor"
 
 
-def find_errors(model, test_data, test_names, genome_names, class_dict, drug, mic_class_dict):
+def find_errors(model, test_data, test_names, genome_names, class_dict, drug, mic_class_dict, save_loc):
 	prediction = model.predict(test_data)
 	prediction = [int(round(float(value))) for value in prediction]
 	actual = [int(float(value)) for value in test_names]
@@ -151,6 +151,8 @@ def find_errors(model, test_data, test_names, genome_names, class_dict, drug, mi
 			else:
 				off_by_one = False
 			wrong_count+=1
-			print("Drug:{} Genome:{} Predicted:{} Actual:{} OBO:{} Major?:{}".format(drug, genome_names[i], class_dict[pred], class_dict[int(act)], off_by_one,find_major(pred,act,drug,mic_class_dict)))
+			with open(save_loc, 'a') as myfile:
+				myfile.write("Drug:{} Genome:{} Predicted:{} Actual:{} OBO:{} Major?:{}".format(drug, genome_names[i], class_dict[pred], class_dict[int(act)], off_by_one,find_major(pred,act,drug,mic_class_dict)))
 
-	print("{} out of {} were incorrect ({} were close)".format(wrong_count, total_count, close_count))
+	with open(save_loc, 'a') as myfile:
+		myfile.write("{} out of {} were incorrect ({} were close)".format(wrong_count, total_count, close_count))

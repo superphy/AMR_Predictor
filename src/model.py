@@ -38,8 +38,9 @@ def get_data(dataset, drug):
 	#load kmer matrix and MIC classes
 	X = np.load(("data/filtered/{}{}/kmer_matrix.npy").format(path,drug))
 	Y = np.load(("data/filtered/{}{}/kmer_rows_mic.npy").format(path,drug))
+	Z = np.load(("data/filtered/{}{}/kmer_rows_genomes.npy").format(path,drug))
 	Y = [remove_symbols(i) for i in Y]
-	return X, Y
+	return X, Y, Z
 
 def usage():
 	print("usage: model.py -x public -y grdi -f 3000 -a AMP\n\nOptions:")
@@ -53,6 +54,7 @@ def usage():
 	"-o, --out         Where to save result DF, defaults to print to std out",
 	"-p,               Add this flag to do hyperparameter optimization, XGB/SVM only",
 	"-i,               Saves all features and their importance in data/features",
+	"-e, 			   Saves errors to data/errors",
 	"-h, --help        Prints this menu",
 	sep = '\n')
 	return
@@ -79,6 +81,7 @@ if __name__ == "__main__":
 	hyper_param = 0
 	out = 'print'
 	imp_feats = 0
+	save_errors = 0
 
 	OBO_acc = np.zeros((2,5))
 	try:
@@ -105,16 +108,22 @@ if __name__ == "__main__":
 			imp_feats = 1
 			if not os.path.exists(os.path.abspath(os.path.curdir)+'/data/features'):
 				os.mkdir(os.path.abspath(os.path.curdir)+'/data/features')
+		elif opt == 'e':
+			save_errors = 1
 		elif opt in ('-h', '--help'):
 			usage()
 			sys.exit()
 
 	X = []
 	Y = []
+	Z = []
 	x_train = []
 	x_test = []
 	y_train = []
 	y_test = []
+	z_train = []
+	z_test = []
+
 	if(train=='grdi' and predict_for == 'FIS'):
 		sys.exit()
 
@@ -131,15 +140,15 @@ if __name__ == "__main__":
 	le.fit(mic_dict)
 	#if no -y is passed in we want to do a 5 fold cross validation on the data
 	if test =='cv':
-		X, Y = get_data(train, predict_for) # pull entire data set to be split later
+		X, Y, Z = get_data(train, predict_for) # pull entire data set to be split later
 		Y = le.transform(Y)
 		#print(Y)
 		#Y = encode_categories(Y, mic_dict)
 		if(num_feats>= X.shape[1]):
 			num_feats = 0
 	else: #we are not cross validating
-		x_train, y_train = get_data(train, predict_for) # pull training set
-		x_test, y_test = get_data(test, predict_for) # pull testing set
+		x_train, y_train, z_train = get_data(train, predict_for) # pull training set
+		x_test, y_test, z_test = get_data(test, predict_for) # pull testing set
 		#le.fit(np.concatenate((y_train,y_test))) # need to fit on both sets of labels, so everything is accounted for (finding what the replacements are)
 		y_train = le.transform(y_train) # just applying the label encoder on the 2 sets (actually replacing things)
 		y_test = le.transform(y_test)
@@ -166,7 +175,7 @@ if __name__ == "__main__":
 	model_data = [[train, test]]
 	#if we are only using one set, we need to split it into multiple folds for training and testing
 	if(test == 'cv'):
-		model_data = cv.split(X,Y)
+		model_data = cv.split(X,Y,Z)
 
 	for train,test in model_data:
 		split_counter +=1
@@ -217,6 +226,8 @@ if __name__ == "__main__":
 			if(imp_feats):
 				feat_save = 'data/features/'+predict_for+'_'+str(num_feats)+'feats_'+model_type+'trainedOn'+train_string+'_testedOn'+test_string+'_fold'+str(split_counter)+'.npy'
 				np.save(feat_save, np.vstack((cols.flatten(), model.feature_importances_)))
+			if(save_errors):
+				find_errors(model, x_test, y_test, z_test, mic_class_dict[drug], drug, mic_class_dict, 'data/errors/'+predict_for+'_'+str(num_feats)+'feats_'+model_type+'trainedOn'+train_string+'_testedOn'+test_string+'_fold'+str(split_counter)+'.npy')
 
 		elif(model_type == 'SVM'):
 			from sklearn import svm
