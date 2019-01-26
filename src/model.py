@@ -184,6 +184,8 @@ if __name__ == "__main__":
 			x_test = X[test]
 			y_test = Y[test]
 			y_train = Y[train]
+			z_train = Z[train]
+			z_test = Z[test]
 
 		cols = []
 		#feature selection
