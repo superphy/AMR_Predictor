@@ -152,7 +152,7 @@ def find_errors(model, test_data, test_names, genome_names, class_dict, drug, mi
 				off_by_one = False
 			wrong_count+=1
 			with open(save_loc, 'a') as myfile:
-				myfile.write("Drug:{} Genome:{} Predicted:{} Actual:{} OBO:{} Major?:{}".format(drug, genome_names[i], class_dict[pred], class_dict[int(act)], off_by_one,find_major(pred,act,drug,mic_class_dict)))
+				myfile.write("\nDrug:{} Genome:{} Predicted:{} Actual:{} OBO:{} Major?:{}".format(drug, genome_names[i], class_dict[pred], class_dict[int(act)], off_by_one,find_major(pred,act,drug,mic_class_dict)))
 
 	with open(save_loc, 'a') as myfile:
-		myfile.write("{} out of {} were incorrect ({} were close)".format(wrong_count, total_count, close_count))
+		myfile.write("\n{} out of {} were incorrect ({} were close)".format(wrong_count, total_count, close_count))
