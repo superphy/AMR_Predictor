@@ -18,6 +18,11 @@ def find_index(arr, element):
             return i
     raise Exception("Index not found")
 
+def remove_b(name):
+    name = name[2:]
+    return name[:-1]
+
+
 kmer_matrix = np.load("data/"+drug+"/kmer_matrix.npy")
 
 kmer_cols = np.load("data/"+drug+"/kmer_cols.npy")
@@ -25,6 +30,9 @@ kmer_cols = [i.decode('utf-8') for i in kmer_cols]
 
 kmer_rows_mic = np.load("data/"+drug+"/kmer_rows_mic.npy")
 kmer_rows_mic = [i.decode('utf-8') for i in kmer_rows_mic]
+
+kmer_rows_genomes = np.load("data/"+drug+"/kmer_rows_genomes.npy")
+kmer_rows_genomes = [i.decode('utf-8') for i in kmer_rows_genomes]
 
 mic_class_dict = joblib.load("data/public_mic_class_order_dict.pkl")[drug]
 
@@ -50,7 +58,7 @@ for i in top_feats_indeces:
 
 counts_df = pd.DataFrame(data = feat_counts, index = mic_class_dict, columns = top_feats)
 
-pd.set_option('display.max_columns', 10)
+pd.set_option('display.max_columns', 15)
 
 mic_counts = collections.Counter(kmer_rows_mic)
 mic_sums = [ mic_counts[i] for i in mic_class_dict]
@@ -59,4 +67,21 @@ for i in range(len(mic_sums)):
     counts_df.values[i] = [j/mic_sums[i] for j in counts_df.values[i]]
 
 print(counts_df)
-df.to_pickle('data/features/'+drug+'_'+feats+'feats_XGBtrainedOn'+train+'_testedOn'+test+'_fold'+fold+'.pkl')
+counts_df.to_pickle('data/features/'+drug+'_'+feats+'feats_XGBtrainedOn'+train+'_testedOn'+test+'_fold'+fold+'.pkl')
+
+errors_df = pd.read_pickle('data/errors/'+drug+'_'+feats+'feats_XGBtrainedOn'+train+'_testedOn'+test+'_fold'+fold+'.pkl')
+
+kmer_counts = np.zeros((errors_df.values.shape[0],len(top_feats)))
+
+for i, genome in enumerate(errors_df['Genome']):
+    for j, kmer_index in enumerate(top_feats_indeces):
+        # count how many times that kmer is in genome
+        #print(kmer_matrix.shape)
+        #print("****INDEX: ", remove_b(genome))
+        kmer_counts[i][j] = kmer_matrix[find_index(kmer_rows_genomes, remove_b(genome))][kmer_index]
+
+#load the new hit information
+for i, kmer in enumerate(top_feats):
+    errors_df[kmer]=kmer_counts[:,i]
+
+print(errors_df)
