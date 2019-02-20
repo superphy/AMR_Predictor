@@ -187,6 +187,11 @@ if __name__ == "__main__":
 			z_train = Z[train]
 			z_test = Z[test]
 
+		print("counting num classes")
+		from collections import Counter
+		num_classes_obj = len(Counter(y_train).keys())
+		#num_classes_obj = len(set(y_test))
+		print("done num classes")
 		cols = []
 		#feature selection
 		if(num_feats!=0):
@@ -213,9 +218,11 @@ if __name__ == "__main__":
 			cols = cols[top_feat_mask]
 
 		if(model_type == 'XGB'):
-			if(num_classes==2):
+			if(num_classes_obj==2):
+				print("set objective to binary")
 				objective = 'binary:logistic'
 			else:
+				print("set objective to multiclass")
 				objective = 'multi:softmax'
 			if(hyper_param):
 				model = HyperoptEstimator(classifier=xgboost_classification('xbc'), preprocessing=[], algo=tpe.suggest, trial_timeout=200)

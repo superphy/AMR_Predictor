@@ -51,6 +51,6 @@ if __name__ == "__main__":
         os.mkdir(os.path.abspath(os.path.curdir)+'/data/kh_' + drug)
 
     #save the new array and matrix for that serovar
-    np.save(os.path.abspath(os.path.curdir)+'/data/kh_'+drug+'/kmer_rows.npy', kmer_rows)
+    np.save(os.path.abspath(os.path.curdir)+'/data/kh_'+drug+'/kmer_rows_genomes.npy', kmer_rows)
     np.save(os.path.abspath(os.path.curdir)+'/data/kh_'+drug+'/kmer_matrix.npy', kmer_matrix)
     np.save(os.path.abspath(os.path.curdir)+'/data/kh_'+drug+'/kmer_rows_mic.npy', kmer_mic)
