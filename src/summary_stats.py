@@ -49,22 +49,33 @@ master_df['acc'] = pd.to_numeric(master_df['acc'])
 master_df['1Dacc'] = pd.to_numeric(master_df['1Dacc'])
 
 #pd.set_option('display.max_rows', 500)
-print(master_df)
+#print(master_df)
 
 pub_count = 0
 pub_acc = 0
 grdi_count = 0
 grdi_acc = 0
 
-for row in master_df.values:
-    if(row[1]== 'XGB' and row[2]==3000 and row[3]=='public' and row[4]=='aCrossValidation'):
-        pub_acc+=row[0]
-        pub_count+=1
-    if(row[1]== 'XGB' and row[2]==3000 and row[3]=='grdi' and row[4]=='aCrossValidation'):
-        grdi_acc+=row[0]
-        grdi_count+=1
-print(pub_acc/pub_count)
-print(grdi_acc/grdi_count)
+for model in ['XGB','SVM','ANN']:
+    pub_count = 0
+    pub_acc0 = 0
+    pub_acc1 = 0
+    grdi_count = 0
+    grdi_acc0 = 0
+    grdi_acc1 = 0
+    for row in master_df.values:
+        if(row[1]== model and row[2]==300 and row[3]=='public' and row[4]=='aCrossValidation'):
+            pub_acc1+=row[6]
+            pub_acc0+=row[0]
+            pub_count+=1
+        if(row[1]== model and row[2]==300 and row[3]=='grdi' and row[4]=='aCrossValidation'):
+            grdi_acc1+=row[6]
+            grdi_acc0+=row[0]
+            grdi_count+=1
+        if(row[1]== 'XGB' and row[5]=='AMP' and row[3]=='public' and row[4]=='aCrossValidation'):
+            print(row)
+    print("Public {}: Direct: {} 1D: {}".format(model,(pub_acc0/pub_count), (pub_acc1/pub_count)))
+    print("GRDI {}: Direct: {} 1D: {}".format(model,(grdi_acc0/grdi_count), (grdi_acc1/grdi_count)))
 
 
 """
