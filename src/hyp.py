@@ -156,18 +156,38 @@ def find_errors(model, test_data, test_names, genome_names, class_dict, drug, mi
 
 def data():
 	from keras.utils import to_categorical
+	from sklearn.feature_selection import SelectKBest, f_classif
 
 	# Matrix of classes for each drug
 	mic_class_dict = joblib.load(os.path.abspath(os.path.curdir)+"/data/public_mic_class_order_dict.pkl")
 
 	drug = sys.argv[2]
+	num_feats = int(sys.argv[1])
 	num_classes = len(mic_class_dict[drug])
 
 	#filepath = os.path.abspath(os.path.curdir)+'/amr_data/'+drug+'/'+str(sys.argv[1])+'feats/fold'+str(sys.argv[3])+'/'
-	x_train = np.load('x_train.npy')
-	x_test  = np.load('x_test.npy')
-	y_train = np.load('y_train.npy')
-	y_test  = np.load('y_test.npy')
+	x_train1 = np.load('data/filtered/AMP/splits/set1/x.npy')
+	x_train2 = np.load('data/filtered/AMP/splits/set2/x.npy')
+	x_train3 = np.load('data/filtered/AMP/splits/set3/x.npy')
+	y_train1 = np.load('data/filtered/AMP/splits/set1/y.npy')
+	y_train2 = np.load('data/filtered/AMP/splits/set2/y.npy')
+	y_train3 = np.load('data/filtered/AMP/splits/set3/y.npy')
+
+	x_train = np.vstack((x_train1, x_train2, x_train3))
+	y_train = np.concatenate((y_train1, y_train2, y_train3))
+
+	x_test  = np.load('data/filtered/AMP/splits/set4/x.npy')
+	y_test  = np.load('data/filtered/AMP/splits/set4/y.npy')
+
+	x_val  = np.load('data/filtered/AMP/splits/set5/x.npy')
+	#y_val  = np.load('data/filtered/AMP/splits/set5/y.npy')
+
+	if(num_feats!=0):
+		sk_obj = SelectKBest(f_classif, k=num_feats)
+		x_train = sk_obj.fit_transform(x_train, y_train)
+		x_test  = sk_obj.transform(x_test)
+		x_val  = sk_obj.transform(x_val)
+		np.save('data/filtered/AMP/splits/set5/x_3000.npy', x_val)
 
 	y_train = to_categorical(y_train, num_classes)
 	y_test  = to_categorical(y_test, num_classes)
@@ -245,12 +265,12 @@ if __name__ == "__main__":
 
 	feats = sys.argv[1]
 	drug  = sys.argv[2]
-	fold  = sys.argv[3]
+	#fold  = sys.argv[3]
 
 	# Useful to have in the slurm output
 	print("************************************")
 	print("hyperas.py")
-	print(drug, feats, fold)
+	print(drug, feats)
 	print("************************************")
 
 	# Load data
@@ -262,12 +282,16 @@ if __name__ == "__main__":
 
 	# Split data, get best model
 	train_data, train_names, test_data, test_names = data()
-	best_run, best_model = optim.minimize(model=create_model, data=data, algo=tpe.suggest, max_evals=100, trials=Trials())
+	best_run, best_model = optim.minimize(model=create_model, data=data, algo=tpe.suggest, max_evals=1, trials=Trials())
 
 	# Find and record errors
 	#find_errors(best_model, test_data, test_names, genome_names, class_dict, drug, mic_class_dict)
 
 	## Score #######################################################
+	test_data  = np.load('data/filtered/AMP/splits/set5/x_3000.npy')
+	test_names  = np.load('data/filtered/AMP/splits/set5/y.npy')
+	from keras.utils import to_categorical
+	test_names = to_categorical(test_names, num_classes)
 	score = best_model.evaluate(test_data, test_names)
 	score_1d = eval_model(best_model, test_data, test_names)
 	y_true = score_1d[3]

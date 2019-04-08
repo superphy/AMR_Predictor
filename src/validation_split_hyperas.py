@@ -18,6 +18,7 @@ from data_transformers import *
 if __name__=='__main__':
     path = ''
     drug = 'AMP'
+    num_feats = 3000
 
     X = np.load(("data/filtered/{}{}/kmer_matrix.npy").format(path,drug))
     Y = np.load(("data/filtered/{}{}/kmer_rows_mic.npy").format(path,drug))
@@ -38,11 +39,11 @@ if __name__=='__main__':
     for train, test in model_data:
         set_count+=1
         x_train = X[train]
-        x_test = X[test]
-        y_test = Y[test]
+        x_test  = X[test]
+        y_test  = Y[test]
         y_train = Y[train]
         z_train = Z[train]
-        z_test = Z[test]
+        z_test  = Z[test]
 
         # save data
         if not os.path.exists(os.path.abspath(os.path.curdir)+"/data/filtered/{}{}/splits".format(path,drug)):
@@ -53,6 +54,7 @@ if __name__=='__main__':
 
         save_path = "data/filtered/{}{}/splits/set".format(path,drug)+str(set_count)
 
+        # This just saves the testing set, so the data is split into 5ths, each set is 1/5th of the data
         np.save(save_path+'/x.npy', x_test)
         np.save(save_path+'/y.npy', y_test)
         np.save(save_path+'/z.npy', z_test)

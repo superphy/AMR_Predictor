@@ -64,16 +64,16 @@ for model in ['XGB','SVM','ANN']:
     grdi_acc0 = 0
     grdi_acc1 = 0
     for row in master_df.values:
-        if(row[1]== model and row[2]==300 and row[3]=='public' and row[4]=='aCrossValidation'):
+        if(row[1]== model and row[2]==1000 and row[3]=='public' and row[4]=='aCrossValidation'):
             pub_acc1+=row[6]
             pub_acc0+=row[0]
             pub_count+=1
-        if(row[1]== model and row[2]==300 and row[3]=='grdi' and row[4]=='aCrossValidation'):
+        if(row[1]== model and row[2]==1000 and row[3]=='grdi' and row[4]=='aCrossValidation'):
             grdi_acc1+=row[6]
             grdi_acc0+=row[0]
             grdi_count+=1
-        if(row[1]== 'XGB' and row[5]=='AMP' and row[3]=='public' and row[4]=='aCrossValidation'):
-            print(row)
+        #if(row[1]== 'XGB' and row[5]=='AMP' and row[3]=='public' and row[4]=='aCrossValidation'):
+            #print(row)
     print("Public {}: Direct: {} 1D: {}".format(model,(pub_acc0/pub_count), (pub_acc1/pub_count)))
     print("GRDI {}: Direct: {} 1D: {}".format(model,(grdi_acc0/grdi_count), (grdi_acc1/grdi_count)))
 

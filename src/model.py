@@ -45,8 +45,8 @@ def get_data(dataset, drug):
 def usage():
 	print("usage: model.py -x public -y grdi -f 3000 -a AMP\n\nOptions:")
 	print(
-	"-x, --train       Which set to train on [us, uk, uk_us, omnilog, kmer]",
-	"-y, --test        Which set to test on [us, uk, uk_us, omnilog, kmer]",
+	"-x, --train       Which set to train on [public, grdi, kh]",
+	"-y, --test        Which set to test on [public, grdi, kh]",
 	"                  Note that not passing a -y causes cross validation on the train set",
 	"-f, --features    Number of features to train on, set to 0 to use all",
 	"-a, --attribute   What to make the prediction on [AMP, AMC, AZM, etc]",
@@ -60,19 +60,6 @@ def usage():
 	return
 
 if __name__ == "__main__":
-	"""
-	#leave at 0 features for no feature selection
-	num_feats = int(sys.argv[1])
-
-	# can be Host, Serotype, Otype or Htype
-	predict_for = sys.argv[2]
-
-	# can be SVM, XGB, or ANN
-	model_type = sys.argv[3]
-
-	# can be kmer or omnilog
-	source = sys.argv[4]
-	"""
 	train = ''
 	test = 'cv'
 	num_feats = 0
