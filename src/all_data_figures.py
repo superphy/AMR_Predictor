@@ -99,6 +99,9 @@ if __name__ == "__main__":
         #group = sns.catplot(x='')
 
     if(figure == '2'):
+        if not os.path.exists(os.path.abspath(os.path.curdir)+'data/simpsons_diversity_dataframe.pkl'):
+            raise Exception("Please run diversity.py before calling this graph")
+            
         simp_df = pd.read_pickle('data/simpsons_diversity_dataframe.pkl')
         simp_df = simp_df.drop(['FIS'])
 
