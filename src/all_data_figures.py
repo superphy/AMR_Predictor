@@ -109,12 +109,34 @@ if __name__ == "__main__":
         plt.savefig('figures/model_finder_multiface.png')
         plt.clf()
 
-    elif(figure == '1' or figure =='all'):
-        print(master_df)
-        sys.exit()
-        #group = sns.catplot(x='')
+    if(figure == '1' or figure =='all'):
+        # add a new column that contains both the train and test in one column
+        master_df['train&test'] = [master_df['train'][i]+'-->'+master_df['test'][i] for i in range(len(master_df.index))]
 
-    elif(figure == '2' or figure =='all'):
+        # use only XGB models of 1000 features
+        XGB_df = master_df['model']=='XGB'
+        thousand_df = master_df['feats']==1000
+        master_df = master_df[XGB_df & thousand_df]
+
+        #cust_pal = ["windows blue", "amber", "greyish", "faded green", "dusty purple","cyan", "fire engine red"]
+        cust_pal = ['fire engine red','water blue', 'bright lime','vibrant purple','cyan','strong pink','orange']
+        sns.set_palette(sns.xkcd_palette(cust_pal))
+        group = sns.catplot(x='drug', y = '1Dacc',hue = "train&test", data = master_df, kind = 'bar', legend_out =True)
+        plt.xlabel('Antimicrobial')
+        plt.ylabel("Accuracy")
+        group._legend.set_title('Dataset Comparison')
+        bar_titles = [
+        'Trained on GRDI,\nTested on Public', 'Trained on kh,\nTested on GRDI',
+        'Trained on GRDI,\nTested on kh','Trained on kh with\n5-Fold Cross Validation',
+        'Trained on Public,\nTested on GRDI','Trained on Public with\n5-Fold Cross Validation',
+        'Trained on GRDI with\n5-Fold Cross Validation']
+        for text, label in zip(group._legend.texts, bar_titles):
+            text.set_text(label)
+        plt.xticks(rotation=-30)
+        plt.savefig('figures/dataset_comparisons.png', dpi=300)
+        plt.clf()
+
+    if(figure == '2' or figure =='all'):
         if not os.path.exists(os.path.abspath(os.path.curdir)+'/figures/diversity_plots/'):
             os.mkdir(os.path.abspath(os.path.curdir)+'/figures/diversity_plots/')
         if not os.path.exists(os.path.abspath(os.path.curdir)+'/data/simpsons_diversity_dataframe.pkl'):
@@ -137,7 +159,7 @@ if __name__ == "__main__":
             plt.clf()
 
 
-    elif(figure == '3' or figure =='all'):
+    if(figure == '3' or figure =='all'):
         if not os.path.exists(os.path.abspath(os.path.curdir)+'/figures/accuracies_and_frequencies/'):
             os.mkdir(os.path.abspath(os.path.curdir)+'/figures/accuracies_and_frequencies/')
 
@@ -180,7 +202,7 @@ if __name__ == "__main__":
                 plt.clf()
 
 
-    else:
+    if(figure not in ['0','1','2','3','all']):
         print("Did not pass a valid argument")
         usage()
         sys.exit(2)
