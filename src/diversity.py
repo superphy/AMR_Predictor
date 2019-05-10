@@ -50,25 +50,18 @@ for drug in drugs:
         for i, ele in enumerate(rows_mic):
             if ele[0]=='b':
                 rows_mic[i] = remove_b(ele)
-        #print('1st rows mic', rows_mic)
+
         if set =='public' or set =='kh':
             rows_mic = [i.decode('utf-8') for i in rows_mic]
 
         # count occurances of each MIC value for each drug&set combination
         counts = Counter(rows_mic)
-        #print('counter', counts)
-        #print('rows_mic', rows_mic)
 
         # make dict of counts using {set}_dict as keys and counts as values
         ordered_counts = {}
-        #print("order", order)
         for mic in order:
             ordered_counts[str(mic)] = counts[mic]
-        #print(list(ordered_counts.values()))
-        #sys.exit()
-        #print(drug, set, skbio.diversity.alpha.simpson(list(ordered_counts.values())))
+
         df[set][drug] = skbio.diversity.alpha.simpson(list(ordered_counts.values()))
-        #print(ordered_counts)
-    #break
-print(df)
+
 df.to_pickle("data/simpsons_diversity_dataframe.pkl")

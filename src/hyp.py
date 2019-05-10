@@ -204,6 +204,7 @@ def create_model(x_train, y_train, x_test, y_test):
 	model = Sequential()
 
 	model.add(Dense(x_train.shape[1],activation='relu',input_dim=(x_train.shape[1])))
+	#model.add(Dense(int({{uniform(num_classes,x_train.shape[1])}}),activation='relu',input_dim=(x_train.shape[1])))
 	model.add(Dropout({{uniform(0,1)}}))
 
 	num_layers = {{choice(['zero', 'one', 'two', 'three', 'four', 'five'])}}
@@ -265,6 +266,7 @@ if __name__ == "__main__":
 
 	feats = sys.argv[1]
 	drug  = sys.argv[2]
+	max_evals = int(sys.argv[3])
 	#fold  = sys.argv[3]
 
 	# Useful to have in the slurm output
@@ -282,7 +284,7 @@ if __name__ == "__main__":
 
 	# Split data, get best model
 	train_data, train_names, test_data, test_names = data()
-	best_run, best_model = optim.minimize(model=create_model, data=data, algo=tpe.suggest, max_evals=1, trials=Trials())
+	best_run, best_model = optim.minimize(model=create_model, data=data, algo=tpe.suggest, max_evals=max_evals, trials=Trials())
 
 	# Find and record errors
 	#find_errors(best_model, test_data, test_names, genome_names, class_dict, drug, mic_class_dict)
@@ -313,12 +315,19 @@ if __name__ == "__main__":
 	rep_df = metrics_report_to_df(y_true, y_pred)
 	################################################################
 
+	if not os.path.exists(os.path.abspath(os.path.curdir)+"/results"):
+		os.mkdir(os.path.abspath(os.path.curdir)+"/results")
+
+	if not os.path.exists(os.path.abspath(os.path.curdir)+"/results/hyperas"):
+		os.mkdir(os.path.abspath(os.path.curdir)+"/results/hyperas")
+
 	## Save Everything #############################################
 	#best_model.save(filepath+'hyp_model.hdf5')
 	#conf_df.to_pickle(filepath+'hyp_conf_df.pkl')
 	#score_df.to_pickle(filepath+'hyp_score_df.pkl')
 	#rep_df.to_pickle(filepath+'hyp_rep_df.pkl')
-	with open('hyperas_out.txt','w') as f:
+
+	with open('{}_{}feats_{}evals'.format(drug,feats,max_evals),'w') as f:
 		f.write("\nBase acc: {0}%\n".format(round(Decimal(score[1]*100),2)))
 		f.write("1-d acc: {0}%\n".format(score_1d[0]))
 		f.write("MCC: {0}\n".format(round(score_1d[1],4)))

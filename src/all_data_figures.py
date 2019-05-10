@@ -111,6 +111,7 @@ if __name__ == "__main__":
 
     if(figure == '1' or figure =='all'):
         # add a new column that contains both the train and test in one column
+        sns.set(style="darkgrid")
         master_df['train&test'] = [master_df['train'][i]+'-->'+master_df['test'][i] for i in range(len(master_df.index))]
 
         # use only XGB models of 1000 features
@@ -119,7 +120,7 @@ if __name__ == "__main__":
         master_df = master_df[XGB_df & thousand_df]
 
         #cust_pal = ["windows blue", "amber", "greyish", "faded green", "dusty purple","cyan", "fire engine red"]
-        cust_pal = ['fire engine red','water blue', 'bright lime','vibrant purple','cyan','strong pink','orange']
+        cust_pal = ['fire engine red','water blue', 'bright lime','vibrant purple','cyan','strong pink','dark grass green']
         sns.set_palette(sns.xkcd_palette(cust_pal))
         group = sns.catplot(x='drug', y = '1Dacc',hue = "train&test", data = master_df, kind = 'bar', legend_out =True)
         plt.xlabel('Antimicrobial')
