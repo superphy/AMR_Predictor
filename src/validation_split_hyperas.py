@@ -16,10 +16,20 @@ from data_transformers import *
 
 
 if __name__=='__main__':
-    path = ''
-    drug = 'AMP'
-    num_feats = 3000
+    dataset = sys.argv[1]
+    drug = sys.argv[2]
 
+    # grdi dataset has no FIS classifications so we skip it
+    if(dataset == 'grdi' and drug == 'FIS'):
+        sys.exit()
+
+    # pathings are public: 'AMP', grdi: 'grdi_AMP', kh: 'kh_AMP'
+    if(dataset == 'public'):
+        path == ''
+    else:
+        path = dataset+'_'
+
+    # load the relevant data
     X = np.load(("data/filtered/{}{}/kmer_matrix.npy").format(path,drug))
     Y = np.load(("data/filtered/{}{}/kmer_rows_mic.npy").format(path,drug))
     Z = np.load(("data/filtered/{}{}/kmer_rows_genomes.npy").format(path,drug))
@@ -28,6 +38,8 @@ if __name__=='__main__':
     mic_class_dict = joblib.load("data/public_mic_class_order_dict.pkl")
     mic_dict = [remove_symbols(i) for i in mic_class_dict[drug]]
 
+    # possible label encodings are determined from all possible MIC values for that drug
+    # for example, we change 0.25,0.5,1,2 into 0,1,2,3
     le = preprocessing.LabelEncoder()
     le.fit(mic_dict)
     Y = le.transform(Y)
@@ -55,6 +67,10 @@ if __name__=='__main__':
         save_path = "data/filtered/{}{}/splits/set".format(path,drug)+str(set_count)
 
         # This just saves the testing set, so the data is split into 5ths, each set is 1/5th of the data
+        # x is the 2D matrix of kmer counts
+        # y is the row labels as MIC values
+        # z is the row labels as genome ID's
+        
         np.save(save_path+'/x.npy', x_test)
         np.save(save_path+'/y.npy', y_test)
         np.save(save_path+'/z.npy', z_test)
