@@ -18,7 +18,7 @@ rule public1_drug:
     params:
         drug = "{drug}"
     shell:
-        'export OMP_NUM_THREADS=16 && mkdir {output} && for j in SVM XGB; do for i in $(seq 100 100 3000 & seq 3500 500 10000); do sbatch -c 16 --mem 125G --partition NMLResearch --wrap="python src/model.py -x public -a {params.drug} -o {output} -f $i -m $j"; done; done'
+        'export OMP_NUM_THREADS=16 && mkdir {output} && for j in SVM XGB; do for i in $(seq 100 100 3000 & seq 3500 500 10000); do sbatch -c 16 --mem 125G --wrap="python src/model.py -x public -a {params.drug} -o {output} -f $i -m $j"; done; done'
 
 rule grdi2_drug:
     output:
@@ -26,7 +26,7 @@ rule grdi2_drug:
     params:
         drug = "{drug}"
     shell:
-        'export OMP_NUM_THREADS=16 && mkdir {output} && for j in SVM XGB; do for i in $(seq 100 100 3000 & seq 3500 500 10000); do sbatch -c 16 --mem 125G --partition NMLResearch --wrap="python src/model.py -x grdi -a {params.drug} -o {output} -f $i -m $j"; done; done'
+        'export OMP_NUM_THREADS=16 && mkdir {output} && for j in SVM XGB; do for i in $(seq 100 100 3000 & seq 3500 500 10000); do sbatch -c 16 --mem 125G --wrap="python src/model.py -x grdi -a {params.drug} -o {output} -f $i -m $j"; done; done'
 
 rule kh3_drug:
     output:
@@ -34,7 +34,7 @@ rule kh3_drug:
     params:
         drug = "{drug}"
     shell:
-        'export OMP_NUM_THREADS=16 && mkdir {output} && for j in SVM XGB; do for i in $(seq 100 100 3000 & seq 3500 500 10000); do sbatch -c 16 --mem 125G --partition NMLResearch --wrap="python src/model.py -x kh -a {params.drug} -o {output} -f $i -m $j"; done; done'
+        'export OMP_NUM_THREADS=16 && mkdir {output} && for j in SVM XGB; do for i in $(seq 100 100 3000 & seq 3500 500 10000); do sbatch -c 16 --mem 125G --wrap="python src/model.py -x kh -a {params.drug} -o {output} -f $i -m $j"; done; done'
 
 rule public4_grdi_drug:
     output:
@@ -42,7 +42,7 @@ rule public4_grdi_drug:
     params:
         drug = "{drug}"
     shell:
-        'export OMP_NUM_THREADS=16 && mkdir {output} && for j in SVM XGB; do for i in $(seq 100 100 3000 & seq 3500 500 10000); do sbatch -c 16 --mem 125G --partition NMLResearch --wrap="python src/model.py -x public -y grdi -a {params.drug} -o {output} -f $i -m $j"; done; done'
+        'export OMP_NUM_THREADS=16 && mkdir {output} && for j in SVM XGB; do for i in $(seq 100 100 3000 & seq 3500 500 10000); do sbatch -c 16 --mem 125G --wrap="python src/model.py -x public -y grdi -a {params.drug} -o {output} -f $i -m $j"; done; done'
 
 rule grdi5_public_drug:
     output:
@@ -50,7 +50,7 @@ rule grdi5_public_drug:
     params:
         drug = "{drug}"
     shell:
-        'export OMP_NUM_THREADS=16 && mkdir {output} && for j in SVM XGB; do for i in $(seq 100 100 3000 & seq 3500 500 10000); do sbatch -c 16 --mem 125G --partition NMLResearch --wrap="python src/model.py -x grdi -y public -a {params.drug} -o {output} -f $i -m $j"; done; done'
+        'export OMP_NUM_THREADS=16 && mkdir {output} && for j in SVM XGB; do for i in $(seq 100 100 3000 & seq 3500 500 10000); do sbatch -c 16 --mem 125G --wrap="python src/model.py -x grdi -y public -a {params.drug} -o {output} -f $i -m $j"; done; done'
 
 rule grdi6_kh_drug:
     output:
@@ -58,7 +58,7 @@ rule grdi6_kh_drug:
     params:
         drug = "{drug}"
     shell:
-        'export OMP_NUM_THREADS=16 && mkdir {output} && for j in SVM XGB; do for i in $(seq 100 100 3000 & seq 3500 500 10000); do sbatch -c 16 --mem 125G --partition NMLResearch --wrap="python src/model.py -x grdi -y kh -a {params.drug} -o {output} -f $i -m $j"; done; done'
+        'export OMP_NUM_THREADS=16 && mkdir {output} && for j in SVM XGB; do for i in $(seq 100 100 3000 & seq 3500 500 10000); do sbatch -c 16 --mem 125G --wrap="python src/model.py -x grdi -y kh -a {params.drug} -o {output} -f $i -m $j"; done; done'
 
 rule kh7_grdi_drug:
     output:
@@ -66,4 +66,4 @@ rule kh7_grdi_drug:
     params:
         drug = "{drug}"
     shell:
-        'export OMP_NUM_THREADS=16 && mkdir {output} && for j in SVM XGB; do for i in $(seq 100 100 3000 & seq 3500 500 10000); do sbatch -c 16 --mem 125G --partition NMLResearch --wrap="python src/model.py -x kh -y grdi -a {params.drug} -o {output} -f $i -m $j"; done; done'
+        'export OMP_NUM_THREADS=16 && mkdir {output} && for j in SVM XGB; do for i in $(seq 100 100 3000 & seq 3500 500 10000); do sbatch -c 16 --mem 125G --wrap="python src/model.py -x kh -y grdi -a {params.drug} -o {output} -f $i -m $j"; done; done'
