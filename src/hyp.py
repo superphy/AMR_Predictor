@@ -203,8 +203,7 @@ def create_model(x_train, y_train, x_test, y_test):
 
 	model = Sequential()
 
-	model.add(Dense(x_train.shape[1],activation='relu',input_dim=(x_train.shape[1])))
-	#model.add(Dense(int({{uniform(num_classes,x_train.shape[1])}}),activation='relu',input_dim=(x_train.shape[1])))
+	model.add(Dense(int({{uniform(num_classes,x_train.shape[1])}}),activation='relu',input_dim=(x_train.shape[1])))
 	model.add(Dropout({{uniform(0,1)}}))
 
 	num_layers = {{choice(['zero', 'one', 'two', 'three', 'four', 'five'])}}
@@ -327,7 +326,7 @@ if __name__ == "__main__":
 	#score_df.to_pickle(filepath+'hyp_score_df.pkl')
 	#rep_df.to_pickle(filepath+'hyp_rep_df.pkl')
 
-	with open('{}_{}feats_{}evals'.format(drug,feats,max_evals),'w') as f:
+	with open('results/hyperas/{}_{}feats_{}evals.txt'.format(drug,feats,max_evals),'w') as f:
 		f.write("\nBase acc: {0}%\n".format(round(Decimal(score[1]*100),2)))
 		f.write("1-d acc: {0}%\n".format(score_1d[0]))
 		f.write("MCC: {0}\n".format(round(score_1d[1],4)))

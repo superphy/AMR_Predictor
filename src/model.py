@@ -185,13 +185,7 @@ if __name__ == "__main__":
 			sk_obj = SelectKBest(f_classif, k=num_feats)
 			x_train = sk_obj.fit_transform(x_train, y_train)
 			x_test  = sk_obj.transform(x_test)
-		"""
-		#uncomment this section if you want to save datasets for hyp.property
-		np.save('x_test.npy', x_test)
-		np.save('x_train.npy', x_train)
-		np.save('y_test.npy', y_test)
-		np.save('y_train.npy', y_train)
-		"""
+
 		if(imp_feats):
 			cols = np.load('data/unfiltered/kmer_cols.npy')
 			feat_indices = np.zeros(len(cols))
@@ -214,7 +208,7 @@ if __name__ == "__main__":
 			if(hyper_param):
 				model = HyperoptEstimator(classifier=xgboost_classification('xbc'), preprocessing=[], algo=tpe.suggest, trial_timeout=200)
 			else:
-				model = XGBClassifier(learning_rate=1, n_estimators=10, objective=objective, silent=True, nthread=num_threads)
+				model = XGBClassifier(objective=objective, silent=True, nthread=num_threads)
 			print(x_train, y_train)
 			print(num_classes)
 			model.fit(x_train,y_train)
@@ -253,9 +247,7 @@ if __name__ == "__main__":
 			reduce_LR = ReduceLROnPlateau(monitor='loss', factor= 0.1, patience=(patience/2), verbose = 1, min_delta=0.005,mode = 'auto', cooldown=0, min_lr=0)
 
 			model = Sequential()
-			model.add(Dense(num_feats,activation='relu',input_dim=(num_feats)))
-			model.add(Dropout(0.50))
-			model.add(Dense(int(((num_feats+num_classes)/2)), activation='relu', kernel_initializer='uniform'))
+			model.add(Dense(int(((num_feats+num_classes)/2)),activation='relu',input_dim=(num_feats)))
 			model.add(Dropout(0.50))
 			model.add(Dense(num_classes, kernel_initializer='uniform', activation='softmax'))
 
