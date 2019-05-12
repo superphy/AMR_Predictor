@@ -158,36 +158,52 @@ def data():
 	from keras.utils import to_categorical
 	from sklearn.feature_selection import SelectKBest, f_classif
 
-	# Matrix of classes for each drug
-	mic_class_dict = joblib.load(os.path.abspath(os.path.curdir)+"/data/public_mic_class_order_dict.pkl")
+	feats = int(sys.argv[1])
+	drug  = sys.argv[2]
+	fold  = sys.argv[4]
+	dataset = sys.argv[5]
 
-	drug = sys.argv[2]
-	num_feats = int(sys.argv[1])
+	# Matrix of classes for each drug
+	if(dataset=='grdi'):
+		mic_class_dict = joblib.load(os.path.abspath(os.path.curdir)+"/data/grdi_mic_class_order_dict.pkl")
+	else:
+		mic_class_dict = joblib.load(os.path.abspath(os.path.curdir)+"/data/public_mic_class_order_dict.pkl")
+
+	path=''
+	if(dataset=='grdi'):
+		path = 'grdi_'
+	elif(dataset=='kh'):
+		path = 'kh_'
+
+	# fold 1 uses sets 1,2,3 to train, 4 to test, fold 2 uses sets 2,3,4 to train, 5 to test, etc
+	train_sets = [(i+fold-1)%5 for i in range(5)]
+	train_sets = [str(i+1) for i in train_sets]
+
 	num_classes = len(mic_class_dict[drug])
 
-	#filepath = os.path.abspath(os.path.curdir)+'/amr_data/'+drug+'/'+str(sys.argv[1])+'feats/fold'+str(sys.argv[3])+'/'
-	x_train1 = np.load('data/filtered/AMP/splits/set1/x.npy')
-	x_train2 = np.load('data/filtered/AMP/splits/set2/x.npy')
-	x_train3 = np.load('data/filtered/AMP/splits/set3/x.npy')
-	y_train1 = np.load('data/filtered/AMP/splits/set1/y.npy')
-	y_train2 = np.load('data/filtered/AMP/splits/set2/y.npy')
-	y_train3 = np.load('data/filtered/AMP/splits/set3/y.npy')
+	# load the relevant training sets and labels
+	x_train1 = np.load('data/filtered/{}{}/splits/set{}/x.npy'.format(path,drug,train_set[0]))
+	x_train2 = np.load('data/filtered/{}{}/splits/set{}/x.npy'.format(path,drug,train_set[1]))
+	x_train3 = np.load('data/filtered/{}{}/splits/set{}/x.npy'.format(path,drug,train_set[2]))
+	y_train1 = np.load('data/filtered/{}{}/splits/set{}/y.npy'.format(path,drug,train_set[0]))
+	y_train2 = np.load('data/filtered/{}{}/splits/set{}/y.npy'.format(path,drug,train_set[1]))
+	y_train3 = np.load('data/filtered/{}{}/splits/set{}/y.npy'.format(path,drug,train_set[2]))
 
+	# merge the 3 training sets into 1
 	x_train = np.vstack((x_train1, x_train2, x_train3))
 	y_train = np.concatenate((y_train1, y_train2, y_train3))
 
-	x_test  = np.load('data/filtered/AMP/splits/set4/x.npy')
-	y_test  = np.load('data/filtered/AMP/splits/set4/y.npy')
+	x_test  = np.load('data/filtered/{}{}/splits/{}/x.npy'.format(path,drug,train_set[3]))
+	y_test  = np.load('data/filtered/{}{}/splits/{}/y.npy'.format(path,drug,train_set[3]))
 
-	x_val  = np.load('data/filtered/AMP/splits/set5/x.npy')
-	#y_val  = np.load('data/filtered/AMP/splits/set5/y.npy')
-
+	# hyperas asks for train and test so the validation set is what comes last, to check the final model
+	# we need to save it to be used later, because we have the sk_obj now.
 	if(num_feats!=0):
-		sk_obj = SelectKBest(f_classif, k=num_feats)
+		sk_obj = SelectKBest(f_classif, k=feats)
 		x_train = sk_obj.fit_transform(x_train, y_train)
 		x_test  = sk_obj.transform(x_test)
 		x_val  = sk_obj.transform(x_val)
-		np.save('data/filtered/AMP/splits/set5/x_3000.npy', x_val)
+		np.save('data/filtered/{}{}/splits/val{}_{}.npy'.format(path,drug,fold,str(feats)), x_val)
 
 	y_train = to_categorical(y_train, num_classes)
 	y_test  = to_categorical(y_test, num_classes)
@@ -266,7 +282,8 @@ if __name__ == "__main__":
 	feats = sys.argv[1]
 	drug  = sys.argv[2]
 	max_evals = int(sys.argv[3])
-	#fold  = sys.argv[3]
+	fold  = sys.argv[4]
+	dataset = sys.argv[5]
 
 	# Useful to have in the slurm output
 	print("************************************")
@@ -288,11 +305,23 @@ if __name__ == "__main__":
 	# Find and record errors
 	#find_errors(best_model, test_data, test_names, genome_names, class_dict, drug, mic_class_dict)
 
-	## Score #######################################################
-	test_data  = np.load('data/filtered/AMP/splits/set5/x_3000.npy')
-	test_names  = np.load('data/filtered/AMP/splits/set5/y.npy')
+	# load validation set 
+	path=''
+	if(dataset=='grdi'):
+		path = 'grdi_'
+	elif(dataset=='kh'):
+		path = 'kh_'
+
+	# fold 1 uses sets 1,2,3 to train, 4 to test and 5 to validate, fold 2 uses sets 2,3,4 to train, 5 to test, etc
+	train_sets = [(i+fold-1)%5 for i in range(5)]
+	train_sets = [str(i+1) for i in train_sets]
+
+	test_names  = np.load('data/filtered/{}{}/splits/set{}/y.npy'.format(path,drug,train_set[4]))
+	test_data = np.load('data/filtered/{}{}/splits/val{}_{}.npy'.format(path,drug,fold,feats), x_val)
 	from keras.utils import to_categorical
 	test_names = to_categorical(test_names, num_classes)
+
+	## Score #######################################################
 	score = best_model.evaluate(test_data, test_names)
 	score_1d = eval_model(best_model, test_data, test_names)
 	y_true = score_1d[3]

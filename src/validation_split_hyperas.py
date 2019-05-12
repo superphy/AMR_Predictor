@@ -25,7 +25,7 @@ if __name__=='__main__':
 
     # pathings are public: 'AMP', grdi: 'grdi_AMP', kh: 'kh_AMP'
     if(dataset == 'public'):
-        path == ''
+        path = ''
     else:
         path = dataset+'_'
 
@@ -70,7 +70,7 @@ if __name__=='__main__':
         # x is the 2D matrix of kmer counts
         # y is the row labels as MIC values
         # z is the row labels as genome ID's
-        
+
         np.save(save_path+'/x.npy', x_test)
         np.save(save_path+'/y.npy', y_test)
         np.save(save_path+'/z.npy', z_test)
