@@ -176,29 +176,31 @@ def data():
 		path = 'kh_'
 
 	# fold 1 uses sets 1,2,3 to train, 4 to test, fold 2 uses sets 2,3,4 to train, 5 to test, etc
-	train_sets = [(i+fold-1)%5 for i in range(5)]
+	train_sets = [(i+int(fold)-1)%5 for i in range(5)]
 	train_sets = [str(i+1) for i in train_sets]
 
 	num_classes = len(mic_class_dict[drug])
 
 	# load the relevant training sets and labels
-	x_train1 = np.load('data/filtered/{}{}/splits/set{}/x.npy'.format(path,drug,train_set[0]))
-	x_train2 = np.load('data/filtered/{}{}/splits/set{}/x.npy'.format(path,drug,train_set[1]))
-	x_train3 = np.load('data/filtered/{}{}/splits/set{}/x.npy'.format(path,drug,train_set[2]))
-	y_train1 = np.load('data/filtered/{}{}/splits/set{}/y.npy'.format(path,drug,train_set[0]))
-	y_train2 = np.load('data/filtered/{}{}/splits/set{}/y.npy'.format(path,drug,train_set[1]))
-	y_train3 = np.load('data/filtered/{}{}/splits/set{}/y.npy'.format(path,drug,train_set[2]))
+	x_train1 = np.load('data/filtered/{}{}/splits/set{}/x.npy'.format(path,drug,train_sets[0]))
+	x_train2 = np.load('data/filtered/{}{}/splits/set{}/x.npy'.format(path,drug,train_sets[1]))
+	x_train3 = np.load('data/filtered/{}{}/splits/set{}/x.npy'.format(path,drug,train_sets[2]))
+	y_train1 = np.load('data/filtered/{}{}/splits/set{}/y.npy'.format(path,drug,train_sets[0]))
+	y_train2 = np.load('data/filtered/{}{}/splits/set{}/y.npy'.format(path,drug,train_sets[1]))
+	y_train3 = np.load('data/filtered/{}{}/splits/set{}/y.npy'.format(path,drug,train_sets[2]))
 
 	# merge the 3 training sets into 1
 	x_train = np.vstack((x_train1, x_train2, x_train3))
 	y_train = np.concatenate((y_train1, y_train2, y_train3))
 
-	x_test  = np.load('data/filtered/{}{}/splits/{}/x.npy'.format(path,drug,train_set[3]))
-	y_test  = np.load('data/filtered/{}{}/splits/{}/y.npy'.format(path,drug,train_set[3]))
+	x_test  = np.load('data/filtered/{}{}/splits/set{}/x.npy'.format(path,drug,train_sets[3]))
+	y_test  = np.load('data/filtered/{}{}/splits/set{}/y.npy'.format(path,drug,train_sets[3]))
+
+	x_val  = np.load('data/filtered/{}{}/splits/set{}/x.npy'.format(path,drug,train_sets[4]))
 
 	# hyperas asks for train and test so the validation set is what comes last, to check the final model
 	# we need to save it to be used later, because we have the sk_obj now.
-	if(num_feats!=0):
+	if(feats!=0):
 		sk_obj = SelectKBest(f_classif, k=feats)
 		x_train = sk_obj.fit_transform(x_train, y_train)
 		x_test  = sk_obj.transform(x_test)
@@ -219,29 +221,30 @@ def create_model(x_train, y_train, x_test, y_test):
 
 	model = Sequential()
 
-	model.add(Dense(int({{uniform(num_classes,x_train.shape[1])}}),activation='relu',input_dim=(x_train.shape[1])))
-	model.add(Dropout({{uniform(0,1)}}))
-
+	# how many hidden layers are in our model
 	num_layers = {{choice(['zero', 'one', 'two', 'three', 'four', 'five'])}}
 
-	if (num_layers in ['one','two','three','four','five']):
-		model.add(Dense(int({{uniform(num_classes,x_train.shape[1])}})))
-		model.add(Dropout({{uniform(0,1)}}))
-	if (num_layers in ['two','three','four','five']):
-		model.add(Dense(int({{uniform(num_classes,x_train.shape[1])}})))
-		model.add(Dropout({{uniform(0,1)}}))
-	if (num_layers in ['three','four','five']):
-		model.add(Dense(int({{uniform(num_classes,x_train.shape[1])}})))
-		model.add(Dropout({{uniform(0,1)}}))
-	if (num_layers in ['four','five']):
-		model.add(Dense(int({{uniform(num_classes,x_train.shape[1])}})))
-		model.add(Dropout({{uniform(0,1)}}))
-	if (num_layers == 'five'):
-		model.add(Dense(int({{uniform(num_classes,x_train.shape[1])}})))
-		model.add(Dropout({{uniform(0,1)}}))
+	if(num_layers == 'zero'):
+		model.add(Dense(num_classes,activation='relu',input_dim=(x_train.shape[1])))
+	else:
+		# this isnt a for loop because each variable needs its own name to be independently trained
+		if (num_layers in ['one','two','three','four','five']):
+			model.add(Dense(int({{uniform(num_classes,x_train.shape[1])}}),activation='relu',input_dim=(x_train.shape[1])))
+			model.add(Dropout({{uniform(0,1)}}))
+		if (num_layers in ['two','three','four','five']):
+			model.add(Dense(int({{uniform(num_classes,x_train.shape[1])}})))
+			model.add(Dropout({{uniform(0,1)}}))
+		if (num_layers in ['three','four','five']):
+			model.add(Dense(int({{uniform(num_classes,x_train.shape[1])}})))
+			model.add(Dropout({{uniform(0,1)}}))
+		if (num_layers in ['four','five']):
+			model.add(Dense(int({{uniform(num_classes,x_train.shape[1])}})))
+			model.add(Dropout({{uniform(0,1)}}))
+		if (num_layers == 'five'):
+			model.add(Dense(int({{uniform(num_classes,x_train.shape[1])}})))
+			model.add(Dropout({{uniform(0,1)}}))
 
-	# We have 6 classes, so output layer has 6
-	model.add(Dense(num_classes, kernel_initializer='uniform', activation='softmax'))
+		model.add(Dense(num_classes, kernel_initializer='uniform', activation='softmax'))
 
 	model.compile(loss='poisson', metrics=['accuracy'], optimizer='adam')
 	model.fit(x_train, y_train, epochs=100, verbose=0, callbacks=[early_stop, reduce_LR])
@@ -305,7 +308,7 @@ if __name__ == "__main__":
 	# Find and record errors
 	#find_errors(best_model, test_data, test_names, genome_names, class_dict, drug, mic_class_dict)
 
-	# load validation set 
+	# load validation set
 	path=''
 	if(dataset=='grdi'):
 		path = 'grdi_'
@@ -313,11 +316,11 @@ if __name__ == "__main__":
 		path = 'kh_'
 
 	# fold 1 uses sets 1,2,3 to train, 4 to test and 5 to validate, fold 2 uses sets 2,3,4 to train, 5 to test, etc
-	train_sets = [(i+fold-1)%5 for i in range(5)]
+	train_sets = [(i+int(fold)-1)%5 for i in range(5)]
 	train_sets = [str(i+1) for i in train_sets]
 
-	test_names  = np.load('data/filtered/{}{}/splits/set{}/y.npy'.format(path,drug,train_set[4]))
-	test_data = np.load('data/filtered/{}{}/splits/val{}_{}.npy'.format(path,drug,fold,feats), x_val)
+	test_names  = np.load('data/filtered/{}{}/splits/set{}/y.npy'.format(path,drug,train_sets[4]))
+	test_data = np.load('data/filtered/{}{}/splits/val{}_{}.npy'.format(path,drug,fold,feats))
 	from keras.utils import to_categorical
 	test_names = to_categorical(test_names, num_classes)
 
