@@ -147,7 +147,7 @@ if __name__ == "__main__":
 	#num_classes = len(le.classes_)
 	num_classes = len(mic_class_dict[predict_for])
 
-	num_threads = 8
+	num_threads = 16
 
 	cv = StratifiedKFold(n_splits=5, random_state=913824)
 	cvscores = []
@@ -155,6 +155,8 @@ if __name__ == "__main__":
 	mcc_scores = []
 	report_scores = []
 	split_counter = 0
+	OBN_accs = []
+	OBO_accs = []
 
 	train_string = train
 	test_string = test
@@ -269,6 +271,11 @@ if __name__ == "__main__":
 			OBOResults = xgb_tester(model, x_test, y_test, 1)
 		print('OBO', OBOResults[0], len(y_test))
 		print('OBN', results[0], len(y_test))
+
+		# saving the accuracies of each split
+		OBO_accs.append(OBOResults[0])
+		OBN_accs.append(results[0])
+
 		OBO_acc[1, split_counter-1] = OBOResults[0]
 		if(model_type == 'ANN'):
 			OBO_acc[0, split_counter-1] = y_test.shape[0]
@@ -281,7 +288,6 @@ if __name__ == "__main__":
 
 		report_scores.append(report)
 		cvscores.append(results[0])
-
 
 	np.set_printoptions(suppress=True)
 	avg_reports = np.mean(report_scores,axis=0)
@@ -314,3 +320,8 @@ if __name__ == "__main__":
 			out = out + '/'
 		out = out+predict_for+'_'+str(num_feats)+'feats_'+model_type+'trainedOn'+train_string+'_testedOn'+t_string+'.pkl'
 		result_df.to_pickle(out)
+
+		if not os.path.exists(os.path.abspath(os.path.curdir)+"/data/split_accuracies"):
+			os.mkdir(os.path.abspath(os.path.curdir)+"/data/split_accuracies")
+		# saving the accuracies for each split
+		np.save('data/split_accuracies/'+predict_for+'_'+str(num_feats)+'feats_'+model_type+'trainedOn'+train_string+'_testedOn'+t_string+'.npy' ,np.vstack((OBN_accs,OBO_accs)))

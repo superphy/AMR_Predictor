@@ -33,6 +33,8 @@ from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit
 from sklearn.feature_selection import SelectKBest, f_classif
 from sklearn.metrics import matthews_corrcoef, confusion_matrix, classification_report
 
+from model_evaluators import *
+from data_transformers import *
 
 seed(913824)
 set_random_seed(913824)
@@ -225,7 +227,7 @@ def create_model(x_train, y_train, x_test, y_test):
 	num_layers = {{choice(['zero', 'one', 'two', 'three', 'four', 'five'])}}
 
 	if(num_layers == 'zero'):
-		model.add(Dense(num_classes,activation='relu',input_dim=(x_train.shape[1])))
+		model.add(Dense(num_classes,activation='softmax',input_dim=(x_train.shape[1])))
 	else:
 		# this isnt a for loop because each variable needs its own name to be independently trained
 		if (num_layers in ['one','two','three','four','five']):
@@ -255,6 +257,7 @@ def create_model(x_train, y_train, x_test, y_test):
 
 def metrics_report_to_df(ytrue, ypred):
 	'''
+	DEPRECATED
 	Given the set of true values and set of predicted values, returns  a table
 	(dataframe) of the precision, recall, fscore, and support  for each class,
 	including avg/total.
@@ -271,16 +274,6 @@ def metrics_report_to_df(ytrue, ypred):
 
 
 if __name__ == "__main__":
-	##################################################################
-	# call with
-	#	time python hyp.py <numfeats> <drug> <fold>
-	# to do all folds
-	#	for i in {1..5}; do python hyp.py <numfeats> <drug> '$i'; done
-	# to do all folds on waffles
-	#	sbatch -c 16 --mem 80G --partition NMLResearch --wrap='for i in {1..5}; do python hyp.py <numfeats> <drug> "$i"; done'
-	# OR
-	#   or use hyp.snake (change the features num)
-	##################################################################
 
 	feats = sys.argv[1]
 	drug  = sys.argv[2]
@@ -295,18 +288,16 @@ if __name__ == "__main__":
 	print("************************************")
 
 	# Load data
-	#filepath = os.path.abspath(os.path.curdir)+'/amr_data/'+drug+'/'+str(feats)+'feats/fold'+str(fold)+'/'
 	mic_class_dict = joblib.load(os.path.abspath(os.path.curdir)+"/data/public_mic_class_order_dict.pkl")
 	class_dict = mic_class_dict[drug]
 	num_classes = len(mic_class_dict[drug])
-	#genome_names = np.load(filepath+'genome_test.npy')
 
 	# Split data, get best model
 	train_data, train_names, test_data, test_names = data()
 	best_run, best_model = optim.minimize(model=create_model, data=data, algo=tpe.suggest, max_evals=max_evals, trials=Trials())
 
 	# Find and record errors
-	#find_errors(best_model, test_data, test_names, genome_names, class_dict, drug, mic_class_dict)
+	# find_errors(best_model, test_data, test_names, genome_names, class_dict, drug, mic_class_dict)
 
 	# load validation set
 	path=''
@@ -341,28 +332,42 @@ if __name__ == "__main__":
 	conf_df.set_axis(mic_class_dict[drug], axis='columns', inplace=True) # Label the axis
 	################################################################
 
-	## Classification Report #######################################
-	report = classification_report(y_true, y_pred, target_names=mic_class_dict[drug])
-	rep_df = metrics_report_to_df(y_true, y_pred)
-	################################################################
 
-	if not os.path.exists(os.path.abspath(os.path.curdir)+"/results"):
-		os.mkdir(os.path.abspath(os.path.curdir)+"/results")
+	if not os.path.exists(os.path.abspath(os.path.curdir)+"/data/"+path+drug):
+		os.mkdir(os.path.abspath(os.path.curdir)+"/data/"+path+drug)
 
-	if not os.path.exists(os.path.abspath(os.path.curdir)+"/results/hyperas"):
-		os.mkdir(os.path.abspath(os.path.curdir)+"/results/hyperas")
+	if not os.path.exists(os.path.abspath(os.path.curdir)+"/data/"+path+drug+"/hyperas/"):
+		os.mkdir(os.path.abspath(os.path.curdir)+"/data/"+path+drug+"/hyperas/")
 
-	## Save Everything #############################################
-	#best_model.save(filepath+'hyp_model.hdf5')
-	#conf_df.to_pickle(filepath+'hyp_conf_df.pkl')
-	#score_df.to_pickle(filepath+'hyp_score_df.pkl')
-	#rep_df.to_pickle(filepath+'hyp_rep_df.pkl')
+	# ann_1d -> returns: (perc, mcc, prediction, actual)
+	results = ann_1d(best_model, test_data, test_names, 0)
+	OBOResults = ann_1d(best_model, test_data, test_names, 1)
 
-	with open('results/hyperas/{}_{}feats_{}evals.txt'.format(drug,feats,max_evals),'w') as f:
-		f.write("\nBase acc: {0}%\n".format(round(Decimal(score[1]*100),2)))
-		f.write("1-d acc: {0}%\n".format(score_1d[0]))
-		f.write("MCC: {0}\n".format(round(score_1d[1],4)))
-		f.write("\nConfusion Matrix\n{0}\n".format(conf_df))
-		f.write("\nClassification Report\n{0}\n".format(report))
-		f.write("Best performing model chosen hyper-parameters:\n{0}\n".format(best_run))
-	################################################################
+	labels = np.arange(0,num_classes)
+	report = precision_recall_fscore_support(results[3], results[2], average=None, labels=labels)
+
+	report_scores = []
+	report_scores.append(report)
+
+	# this is to match the result formatting of model.py to ensure XGB and ANN are treated the same
+	np.set_printoptions(suppress=True)
+	avg_reports = np.mean(report_scores, axis=0)
+	avg_reports = np.transpose(avg_reports)
+	avg_reports = np.around(avg_reports, decimals=2)
+	OBO_array = np.zeros((avg_reports.shape[0],1))
+	OBO_array[0,0] = OBOResults[0]/100
+
+	result_df = pd.DataFrame(data = np.hstack((avg_reports,OBO_array)), index = mic_class_dict[drug], columns = ['Precision','Recall', 'F-Score','Supports', '1D Acc'])
+
+	running_sum = 0
+	t_string = 'aCrossValidation'
+	for row in result_df.values:
+		running_sum+=(row[1]*row[3]/(len(test_names)))
+
+	print("Predicting for", drug)
+	print("on {} features using a {} trained on {} data, tested on {}".format(feats, 'ANN', 'public', t_string))
+	print("Accuracy:", running_sum)
+	print(result_df)
+	out = "data/"+path+drug+"/hyperas/"
+	out = out+str(feats)+'feats_'+fold+'.pkl'
+	result_df.to_pickle(out)
