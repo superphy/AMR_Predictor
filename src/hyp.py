@@ -15,6 +15,9 @@ from tensorflow import set_random_seed
 from concurrent.futures import ProcessPoolExecutor
 from multiprocessing import cpu_count
 
+session_conf = tensorflow.ConfigProto(intra_op_parallelism_threads=16,inter_op_parallelism_threads=16)
+sess = tensorflow.Session(config=session_conf)
+
 from hyperopt import Trials, STATUS_OK, tpe
 from keras.layers.convolutional import Conv1D
 from keras.layers.core import Dense, Dropout, Activation
@@ -24,7 +27,7 @@ from keras.utils import np_utils, to_categorical
 from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 
 from hyperas import optim
-from hyperas.distributions import choice, uniform, conditional
+from hyperas.distributions import choice, uniform
 
 from sklearn import metrics
 from sklearn.externals import joblib
@@ -294,7 +297,7 @@ if __name__ == "__main__":
 
 	# Split data, get best model
 	train_data, train_names, test_data, test_names = data()
-	best_run, best_model = optim.minimize(model=create_model, data=data, algo=tpe.suggest, max_evals=max_evals, trials=Trials())
+	best_run, best_model = optim.minimize(model=create_model, data=data, algo=tpe.suggest, max_evals=max_evals, trials=Trials(),keep_temp=True)
 
 	# Find and record errors
 	# find_errors(best_model, test_data, test_names, genome_names, class_dict, drug, mic_class_dict)
