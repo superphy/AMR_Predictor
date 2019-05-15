@@ -228,6 +228,7 @@ if __name__ == "__main__":
             split_df = master_df[train_df & test_df & drug_df]
 
             title_string = (("{} predictor trained on {}, tested on {}".format(drug, train, test)))
+            sns.set(style="whitegrid")
 
             base = sns.relplot(x="feats", y="acc", hue="model",hue_order=["XGB","SVM","ANN"], kind="line", data=split_df)
             plt.rcParams["axes.titlesize"] = 8

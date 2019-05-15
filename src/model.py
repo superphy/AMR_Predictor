@@ -215,6 +215,13 @@ if __name__ == "__main__":
 			print(num_classes)
 			model.fit(x_train,y_train)
 
+			save_model=False
+			if(save_model):
+				pickle.dump(model, open("predict/models/xgb_public_{}feats_{}model.dat".format(str(num_feats),predict_for),"wb"))
+				np.save("predict/features/{}feats_{}.npy".format(str(num_feats),predict_for), cols)
+				print("Model Saved, exiting model.py")
+				sys.exit()
+
 			if(imp_feats):
 				feat_save = 'data/features/'+predict_for+'_'+str(num_feats)+'feats_'+model_type+'trainedOn'+train_string+'_testedOn'+test_string+'_fold'+str(split_counter)+'.npy'
 				np.save(feat_save, np.vstack((cols.flatten(), model.feature_importances_)))
