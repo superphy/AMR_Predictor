@@ -15,6 +15,7 @@ def usage():
     "1 - Multibar graph, 13 sets of 7 bars detailing 13 drug accuracies in each of 7 dataset comparisons",
     "2 - Simpsons Diversity Plots",
     "3 - MIC frequency & accuracy bar graphs",
+    "4 - Individual tests: acc vs feat size for each model, each dataset matchup",
     sep = '\n')
     return
 
@@ -202,8 +203,51 @@ if __name__ == "__main__":
                 plt.savefig('figures/accuracies_and_frequencies/'+dataset+'_'+drug+'.png',dpi=300)
                 plt.clf()
 
+    if(figure == '4' or figure =='all'):
+        if not os.path.exists(os.path.abspath(os.path.curdir)+'/figures/individual_tests/'):
+            os.mkdir(os.path.abspath(os.path.curdir)+'/figures/individual_tests/')
+        for direct in ([dirs for r,dirs,f in os.walk("results")][0]):
+            splits = direct.split('_')
 
-    if(figure not in ['0','1','2','3','all']):
+            # 2 splits means we are cross validating
+            if(len(splits)==2):
+                train = splits[0][0:-1]
+                drug = splits[1]
+                test = 'aCrossValidation'
+
+            # 3 splits means we are testing across datasets
+            else:
+                train = splits[0][0:-1]
+                test = splits[1]
+                drug = splits[2]
+
+            # filter the relevant parts from the dataframe
+            train_df = master_df['train']==train
+            test_df = master_df['test']==test
+            drug_df = master_df['drug']==drug
+            split_df = master_df[train_df & test_df & drug_df]
+
+            title_string = (("{} predictor trained on {}, tested on {}".format(drug, train, test)))
+
+            base = sns.relplot(x="feats", y="acc", hue="model",hue_order=["XGB","SVM","ANN"], kind="line", data=split_df)
+            plt.rcParams["axes.titlesize"] = 8
+            plt.title(title_string + ' (Direct)')
+            plt.ylim(0,1)
+            plt.xlim(0,10000)
+            plt.savefig('figures/individual_tests/0D_'+(title_string.replace(" ",""))+'.png',dpi=300)
+            plt.clf()
+
+
+            window = sns.relplot(x="feats", y="1Dacc", hue="model",hue_order=["XGB","SVM","ANN"], kind="line", data=split_df)
+            plt.rcParams["axes.titlesize"] = 8
+            plt.title(title_string + ' (1-Dilution)')
+            plt.ylim(0,1)
+            plt.xlim(0,10000)
+            plt.savefig('figures/individual_tests/1D_'+(title_string.replace(" ",""))+'.png',dpi=300)
+            plt.clf()
+
+
+    if(figure not in ['0','1','2','3', '4','all']):
         print("Did not pass a valid argument")
         usage()
         sys.exit(2)
