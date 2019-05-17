@@ -7,8 +7,35 @@ dump - jellyfish
 predict - load into matrix, spit out csv(from pandas)
 evaluate - if they have MIC's listed, evaluate the model
 """
-ids, = glob_wildcards("genomes/raw/{id}.fasta")
+ids, = glob_wildcards("predict/genomes/raw/{id}.fasta")
+cols_dict = {}
+relevant_feats = []
+def make_row(filename):
+    from Bio import Seq, SeqIO
+    """
+    Given a genome file, create and return a row of kmer counts
+    to be inserted into the kmer matrix.
+    """
+
+    # Create a temp row to fill and return (later placed in the kmer_matrix)
+    temp_row = [0]*len(relevant_feats)
+
+    # Walk through the file
+    for record in SeqIO.parse("predict/genomes/jellyfish_results/"+filename, "fasta"):
+        # Retrieve the sequence as a string
+        kmer_seq = record.seq
+        kmer_seq = kmer_seq._get_seq_str_and_check_alphabet(kmer_seq)
+
+        if(kmer_seq in relevant_feats):
+            kmer_count = int(record.id)
+            temp_row[cols_dict[filename]] = kmer_count
+
+    return filename, temp_row
+
+
 rule all:
+    input:
+        "predict/predictions.csv"
 
 rule clean:
     # This rule cleans fastas that have low coverage or have sequencing/assembly errors
@@ -21,14 +48,14 @@ rule clean:
 
 rule count:
     # Rules count and dump count the number of appearences of each kmer of length 11
-  input:
-    "predict/genomes/clean/{id}.fasta"
-  output:
-    temp("predict/genomes/jellyfish_results/{id}.jf")
-  threads:
-    2
-  shell:
-    "jellyfish count -C -m 11 -s 100M -t {threads} {input} -o {output}"
+    input:
+        "predict/genomes/clean/{id}.fasta"
+    output:
+        temp("predict/genomes/jellyfish_results/{id}.jf")
+    threads:
+        2
+    shell:
+        "jellyfish count -C -m 11 -s 100M -t {threads} {input} -o {output}"
 
 rule dump:
     input:
@@ -47,10 +74,25 @@ rule matrix:
         "predict/genomes/unfiltered/kmer_matrix.npy",
         "predict/genomes/unfiltered/kmer_rows.npy",
         "predict/genomes/unfiltered/kmer_cols.npy"
+    threads:
+        144
     run:
         import os, sys
-        import numpy
-        from Bio import Seq, SeqIO
+        import numpy as np
+        from concurrent.futures import ProcessPoolExecutor
+        from multiprocessing import cpu_count
+
+        num_start = 0
+        num_stop = 0
+        total = 0
+
+        def progress():
+            if(num_stop<total):
+                sys.stdout.write('\r')
+                sys.stdout.write("Loading Genomes: {} started, {} finished, {} total".format(num_start,num_stop,total))
+                sys.stdout.flush()
+            else:
+                print("\nAll Genomes Loaded!")
 
         # find all the possible features that are going to be used to make the prediction
         relevant_feats = []
@@ -62,24 +104,29 @@ rule matrix:
 
         # find all the genomes we were given, genomes are filenames and runs are sample names
         genomes = ([files for r,d,files in os.walk("predict/genomes/jellyfish_results/")][0])
+        total = len(genomes)
         runs = [i.split('.')[0] for i in genomes]
 
         # declaring empty kmer matrix to fill
         kmer_matrix = np.zeros((len(genomes),len(relevant_feats)),dtype = 'uint8')
 
         # making dicts for faster indexing
+        # note that rows dict is in filenames not genome/run names
         rows_dict = { genomes[i] : i for i in range(0, len(genomes))}
         cols_dict = { relevant_feats[i] : i for i in range(0, len(relevant_feats))}
 
-        # go through each genome
-        for genome in genomes:
-            for record in SeqIO.parse(genome, "fasta"):
-                kmer_seq = kmerseq._get_seq_str_and_check_alphabet(record.seq)
-                kmer_count = int(record.id)
-
-                # load kmer matrix at the correct cell if its a relevant kmer
-                if(kmer_seq in relevant_feats):
-                    kmer_matrix[rows_dict[genome]][cols_dict[kmer_seq]]=kmer_count
+        # Use concurrent futures to get multiple rows at the same time
+        # Then place completed rows into the matrix and update the row dictionary
+        num_start += min(cpu_count(),len(genomes))
+        progress()
+        with ProcessPoolExecutor(max_workers=cpu_count()) as ppe:
+            for genome_name,temp_row in ppe.map(make_row, genomes):
+                num_stop+=1
+                if(num_start<total):
+                    num_start+=1
+                progress()
+                for i, val in enumerate(temp_row):
+                    kmer_matrix[rows_dict[genome_name]][i] = val
 
         # save everything
         np.save("predict/genomes/unfiltered/kmer_matrix.npy", kmer_matrix)
@@ -141,7 +188,7 @@ rule predict:
             curr_matrix = curr_matrix[:,np.argsort(new_locations)]
 
             # load model
-            model = pickle.load(open("xgb_public_1000feats_{}model.dat".format(drug)."wb"))
+            model = pickle.load(open("xgb_public_1000feats_{}model.dat".format(drug),"wb"))
             predictions = [round(i) for i in model.predict(curr_matrix)]
 
             # predictions are currently encoded in 0,1,2,3,4 and we need MIC values'
@@ -155,5 +202,4 @@ rule predict:
                 predict_df.at[run_id,drug] = prediction
 
         # save the dataframe of predictions as a .csv
-
         predict_df.to_csv("predict/predictions.csv")

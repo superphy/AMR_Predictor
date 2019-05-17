@@ -217,8 +217,9 @@ if __name__ == "__main__":
 
 			save_model=False
 			if(save_model):
+				# note that for this to save properly, imp_feats must == 1
 				pickle.dump(model, open("predict/models/xgb_public_{}feats_{}model.dat".format(str(num_feats),predict_for),"wb"))
-				np.save("predict/features/{}feats_{}.npy".format(str(num_feats),predict_for), cols)
+				np.save("predict/features/{}feats_{}.npy".format(str(num_feats),predict_for), cols.flatten())
 				print("Model Saved, exiting model.py")
 				sys.exit()
 
