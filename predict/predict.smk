@@ -8,14 +8,17 @@ predict - load into matrix, spit out csv(from pandas)
 evaluate - if they have MIC's listed, evaluate the model
 """
 ids, = glob_wildcards("predict/genomes/raw/{id}.fasta")
-cols_dict = {}
-relevant_feats = []
+features = 1000
+
 def make_row(filename):
     from Bio import Seq, SeqIO
+    import numpy as np
     """
     Given a genome file, create and return a row of kmer counts
     to be inserted into the kmer matrix.
     """
+    relevant_feats = np.load("predict/features/relevant_feats_{}.npy".format(str(features)))
+    cols_dict = { relevant_feats[i] : i for i in range(0, len(relevant_feats))}
 
     # Create a temp row to fill and return (later placed in the kmer_matrix)
     temp_row = [0]*len(relevant_feats)
@@ -26,9 +29,10 @@ def make_row(filename):
         kmer_seq = record.seq
         kmer_seq = kmer_seq._get_seq_str_and_check_alphabet(kmer_seq)
 
+
         if(kmer_seq in relevant_feats):
             kmer_count = int(record.id)
-            temp_row[cols_dict[filename]] = kmer_count
+            temp_row[cols_dict[kmer_seq]] = kmer_count
 
     return filename, temp_row
 
@@ -87,20 +91,23 @@ rule matrix:
         total = 0
 
         def progress():
-            if(num_stop<total):
-                sys.stdout.write('\r')
-                sys.stdout.write("Loading Genomes: {} started, {} finished, {} total".format(num_start,num_stop,total))
-                sys.stdout.flush()
-            else:
-                print("\nAll Genomes Loaded!")
+            sys.stdout.write('\r')
+            sys.stdout.write("Loading Genomes: {} started, {} finished, {} total".format(num_start,num_stop,total))
+            sys.stdout.flush()
+            if(num_stop==total):
+                print("\nAll Genomes Loaded!\n")
 
         # find all the possible features that are going to be used to make the prediction
-        relevant_feats = []
-        for feat_array in ([files for r,d,files in os.walk("predict/features/")][0]):
-            relevant_feats = np.concatenate((relevant_feats, np.load("predict/features/"+feat_array)))
+        if not os.path.exists(os.path.abspath(os.path.curdir)+"/predict/features/relevant_feats_{}.npy".format(str(features))):
+            relevant_feats = []
+            for feat_array in ([files for r,d,files in os.walk("predict/features/")][0]):
+                relevant_feats = np.concatenate((relevant_feats, np.load("predict/features/"+feat_array)))
 
-        # remove any duplicates
-        relevant_feats = [i for i in set(relevant_feats)]
+            # remove any duplicates
+            relevant_feats = [i.decode('utf-8') for i in set(relevant_feats)]
+            np.save("predict/features/relevant_feats_{}.npy".format(str(features)),relevant_feats)
+        else:
+            relevant_feats = np.load("predict/features/relevant_feats_{}.npy".format(str(features)))
 
         # find all the genomes we were given, genomes are filenames and runs are sample names
         genomes = ([files for r,d,files in os.walk("predict/genomes/jellyfish_results/")][0])
@@ -149,6 +156,9 @@ rule predict:
         import pickle
         from sklearn import preprocessing
         from sklearn.externals import joblib
+        import os,sys
+
+        sys.path.insert(0, os.path.abspath(os.path.curdir)+"/src/")
         from data_transformers import remove_symbols
 
         drugs = ['AMP','AMC','AZM','CHL','CIP','CRO','FIS','FOX','GEN','NAL','SXT','TET','TIO']
@@ -172,7 +182,7 @@ rule predict:
         # go through each drug and make prediction for just that drug
         for drug in drugs:
             # just use the data relevant to this drug
-            drug_feats = np.load("predict/features/1000feats_"+drug+".npy")
+            drug_feats = np.load("predict/features/"+str(features)+"feats_"+drug+".npy")
             cols_dict = { kmer_cols[i] : i for i in range(0, len(kmer_cols))}
             feat_mask = [i in drug_feats for i in kmer_cols]
 
@@ -188,8 +198,9 @@ rule predict:
             curr_matrix = curr_matrix[:,np.argsort(new_locations)]
 
             # load model
-            model = pickle.load(open("xgb_public_1000feats_{}model.dat".format(drug),"wb"))
-            predictions = [round(i) for i in model.predict(curr_matrix)]
+            model = pickle.load(open("predict/models/xgb_public_{}feats_{}model.dat".format(str(features),drug),"rb"))
+
+            predictions = [round(i) for i in model.predict(curr_matrix, validate_features=False)]
 
             # predictions are currently encoded in 0,1,2,3,4 and we need MIC values'
             mic_dict = [remove_symbols(i) for i in mic_class_dict[drug]]
