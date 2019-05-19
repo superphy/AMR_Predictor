@@ -41,18 +41,3 @@ for mic in mics:
     mic_df[mic]=[remove_equality(i) for i in [remove_tail(i) for i in mic_df[mic]]]
 
 mic_df.to_excel("data/new_antibiogram_test.xlsx")
-
-
-"""
-old_mic_df = pd.read_excel('data/no_ecoli_GenotypicAMR_Master.xlsx')
-
-new_runs = mic_df['run']
-old_runs = old_mic_df['run']
-
-counter = 0
-for run in old_runs:
-    if run not in new_runs:
-        counter+=1
-
-print("missing", counter)
-"""

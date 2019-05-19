@@ -211,8 +211,7 @@ if __name__ == "__main__":
 				model = HyperoptEstimator(classifier=xgboost_classification('xbc'), preprocessing=[], algo=tpe.suggest, trial_timeout=200)
 			else:
 				model = XGBClassifier(objective=objective, silent=True, nthread=num_threads)
-			print(x_train, y_train)
-			print(num_classes)
+
 			model.fit(x_train,y_train)
 
 			save_model=False

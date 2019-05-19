@@ -7,7 +7,7 @@ if __name__ == '__main__':
     """
         This script takes in a text file in the format:
             Drug:AMC Genome:SRR1200748 Predicted:<=1.0000 Actual:2.0000 OBO:True Major?:NonMajor,
-        formats it into a pandas dataframe and then pickles it.
+        formats it into a pandas dataframe and then saves it as csv.
         Run as genome_error_table_converter.py {filepath}
     """
     with open(sys.argv[1]) as file:
@@ -59,4 +59,4 @@ if __name__ == '__main__':
         df['MajorError?'] = major1
 
         outputfile = sys.argv[1].split('.')[0]
-        df.to_pickle(outputfile+'.pkl')
+        df.to_csv(outputfile+'.csv')
