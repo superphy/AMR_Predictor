@@ -176,6 +176,7 @@ rule predict:
 		evaluate = False
 		try:
 			labels = pd.read_excel("predict/mic_labels.xlsx")
+			mic_df = joblib.load("predict/genomes/public_mic_class_dataframe.pkl")
 			evaluate = True
 		except:
 			print("No valid MIC labels provided, will return predictions without evaluation")
@@ -213,14 +214,14 @@ rule predict:
 			predictions = [round(i) for i in model.predict(curr_matrix, validate_features=False)]
 
 			# predictions are currently encoded in 0,1,2,3,4 and we need MIC values'
-			le.fit(mic_class_dict)
+			le.fit(mic_class_dict[drug])
 			predictions = le.inverse_transform(predictions)
 
 			# if there is a column for this drug, we need to make predictions for it
 			has_mic_labels = False
 			if(evaluate):
 				try:
-					drug_col = labels['MIC_'+drug]
+					drug_col = mic_df[drug]
 					has_mic_labels = True
 				except:
 					print("No valid column heading for {}, skipping evaluation.")
@@ -236,10 +237,11 @@ rule predict:
 
 				try:
 					# check to see if this genome has mic values for this drug
-					genome_index = (labels.loc[labels['run']==run_id]).index[0]
+					genome_index = list(mic_df.index).index(run_id)
 
 					# find what the correct prediction would be
 					actual = drug_col[genome_index]
+					assert(actual in mic_class_dict[drug])
 					off_by_one = False
 
 					# find indexing so we can compare without it being a log increase
@@ -249,18 +251,18 @@ rule predict:
 					if(pred_loc == act_loc):
 						# if we are in here, there was no error so we can just say that so we know how many predictions were evaluated
 						with open('predict/prediction_errors.txt', 'a') as myfile:
-							myfile.write("Correct")
+							myfile.write("\nCorrect:"+drug)
 						continue
 
 					if(pred_loc==act_loc+1 or pred_loc==act_loc-1):
 						#checking if the prediction was within 1 dilution of the actual value
 						off_by_one = True
 
-					# now we write all of the error information to file	
+					# now we write all of the error information to file
 					with open('predict/prediction_errors.txt', 'a') as myfile:
 						myfile.write("\nDrug:{} Genome:{} Predicted:{} Actual:{} OBO:{} Major?:{}".format(drug, run_id, prediction, actual, off_by_one,find_major(pred_loc,act_loc,drug,mic_class_dict)))
 				except:
-					print("Could not find a valid {} MIC for {}".format(drug, genome_eval))
+					print("Could not find a valid {} MIC for {}".format(drug, run_id))
 					continue
 
 
