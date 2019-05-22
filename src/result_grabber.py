@@ -58,5 +58,9 @@ if __name__ == "__main__":
 		for row in result_df.values:
 			correct += row[1] * row[3]
 
+		"""
+		print(result_df)
 		print("Accuracy:", correct/num_samples)
 		print("1D-Acc  :", result_df.values[0,4])
+		"""
+		print(result_df)

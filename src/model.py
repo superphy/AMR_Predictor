@@ -196,7 +196,7 @@ if __name__ == "__main__":
 			#creating an array of features that are persiting past feature selection
 			feat_indices = sk_obj.transform(feat_indices.reshape(1,-1))
 			feat_indices = feat_indices.flatten()
-			top_feat_mask  = np.zeros(len(cols))
+			top_feat_mask = np.zeros(len(cols))
 			top_feat_mask = np.asarray([i in feat_indices for i in range(len(cols))])
 			cols = cols[top_feat_mask]
 
@@ -212,15 +212,19 @@ if __name__ == "__main__":
 			else:
 				model = XGBClassifier(objective=objective, silent=True, nthread=num_threads)
 
-			model.fit(x_train,y_train)
-
 			save_model=False
 			if(save_model):
+				import xgboost as xgb
+				xg_train = xgb.DMatrix(x_train,y_train, feature_names=[i.decode('utf-8') for i in cols.flatten()])
+				param = {'objective':objective, 'num_class': len(mic_class_dict[drug])}
+				bst = xgb.train(param,xg_train)
 				# note that for this to save properly, imp_feats must == 1
-				pickle.dump(model, open("predict/models/xgb_public_{}feats_{}model.dat".format(str(num_feats),predict_for),"wb"))
+				joblib.dump(bst, "predict/models/xgb_public_{}feats_{}model.bst".format(str(num_feats),predict_for))
 				np.save("predict/features/{}feats_{}.npy".format(str(num_feats),predict_for), cols.flatten())
 				print("Model Saved, exiting model.py")
 				sys.exit()
+			else:
+				model.fit(x_train,y_train)
 
 			if(imp_feats):
 				feat_save = 'data/features/'+predict_for+'_'+str(num_feats)+'feats_'+model_type+'trainedOn'+train_string+'_testedOn'+test_string+'_fold'+str(split_counter)+'.npy'

@@ -15,7 +15,8 @@ def usage():
     "1 - Multibar graph, 13 sets of 7 bars detailing 13 drug accuracies in each of 7 dataset comparisons",
     "2 - Simpsons Diversity Plots",
     "3 - MIC frequency & accuracy bar graphs",
-    "4 - Individual tests: acc vs feat size for each model, each dataset matchup",
+    "4 - MIC frequency graphs"
+    "5 - Individual tests: acc vs feat size for each model, each dataset matchup",
     sep = '\n')
     return
 
@@ -34,6 +35,8 @@ def label_points(x, y, labels, ax):
             ax.text(x[i]+0.005, y[i]+0.005, label, fontsize = 7)
 
 drugs = ['AMC', 'AMP', 'AZM', 'CHL', 'CIP', 'CRO', 'FIS', 'FOX', 'SXT', 'TET', 'TIO', 'GEN', 'NAL']
+names = ['Amoxicillin','Ampicillin','Azithromycin','Chloramphenicol','Ciprofloxacin','Ceftriaxone','Sulfisoxazole',
+'Cefoxitin','Trimethoprim/Sulfamethoxazole','Tetracycline','Ceftiofur','Gentamicin','Nalidixic Acid']
 
 if __name__ == "__main__":
     if not os.path.exists(os.path.abspath(os.path.curdir)+'/figures'):
@@ -87,27 +90,33 @@ if __name__ == "__main__":
     master_df['1Dacc'] = pd.to_numeric(master_df['1Dacc'])
 
     if(figure == '0' or figure =='all'):
+        multi_df = master_df
         drop_counter = 0
-        for i, row in enumerate(master_df.values):
+        for i, row in enumerate(multi_df.values):
             #if(row[1]!='XGB' or row[3]!='public' or row[4]!='aCrossValidation'):
             if(row[3]!='public' or row[4]!='aCrossValidation'):
-                master_df = master_df.drop([i])
+                multi_df = multi_df.drop([i])
                 drop_counter+=1
         print("{} rows removed from master dataframe".format(drop_counter))
-        master_df = master_df.sort_values(by=['feats'])
+        multi_df = multi_df.sort_values(by=['feats'])
+
+        multi_df["drug"] = multi_df["drug"].map(dict(zip(drugs,names)))
 
         sns.set(style="ticks")
         #trying to print them all as one
-        grid = sns.FacetGrid(master_df, col = 'drug',hue ="model",hue_order=["XGB","SVM","ANN"], col_wrap = 4, margin_titles=False, legend_out=True)
-        #grid = sns.FacetGrid(master_df, col="model", hue ="model", row ="drug",hue_order=["XGB","SVM","ANN"],margin_titles=True)
-        grid = (grid.map(plt.plot, "feats", "1Dacc", alpha=1).add_legend())
+        grid = sns.FacetGrid(multi_df, col = 'drug',col_order = names,hue ="model",hue_order=["XGB","SVM","ANN"], col_wrap = 4, margin_titles=False, legend_out=True)
+        grid = (grid.map(plt.plot, "feats", "1Dacc", alpha=1).add_legend().set_titles("{col_name}"))
         #plt.ylim(0.8,1)
+        grid.fig.get_children()[-1].set_bbox_to_anchor((0.9,0.1,0,0))
+        plt.setp(grid._legend.get_texts(), fontsize='18')
+        plt.setp(grid._legend.get_title(), fontsize='20')
         grid.set_ylabels('Accuracy')
         grid.set_xlabels('Number of Features')
         plt.xlim(100,3000)
+        plt.ylim(0.8,1)
 
         #plt.legend(loc='lower right')
-        plt.savefig('figures/model_finder_multiface.png')
+        plt.savefig('figures/model_finder_multiface.png', dpi=600)
         plt.clf()
 
     if(figure == '1' or figure =='all'):
@@ -118,12 +127,12 @@ if __name__ == "__main__":
         # use only XGB models of 1000 features
         XGB_df = master_df['model']=='XGB'
         thousand_df = master_df['feats']==1000
-        master_df = master_df[XGB_df & thousand_df]
+        dataset_df = master_df[XGB_df & thousand_df]
 
         #cust_pal = ["windows blue", "amber", "greyish", "faded green", "dusty purple","cyan", "fire engine red"]
         cust_pal = ['fire engine red','water blue', 'bright lime','vibrant purple','cyan','strong pink','dark grass green']
         sns.set_palette(sns.xkcd_palette(cust_pal))
-        group = sns.catplot(x='drug', y = '1Dacc',hue = "train&test", data = master_df, kind = 'bar', legend_out =True)
+        group = sns.catplot(x='drug', y = '1Dacc',hue = "train&test", data = dataset_df, kind = 'bar', legend_out =True)
         plt.xlabel('Antimicrobial')
         plt.ylabel("Accuracy")
         group._legend.set_title('Dataset Comparison')
@@ -161,49 +170,66 @@ if __name__ == "__main__":
             plt.clf()
 
 
-    if(figure == '3' or figure =='all'):
-        if not os.path.exists(os.path.abspath(os.path.curdir)+'/figures/accuracies_and_frequencies/'):
-            os.mkdir(os.path.abspath(os.path.curdir)+'/figures/accuracies_and_frequencies/')
+    if(figure in ['3','4','all']):
+        if(figure != '4'):
+            if not os.path.exists(os.path.abspath(os.path.curdir)+'/figures/accuracies_and_frequencies/'):
+                os.mkdir(os.path.abspath(os.path.curdir)+'/figures/accuracies_and_frequencies/')
+        if(figure != '3'):
+            if not os.path.exists(os.path.abspath(os.path.curdir)+'/figures/frequencies/'):
+                os.mkdir(os.path.abspath(os.path.curdir)+'/figures/frequencies/')
 
-        #model_df = master_df['model'] == 'XGB'
-        #feats_df = master_df['feats'] == 1000
-        #test_df = master_df['test'] == 'aCrossValidation'
-        #current_df = master_df[ model_df & feats_df & test_df]
-        #print(current_df)
-        #sys.exit()
+        if(figure == 'all'):
+            figures = ['3','4']
+        else:
+            figures = [figure]
 
-        for set_number, dataset in enumerate(['public', 'grdi', 'kh']):
-            if dataset =='grdi':
-                with open('data/grdi_mic_class_order_dict.pkl','rb') as fh:
-                    class_dict = pickle.load(fh)
-            else:
-                with open('data/public_mic_class_order_dict.pkl','rb') as fh:
-                    class_dict = pickle.load(fh)
+        for figure in figures:
+            for set_number, dataset in enumerate(['public', 'grdi', 'kh']):
+                if dataset =='grdi':
+                    with open('data/grdi_mic_class_order_dict.pkl','rb') as fh:
+                        class_dict = pickle.load(fh)
+                else:
+                    with open('data/public_mic_class_order_dict.pkl','rb') as fh:
+                        class_dict = pickle.load(fh)
 
-            for drug in drugs:
-                if(dataset=='grdi' and drug == 'FIS'):
-                    continue
-                classes = [strip_tail(i) for i in class_dict[drug]]
-                with open('results/'+dataset+str(set_number+1)+'_'+drug+'/'+drug+'_1000feats_XGBtrainedOn'+dataset+'_testedOnaCrossValidation.pkl','rb') as fh:
-                    single_df = pickle.load(fh)
-                ax = sns.barplot(y='Supports', x=classes, data = single_df)
-                plt.xlabel('Minimum Inhibitory Concentration (mg/L)')
-                plt.ylabel('No. Genomes')
-
-                # Append the accuracies to the tops of the bars
-                for i, p in enumerate(ax.patches):
-                    if i >= len(single_df.values[:,0]+1):
-                        break
-                    height = p.get_height()
-                    acc1d = float('{:1.2f}'.format(single_df.values[i,1]))
-                    if height == 0:
+                for drug in drugs:
+                    if(dataset=='grdi' and drug == 'FIS'):
                         continue
-                    ax.text(p.get_x() + p.get_width()/2., p.get_height() + 3, str(int(acc1d*100))+'%' , ha="center")
-                ax.set_title(dataset+' '+drug+' MIC Frequencies')
-                plt.savefig('figures/accuracies_and_frequencies/'+dataset+'_'+drug+'.png',dpi=300)
-                plt.clf()
+                    classes = [strip_tail(i) for i in class_dict[drug]]
+                    with open('results/'+dataset+str(set_number+1)+'_'+drug+'/'+drug+'_1000feats_XGBtrainedOn'+dataset+'_testedOnaCrossValidation.pkl','rb') as fh:
+                        single_df = pickle.load(fh)
+                    ax = sns.barplot(y='Supports', x=classes, data = single_df)
+                    plt.xlabel('Minimum Inhibitory Concentration (mg/L)')
+                    plt.ylabel('Number of Genomes')
 
-    if(figure == '4' or figure =='all'):
+                    if(figure == '3'):
+                        # Append the accuracies to the tops of the bars
+                        for i, p in enumerate(ax.patches):
+                            if i >= len(single_df.values[:,0]+1):
+                                break
+                            height = p.get_height()
+                            acc1d = float('{:1.2f}'.format(single_df.values[i,1]))
+                            if height == 0:
+                                continue
+                            ax.text(p.get_x() + p.get_width()/2., p.get_height() + 3, str(int(acc1d*100))+'%' , ha="center")
+                        ax.set_title(dataset+' '+drug+' MIC Frequencies')
+                        plt.savefig('figures/accuracies_and_frequencies/'+dataset+'_'+drug+'.png',dpi=300)
+                        plt.clf()
+                    if(figure == '4'):
+                        # Append the frequencies to the tops of the bars
+                        for i, p in enumerate(ax.patches):
+                            if i >= len(single_df.values[:,0]+1):
+                                break
+                            height = p.get_height()
+                            count = single_df.values[i,3]
+                            if height == 0:
+                                continue
+                            ax.text(p.get_x() + p.get_width()/2., p.get_height() + 3, str(int(count)) , ha="center")
+                        ax.set_title(dataset+' '+drug+' MIC Frequencies')
+                        plt.savefig('figures/frequencies/'+dataset+'_'+drug+'.png',dpi=300)
+                        plt.clf()
+
+    if(figure == '5' or figure =='all'):
         if not os.path.exists(os.path.abspath(os.path.curdir)+'/figures/individual_tests/'):
             os.mkdir(os.path.abspath(os.path.curdir)+'/figures/individual_tests/')
         for direct in ([dirs for r,dirs,f in os.walk("results")][0]):
@@ -221,6 +247,9 @@ if __name__ == "__main__":
                 test = splits[1]
                 drug = splits[2]
 
+            if(drug == 'FIS' and (train == 'grdi' or test == 'grdi')):
+                continue
+
             # filter the relevant parts from the dataframe
             train_df = master_df['train']==train
             test_df = master_df['test']==test
@@ -235,6 +264,8 @@ if __name__ == "__main__":
             plt.title(title_string + ' (Direct)')
             plt.ylim(0,1)
             plt.xlim(0,10000)
+            plt.xlabel('Number of Features')
+            plt.ylabel('Accuracy')
             plt.savefig('figures/individual_tests/0D_'+(title_string.replace(" ",""))+'.png',dpi=300)
             plt.clf()
 
@@ -244,11 +275,13 @@ if __name__ == "__main__":
             plt.title(title_string + ' (1-Dilution)')
             plt.ylim(0,1)
             plt.xlim(0,10000)
+            plt.xlabel('Number of Features')
+            plt.ylabel('Accuracy')
             plt.savefig('figures/individual_tests/1D_'+(title_string.replace(" ",""))+'.png',dpi=300)
             plt.clf()
 
 
-    if(figure not in ['0','1','2','3', '4','all']):
+    if(figure not in ['0','1','2','3','4','5','all']):
         print("Did not pass a valid argument")
         usage()
         sys.exit(2)
