@@ -216,11 +216,12 @@ if __name__ == "__main__":
 			if(save_model):
 				import xgboost as xgb
 				xg_train = xgb.DMatrix(x_train,y_train, feature_names=[i.decode('utf-8') for i in cols.flatten()])
-				param = {'objective':objective, 'num_class': len(mic_class_dict[drug])}
+				param = {'objective':objective, 'num_class': num_classes_obj}
 				bst = xgb.train(param,xg_train)
 				# note that for this to save properly, imp_feats must == 1
 				joblib.dump(bst, "predict/models/xgb_public_{}feats_{}model.bst".format(str(num_feats),predict_for))
 				np.save("predict/features/{}feats_{}.npy".format(str(num_feats),predict_for), cols.flatten())
+				np.save("predict/features/{}feats_le_{}.npy".format(str(num_feats),predict_for),le.classes_)
 				print("Model Saved, exiting model.py")
 				sys.exit()
 			else:

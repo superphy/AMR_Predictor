@@ -29,8 +29,8 @@ def strip_tail(mic_str):
 
 def label_points(x, y, labels, ax):
     for i, label in enumerate(labels):
-        if label == 'CHL':
-            ax.text(x[i]+0.005, y[i]-0.005, label, fontsize = 7)
+        if label in ['CHL', 'NAL']:
+            ax.text(x[i]+0.005, y[i]-0.009, label, fontsize = 7)
         else:
             ax.text(x[i]+0.005, y[i]+0.005, label, fontsize = 7)
 
@@ -129,10 +129,30 @@ if __name__ == "__main__":
         thousand_df = master_df['feats']==1000
         dataset_df = master_df[XGB_df & thousand_df]
 
-        #cust_pal = ["windows blue", "amber", "greyish", "faded green", "dusty purple","cyan", "fire engine red"]
+        if not os.path.exists(os.path.abspath(os.path.curdir)+'/figures/dataset_comparisons/'):
+            os.mkdir(os.path.abspath(os.path.curdir)+'/figures/dataset_comparisons/')
+
+        group = sns.catplot(x='train&test', y = '1Dacc',hue = "drug",hue_order=drugs, data = dataset_df, kind = 'bar', legend_out=True)
+        plt.xlabel('Dataset Comparison')
+        plt.ylabel("Accuracy")
+        group._legend.set_title('Antimicrobial')
+        bar_titles = [
+        'Trained on GRDI,\nTested on Public', '\n\n\nTrained on kh,\nTested on GRDI',
+        'Trained on GRDI,\nTested on kh','\n\n\nTrained on kh\nwith 5-Fold\nCross Validation',
+        'Trained on Public,\nTested on GRDI','\n\n\nTrained on Public\nwith 5-Fold\nCross Validation',
+        'Trained on GRDI with\n5-Fold Cross Validation']
+        for text, label in zip(group._legend.texts, names):
+            text.set_text(label)
+        group.set_xticklabels(bar_titles)
+        plt.xticks(rotation=0, fontsize = 7, horizontalalignment='center')
+        group.fig.get_children()[-1].set_bbox_to_anchor((1.325,0.6,0,0))
+        plt.setp(group._legend.get_title(), fontsize='18')
+        plt.savefig('figures/dataset_comparisons/dataset_clusters.png', dpi=300, bbox_inches='tight')
+        plt.clf()
+
         cust_pal = ['fire engine red','water blue', 'bright lime','vibrant purple','cyan','strong pink','dark grass green']
         sns.set_palette(sns.xkcd_palette(cust_pal))
-        group = sns.catplot(x='drug', y = '1Dacc',hue = "train&test", data = dataset_df, kind = 'bar', legend_out =True)
+        group = sns.catplot(x='drug', y = '1Dacc',hue = "train&test", order=drugs, data = dataset_df, kind = 'bar', legend_out =True)
         plt.xlabel('Antimicrobial')
         plt.ylabel("Accuracy")
         group._legend.set_title('Dataset Comparison')
@@ -144,7 +164,7 @@ if __name__ == "__main__":
         for text, label in zip(group._legend.texts, bar_titles):
             text.set_text(label)
         plt.xticks(rotation=-30)
-        plt.savefig('figures/dataset_comparisons.png', dpi=300)
+        plt.savefig('figures/dataset_comparisons/drug_clusters.png', dpi=300)
         plt.clf()
 
     if(figure == '2' or figure =='all'):
@@ -158,8 +178,8 @@ if __name__ == "__main__":
 
         for dataset in ['public', 'kh']:
             ax = sns.lmplot(dataset, 'grdi', data = simp_df, fit_reg = False)
-            plt.xlabel('Simpsons Diversity In The '+dataset+' Data Set')
-            plt.ylabel("Simpsons Diversity In The grdi Data Set")
+            plt.xlabel('Simpsons Diversity In The '+dataset.capitalize()+' Data Set')
+            plt.ylabel("Simpsons Diversity In The GRDI Data Set")
             plt.xlim(0,0.75)
             plt.ylim(0,0.75)
             if(dataset=='public'):

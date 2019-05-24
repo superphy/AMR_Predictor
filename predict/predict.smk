@@ -157,6 +157,7 @@ rule predict:
 		from sklearn import preprocessing
 		from sklearn.externals import joblib
 		import os,sys
+		import xgboost as xgb
 
 		sys.path.insert(0, os.path.abspath(os.path.curdir)+"/src/")
 		from data_transformers import remove_symbols
@@ -164,9 +165,7 @@ rule predict:
 
 		drugs = ['AMP','AMC','AZM','CHL','CIP','CRO','FIS','FOX','GEN','NAL','SXT','TET','TIO']
 
-		# predictions will be encoded into 0,1,2,3... so we need to bring them back to MIC values
-		le = preprocessing.LabelEncoder()
-		mic_class_dict = joblib.load("data/public_mic_class_order_dict.pkl")
+		mic_class_dict = joblib.load("predict/genomes/public_mic_class_order_dict.pkl")
 
 		# load in 2D matrix of kmer counts, columns are kmers and rows are genomes so
 		# kmer_matrix[genome][kmer] returns how many times that kmer was seen in that genome
@@ -191,9 +190,11 @@ rule predict:
 
 		# go through each drug and make prediction for just that drug
 		for drug in drugs:
-			# just use the data relevant to this drug
+			# just use the data relevant to this drug, drug feats is in bytes, kmer_cols is not
 			drug_feats = np.load("predict/features/"+str(features)+"feats_"+drug+".npy")
-			cols_dict = { kmer_cols[i] : i for i in range(0, len(kmer_cols))}
+			drug_feats = [i.decode('utf-8') for i in drug_feats]
+
+			cols_dict = { drug_feats[i] : i for i in range(0, len(drug_feats))}
 			feat_mask = [i in drug_feats for i in kmer_cols]
 
 			# transpose, apply mask, transpose again
@@ -206,15 +207,31 @@ rule predict:
 
 			# return new kmer_matrix with cols in the correct spot
 			curr_matrix = curr_matrix[:,np.argsort(new_locations)]
+			curr_cols = curr_cols[np.argsort(new_locations)]
 
-			# load model
-			model = pickle.load(open("predict/models/xgb_public_{}feats_{}model.dat".format(str(features),drug),"rb"))
+			# load booster
+			bst = joblib.load("predict/models/xgb_public_{}feats_{}model.bst".format(str(features),drug))
+
+			# we can pull the new features list from the xgboost booster to ensure the features are in the same order
+			booster_names = bst.feature_names
+
+			# create a dmatrix for testing
+			dtest = xgb.DMatrix(curr_matrix,feature_names=curr_cols)
+
+			# verifying that the columns we are loading in are in the same order as when the model was trained
+			for train_kmer, test_kmer in zip(drug_feats,curr_cols):
+				try:
+					assert(train_kmer==test_kmer)
+				except:
+					print("Expected kmer {} but got {}".format(train_kmer,test_kmer))
+					sys.exit()
 
 			# if your GPU has a compute capability below 3.5 this next line will fail
-			predictions = [round(i) for i in model.predict(curr_matrix, validate_features=False)]
+			predictions = [int(round(i)) for i in bst.predict(dtest, validate_features = True)]
 
-			# predictions are currently encoded in 0,1,2,3,4 and we need MIC values'
-			le.fit(mic_class_dict[drug])
+			# predictions will be encoded into 0,1,2,3... so we need to bring them back to MIC values
+			le = preprocessing.LabelEncoder()
+			le.classes_ = np.load("predict/features/1000feats_le_{}.npy".format(drug))
 			predictions = le.inverse_transform(predictions)
 
 			# if there is a column for this drug, we need to make predictions for it
@@ -235,7 +252,8 @@ rule predict:
 			for prediction, run_id in zip(predictions, kmer_rows):
 				predict_df.at[run_id,drug] = prediction
 
-				try:
+				#try:
+				if(True):
 					# check to see if this genome has mic values for this drug
 					genome_index = list(mic_df.index).index(run_id)
 
@@ -261,9 +279,9 @@ rule predict:
 					# now we write all of the error information to file
 					with open('predict/prediction_errors.txt', 'a') as myfile:
 						myfile.write("\nDrug:{} Genome:{} Predicted:{} Actual:{} OBO:{} Major?:{}".format(drug, run_id, prediction, actual, off_by_one,find_major(pred_loc,act_loc,drug,mic_class_dict)))
-				except:
-					print("Could not find a valid {} MIC for {}".format(drug, run_id))
-					continue
+				#except:
+				#	print("Could not find a valid {} MIC for {}".format(drug, run_id))
+				#	continue
 
 
 
