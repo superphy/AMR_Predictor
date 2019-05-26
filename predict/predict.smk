@@ -36,7 +36,6 @@ def make_row(filename):
 
 	return filename, temp_row
 
-
 rule all:
 	input:
 		"predict/predictions.csv"
@@ -231,7 +230,7 @@ rule predict:
 
 			# predictions will be encoded into 0,1,2,3... so we need to bring them back to MIC values
 			le = preprocessing.LabelEncoder()
-			le.classes_ = np.load("predict/features/1000feats_le_{}.npy".format(drug))
+			le.classes_ = np.asarray(mic_class_dict[drug])
 			predictions = le.inverse_transform(predictions)
 
 			# if there is a column for this drug, we need to make predictions for it
@@ -252,14 +251,14 @@ rule predict:
 			for prediction, run_id in zip(predictions, kmer_rows):
 				predict_df.at[run_id,drug] = prediction
 
-				#try:
-				if(True):
+				try:
 					# check to see if this genome has mic values for this drug
 					genome_index = list(mic_df.index).index(run_id)
 
 					# find what the correct prediction would be
 					actual = drug_col[genome_index]
 					assert(actual in mic_class_dict[drug])
+
 					off_by_one = False
 
 					# find indexing so we can compare without it being a log increase
@@ -279,9 +278,9 @@ rule predict:
 					# now we write all of the error information to file
 					with open('predict/prediction_errors.txt', 'a') as myfile:
 						myfile.write("\nDrug:{} Genome:{} Predicted:{} Actual:{} OBO:{} Major?:{}".format(drug, run_id, prediction, actual, off_by_one,find_major(pred_loc,act_loc,drug,mic_class_dict)))
-				#except:
-				#	print("Could not find a valid {} MIC for {}".format(drug, run_id))
-				#	continue
+				except:
+					print("Could not find a valid {} MIC for {}".format(drug, run_id))
+					continue
 
 
 
@@ -290,3 +289,73 @@ rule predict:
 
 		if(evaluate):
 			shell("python src/genome_error_table_converter.py predict/prediction_errors.txt")
+
+			# create a dataframe for the results to be stored in as we read them
+			results_df = pd.DataFrame(data = np.zeros((13,6)),index = drugs,columns=['Accuracy (1D)','Accuracy (Direct)',
+			'Total Predictions','Non-Major Error Rate','Major Error Rate','Very Major Error Rate'])
+
+			# we are going to walk line by line classifying results
+			with open("predict/prediction_errors.txt") as file:
+				for line_num, line in enumerate(file):
+
+					# looking at the first 5 characters we can see if the prediction was correct or if it was an error
+					first_word = line[:5]
+
+					# if it was an error we need to collect what type it was
+					if(first_word=='Drug:'):
+
+						# this is the ordering of how the errors are written to the file
+						drug, genome, pred, act, off_by_one, major = line.split(' ')
+
+						# we need to split off all the english to just get the keyvalue
+						drug = drug.split(':')[1]
+						off_by_one = off_by_one.split(':')[1]
+						major = major.split(':')[1]
+
+						# lines end with a \n that we need to remove
+						major = major.rstrip()
+
+						# based on what we find we need to increment the correct value in the dataframe, we will convert to % later
+						results_df.at[drug,'Total Predictions']+=1
+						if(off_by_one=='True'):
+							results_df.at[drug,'Accuracy (1D)']+=1
+						if(major=='NonMajor'):
+							results_df.at[drug,'Non-Major Error Rate']+=1
+						elif(major=='Major'):
+							results_df.at[drug,'Major Error Rate']+=1
+						elif(major=='VeryMajor'):
+							results_df.at[drug,'Very Major Error Rate']+=1
+						else:
+							raise Exception("Major rate not able to be properly classified")
+
+					# if the prediction was correct we simply increment both accuracies
+					elif(first_word=='Corre'):
+						drug = line.split(':')[1]
+						drug = drug.rstrip()
+						results_df.at[drug,'Total Predictions']+=1
+						results_df.at[drug,'Accuracy (1D)']+=1
+						results_df.at[drug,'Accuracy (Direct)']+=1
+
+					elif(first_word=='\n'):
+						# this is intentionally left empty to skip newline chars
+						continue
+
+					else:
+						raise Exception("An unexpected {} was found in prediction_errors on line {}".format(first_word,line_num+1))
+
+			# now we want to generate rates from raw numbers
+			for drug in drugs:
+				# for accuracies we divide raw counts by total predictions
+				total = results_df['Total Predictions'][drug]
+				results_df.at[drug,'Accuracy (1D)'] = results_df['Accuracy (1D)'][drug] / total
+				results_df.at[drug,'Accuracy (Direct)'] = results_df['Accuracy (Direct)'][drug] / total
+
+				# for errors we divide raw counts by the sum of the different types of errors
+				num_errors = 0
+				for error_type in ['Non-Major Error Rate','Major Error Rate','Very Major Error Rate']:
+					num_errors+= results_df[error_type][drug]
+				results_df.at[drug,'Non-Major Error Rate'] = results_df['Non-Major Error Rate'][drug] / num_errors
+				results_df.at[drug,'Major Error Rate'] = results_df['Major Error Rate'][drug] / num_errors
+				results_df.at[drug,'Very Major Error Rate'] = results_df['Very Major Error Rate'][drug] / num_errors
+
+			results_df.to_csv("predict/results.csv")
