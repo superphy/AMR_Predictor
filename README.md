@@ -6,13 +6,17 @@ Machine learning methods to predict the anti-microbial resistance of Salmonella.
 2. [Download anaconda or miniconda (python 3.7)](https://conda.io/miniconda.html (python 3.7)), instructions for that [are here](https://conda.io/docs/user-guide/install/index.html)
 3. Install dependecies: run `conda env create -f data/envi.yaml`
 
-If you do not have MIC labels and only want predictions, skip to step 6
+If you do not have your own MIC labels and would like to use ours (from NCBI SRA May 2019) skip to step 5
 
-4. Name your labels as mic_labels.xlsx and put them in predict/mic_labels.xlsx
+If you only want predictions with no evaluations, remove predict/mic_labels.xlsx and skip to step 6
+
+If you have your own mic labels, proceed with step 4
+
+4. Name your labels as mic_labels.xlsx and replace predict/mic_labels.xlsx
 
 In mic_labels.xlsc the names of the genomes need to be in a column titled run and the MIC values need to be in columns labeled  like MIC_AMP, MIC_AMC, etc
 
-See data/no_ecoli_GenotypicAMR_Master.xlsx for acceptable MIC formats
+See predict/mic_labels.xlsx for acceptable MIC formats
 
 5. Run `snakemake -s predict/mic_clean.smk`
 6. Place genomes in predict/genomes/raw
