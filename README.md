@@ -7,6 +7,7 @@ Machine learning methods to predict the anti-microbial resistance of Salmonella.
 3. Install dependecies: run `conda env create -f data/envi.yaml`
 
 If you do not have MIC labels and only want predictions, skip to step 6
+
 4. Name your labels as mic_labels.xlsx and put them in predict/mic_labels.xlsx
 
 In mic_labels.xlsc the names of the genomes need to be in a column titled run and the MIC values need to be in columns labeled  like MIC_AMP, MIC_AMC, etc
