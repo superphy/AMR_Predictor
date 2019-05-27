@@ -12,7 +12,7 @@ top_x_feats = '5'
 drug = 'AMP'
 
 # Number of features the model was train on
-feats = '3000'
+feats = '1000'
 
 # Training set
 train ='public'
@@ -36,9 +36,9 @@ rule prokka:
     output:
         "annotation/annotated_genomes/{id}/{id}.ffn",
     threads:
-        7
+        1
     shell:
-        "prokka {input} --outdir annotation/annotated_genomes/{wildcards.id} --prefix {wildcards.id} --cpus {threads} --force"
+        "prokka {input} --outdir annotation/annotated_genomes/{wildcards.id} --prefix {wildcards.id} --cpus {threads} --force --compliant"
 
 rule single_line:
     input:
