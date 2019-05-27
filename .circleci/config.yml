@@ -1,15 +1,65 @@
-# Use the latest 2.1 version of CircleCI pipeline processing engine, see https://circleci.com/docs/2.0/configuration-reference/
 version: 2.1
 
-# Use a package of configuration called an orb, see https://circleci.com/docs/2.0/orb-intro/
-orbs:
-  # Declare a dependency on the welcome-orb
-  welcome: circleci/welcome-orb@0.3.1
+jobs:
+    conda:
+      docker:
+        - image: circleci/python:3.6.5
+      steps:
+        - checkout
+        - run: conda env create -f data/envi.yaml
+        - run: source activate skmer
+        - persist_to_workspace:
+            root: amr_predictor
+            paths:
+              - echo-output
 
-# Orchestrate or schedule a set of jobs, see https://circleci.com/docs/2.0/workflows/
+    train:
+      docker:
+        - image: circleci/python:3.6.5
+      steps:
+        - checkout
+        - run: echo "in job train"
+        - attach_workspace:
+            at: amr_predictor
+        - run:
+            conda list | wc -l
+
+
+    predict:
+      docker:
+        - image: circleci/python:3.6.5
+      steps:
+        - checkout
+        - run: echo "in job predict"
+        - attach_workspace:
+            at: amr_predictor
+        - run:
+            conda list | wc -l
+
+
+    annotate:
+      docker:
+        - image: circleci/python:3.6.5
+      steps:
+        - checkout
+        - run: echo "in job annotate"
+        - attach_workspace:
+            at: amr_predictor
+        - run:
+            conda list | wc -l
+
 workflows:
-  # Name the workflow "Welcome"
-  Welcome:
-    # Run the welcome/run job in its own container
+  version: 2
+  all:
     jobs:
-      - welcome/run
+      - conda
+      - train
+          requires:
+            - conda
+      - predict
+          requires:
+            - conda
+      - annotate
+          requires:
+            - conda
+            - train
