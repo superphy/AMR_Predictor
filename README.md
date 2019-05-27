@@ -14,7 +14,7 @@ If you have your own mic labels, proceed with step 4
 
 4. Name your labels as mic_labels.xlsx and replace predict/mic_labels.xlsx
 
-In mic_labels.xlsc the names of the genomes need to be in a column titled run and the MIC values need to be in columns labeled  like MIC_AMP, MIC_AMC, etc
+In mic_labels.xlsx the names of the genomes need to be in a column titled run and the MIC values need to be in columns labeled  like MIC_AMP, MIC_AMC, etc
 
 See predict/mic_labels.xlsx for acceptable MIC formats
 
