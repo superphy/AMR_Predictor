@@ -35,6 +35,14 @@ See data/no_ecoli_GenotypicAMR_Master.xlsx for acceptable MIC formats
    `snakemake -s src/run_XGB_SVM_tests_slurm.smk && hyperas.smk`(if using slurm) 
 9. Run `all_data_figures.py all` to save all the results as figures
 
+Figures can be found in figures/
+
+To find the results of an individual test, run `result_grabber.py --help` 
+
+10. If you would like to annotate your genomes, run `snakemake -j X -s annotation/annotate.smk`
+
+The resulting annotations and the location of the most import regions to the machine learning models can be found in annotation/
+
 ### Manually Running Tests
 If you do not want to run all tests in step 8 above, run `src/model.py --help` to see how to run the model for a specific set of parameters.
 
