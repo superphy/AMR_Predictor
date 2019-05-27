@@ -53,13 +53,13 @@ workflows:
   all:
     jobs:
       - conda
-      - train
+      - train:
           requires:
             - conda
-      - predict
+      - predict:
           requires:
             - conda
-      - annotate
+      - annotate:
           requires:
             - conda
             - train
