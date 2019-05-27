@@ -3,7 +3,7 @@ version: 2.1
 jobs:
     conda:
       docker:
-        - image: circleci/python:3.6.5
+        - image: bioconda/bioconda-utils-build-env
       steps:
         - checkout
         - run: conda env create -f data/envi.yaml
