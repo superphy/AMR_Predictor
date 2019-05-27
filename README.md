@@ -43,7 +43,13 @@ Figures can be found in figures/
 
 To find the results of an individual test, run `result_grabber.py --help` 
 
-10. If you would like to annotate your genomes, run `snakemake -j X -s annotation/annotate.smk`
+10. If you would like to annotate the genomes and map back the top features:
+
+run model.py with the -i flag, e.g. `python src/model.py -x public -f 1000 -a AMP -i`
+
+Set the parameters in annotation/annotate.smk
+
+run `snakemake -j X -s annotation/annotate.smk`
 
 The resulting annotations and the location of the most import regions to the machine learning models can be found in annotation/
 
