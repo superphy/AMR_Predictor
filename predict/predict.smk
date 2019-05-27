@@ -321,12 +321,12 @@ rule predict:
 							results_df.at[drug,'Accuracy (1D)']+=1
 						if(major=='NonMajor'):
 							results_df.at[drug,'Non-Major Error Rate']+=1
-						elif(major=='Major'):
+						elif(major=='MajorError'):
 							results_df.at[drug,'Major Error Rate']+=1
-						elif(major=='VeryMajor'):
+						elif(major=='VeryMajorError'):
 							results_df.at[drug,'Very Major Error Rate']+=1
 						else:
-							raise Exception("Major rate not able to be properly classified")
+							raise Exception("Major rate: {} not able to be properly classified".format(major))
 
 					# if the prediction was correct we simply increment both accuracies
 					elif(first_word=='Corre'):
@@ -350,12 +350,12 @@ rule predict:
 				results_df.at[drug,'Accuracy (1D)'] = results_df['Accuracy (1D)'][drug] / total
 				results_df.at[drug,'Accuracy (Direct)'] = results_df['Accuracy (Direct)'][drug] / total
 
-				# for errors we divide raw counts by the sum of the different types of errors
+				# for errors we divide raw counts by total predictions
 				num_errors = 0
 				for error_type in ['Non-Major Error Rate','Major Error Rate','Very Major Error Rate']:
 					num_errors+= results_df[error_type][drug]
-				results_df.at[drug,'Non-Major Error Rate'] = results_df['Non-Major Error Rate'][drug] / num_errors
-				results_df.at[drug,'Major Error Rate'] = results_df['Major Error Rate'][drug] / num_errors
-				results_df.at[drug,'Very Major Error Rate'] = results_df['Very Major Error Rate'][drug] / num_errors
+				results_df.at[drug,'Non-Major Error Rate'] = results_df['Non-Major Error Rate'][drug] / total
+				results_df.at[drug,'Major Error Rate'] = results_df['Major Error Rate'][drug] / total
+				results_df.at[drug,'Very Major Error Rate'] = results_df['Very Major Error Rate'][drug] / total
 
 			results_df.to_csv("predict/results.csv")
