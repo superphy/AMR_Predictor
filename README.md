@@ -17,7 +17,7 @@ See data/no_ecoli_GenotypicAMR_Master.xlsx for acceptable MIC formats
 5. Run `snakemake -s predict/mic_clean.smk`
 6. Place genomes in predict/genomes/raw
 7. Run `snakemake -j X -s predict/predict.smk` where X is the number of cores you wish to use
-8. View results in predict/results.csv
+8. View results in predict/results.csv or predictions in predict/predictions.csv
 
 ## If you would like to run all of the tests
 1. Clone repository (run `git clone https://github.com/superphy/AMR_Predictor.git`)
