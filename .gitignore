@@ -95,3 +95,7 @@ amr_data/
 data/Resolved*
 slurm*
 results/
+annotation/SRR*
+annotation/annotated_genomes/*
+annotation/feature_summary*
+citations*

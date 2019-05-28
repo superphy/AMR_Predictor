@@ -1,65 +1,52 @@
-version: 2.1
+version: 2
 
 jobs:
-    conda:
+    train:
       docker:
         - image: continuumio/anaconda3:5.0.1
       steps:
         - checkout
         - run: conda env create -f data/envi.yaml
         - run: source activate skmer
-        - persist_to_workspace:
-            root: amr_predictor
-            paths:
-              - echo-output
-
-    train:
-      docker:
-        - image: continuumio/anaconda3:5.0.1
-      steps:
-        - checkout
-        - run: echo "in job train"
-        - attach_workspace:
-            at: amr_predictor
-        - run:
-            conda list | wc -l
-
+        - run: mkdir -p data/genomes/raw
+        - run: mkdir -p data/grdi_genomes/raw
+        - run: cp .circleci/test_data/*.fasta data/genomes/raw
+        - run: mv .circleci/test_data/*.fasta data/grdi_genomes/raw
+        - run: cp .circleci/test_data/test_labels.xlsx data/no_ecoli_GenotypicAMR_Master.xlsx
+        - run: mv .circleci/test_data/test_labels.xlsx "data/ResolvedCIPARS_SRL (1).xlsx"
+        - run: snakemake
+        - run: python src/model.py -x public -y grdi -a AMP -f 100 -i
 
     predict:
       docker:
         - image: continuumio/anaconda3:5.0.1
       steps:
         - checkout
-        - run: echo "in job predict"
-        - attach_workspace:
-            at: amr_predictor
-        - run:
-            conda list | wc -l
-
-
+        - run: conda env create -f data/envi.yaml
+        - run: source activate skmer
+        - run: mkdir predict/genomes/raw
+        - run: mv .circleci/test_data/SRR2407633.fasta predict/genomes/raw
+        - run: mv .circleci/test_data/test_labels.xlsx predict/mic_labels.xlsx
+        - run: snakemake -s predict/mic_clean.smk
+        - run: snakemake -s predict/predict.smk
+        - run: head predict/results.csv
+        
     annotate:
       docker:
         - image: continuumio/anaconda3:5.0.1
       steps:
         - checkout
-        - run: echo "in job annotate"
-        - attach_workspace:
-            at: amr_predictor
-        - run:
-            conda list | wc -l
+        - run: conda env create -f data/envi.yaml
+        - run: source activate skmer
+        - run: mkdir predict/genomes/clean
+        - run: mv .circleci/test_data/SRR2407633.fasta predict/genomes/clean
+        - run: snakemake -s annotation/annotate.smk
+
 
 workflows:
   version: 2
   all:
     jobs:
-      - conda
       - train:
-          requires:
-            - conda
       - predict:
-          requires:
-            - conda
       - annotate:
-          requires:
-            - conda
-            - train
