@@ -190,7 +190,7 @@ dependencies:
   - perl-html-parser=3.72=pl5.22.0_1
   - perl-html-tableextract=2.13=0
   - perl-html-tagset=3.20=pl5.22.0_1
-  - perl-html-tidy=1.56=1CondaValueError: Malformed version string '~': invalid character(s).
+  - perl-html-tidy=1.56=1
   - perl-html-tree=5.03=0
   - perl-html-treebuilder-xpath=0.14=0
   - perl-http-cookies=6.01=0
@@ -418,3 +418,4 @@ dependencies:
     - widgetsnbextension==3.2.1
     - xgboost==0.82
 prefix: /home/CSCScience.ca/rsteinkey/.conda/envs/skmer
+
