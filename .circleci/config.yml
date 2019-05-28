@@ -3,7 +3,7 @@ version: 2.1
 jobs:
     conda:
       docker:
-        - image: continuumio/anaconda:5.0.1
+        - image: continuumio/anaconda3:5.0.1
       steps:
         - checkout
         - run: conda env create -f data/envi.yaml
@@ -15,7 +15,7 @@ jobs:
 
     train:
       docker:
-        - image: continuumio/anaconda:5.0.1
+        - image: continuumio/anaconda3:5.0.1
       steps:
         - checkout
         - run: echo "in job train"
@@ -27,7 +27,7 @@ jobs:
 
     predict:
       docker:
-        - image: continuumio/anaconda:5.0.1
+        - image: continuumio/anaconda3:5.0.1
       steps:
         - checkout
         - run: echo "in job predict"
@@ -39,7 +39,7 @@ jobs:
 
     annotate:
       docker:
-        - image: continuumio/anaconda:5.0.1
+        - image: continuumio/anaconda3:5.0.1
       steps:
         - checkout
         - run: echo "in job annotate"
