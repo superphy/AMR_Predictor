@@ -30,7 +30,7 @@ jobs:
         - run: snakemake -s predict/mic_clean.smk
         - run: snakemake -s predict/predict.smk
         - run: head predict/results.csv
-        
+
     annotate:
       docker:
         - image: continuumio/anaconda3:5.0.1
@@ -47,6 +47,6 @@ workflows:
   version: 2
   all:
     jobs:
-      - train:
-      - predict:
-      - annotate:
+      - train
+      - predict
+      - annotate
