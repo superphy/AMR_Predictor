@@ -14,8 +14,8 @@ jobs:
               mkdir -p data/grdi_genomes/raw
               cp .circleci/test_data/*.fasta data/genomes/raw
               mv .circleci/test_data/*.fasta data/grdi_genomes/raw
-              cp .circleci/test_data/test_labels.xlsx data/no_ecoli_GenotypicAMR_Master.xlsx
-              mv .circleci/test_data/test_labels.xlsx "data/ResolvedCIPARS_SRL (1).xlsx"
+              mv .circleci/test_data/test_labels.xlsx data/no_ecoli_GenotypicAMR_Master.xlsx
+              mv .circleci/test_data/test_labels_grdi.xlsx "data/ResolvedCIPARS_SRL (1).xlsx"
               snakemake
               python src/model.py -x public -y grdi -a AMP -f 100 -i
 
@@ -46,6 +46,7 @@ jobs:
               source activate skmer
               mkdir -p data/genomes/clean
               mv .circleci/test_data/SRR2407633.fasta data/genomes/clean
+              wget -P ~/.conda/envs/skmer/bin/ "https://github.com/tseemann/prokka/raw/master/binaries/linux/tbl2asn"
               snakemake -s annotation/annotate.smk
 
 
