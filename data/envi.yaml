@@ -8,9 +8,13 @@ dependencies:
   - _py-xgboost-mutex=2.0=cpu_0
   - _tflow_180_select=2.0=mkl
   - absl-py=0.2.2=py_0
+  - aioeasywebdav=2.2.0=py36_0
+  - aiohttp=3.5.4=py36h14c3975_0
   - aragorn=1.2.38=h470a237_2
   - asn1crypto=0.24.0=py36_0
   - astor=0.6.2=py36_1
+  - async-timeout=3.0.1=py_1000
+  - attrs=19.1.0=py_0
   - backports=1.0=py36_1
   - backports.weakref=1.0rc1=py36_1
   - barrnap=0.9=1
@@ -29,6 +33,7 @@ dependencies:
   - cd-hit=4.6.8=0
   - certifi=2019.3.9=py36_0
   - cffi=1.11.5=py36h9745a5d_0
+  - chardet=3.0.4=py36_1003
   - click=7.0=py_0
   - cryptography=2.2.2=py36h14c3975_0
   - cycler=0.10.0=py36_0
@@ -60,6 +65,7 @@ dependencies:
   - html5lib=0.9999999=py36_0
   - icu=58.2=hfc679d8_0
   - idna=2.7=py36_0
+  - idna_ssl=1.1.0=py36_1000
   - imbalanced-learn=0.3.3=py_0
   - infernal=1.1.2=h470a237_1
   - intel-openmp=2018.0.3=0
@@ -105,6 +111,7 @@ dependencies:
   - mkl_fft=1.0.4=py36h4414c95_1
   - mkl_random=1.0.1=py36h4414c95_1
   - msgpack-python=0.5.6=py36h6bb024c_1
+  - multidict=4.5.2=py36h14c3975_1000
   - nano=2.4.1=0
   - natsort=6.0.0=py_0
   - ncurses=5.9=10
@@ -351,7 +358,7 @@ dependencies:
   - setuptools=39.2.0=py36_0
   - sip=4.18=py36_1
   - six=1.11.0=py36_1
-  - snakemake=3.13.3=py36_0
+  - snakemake=4.0.0=py36_0
   - sqlite=3.20.1=2
   - statsmodels=0.9.0=py36h035aef0_0
   - tabulate=0.8.2=py_0
@@ -365,6 +372,7 @@ dependencies:
   - tidyp=1.04=1
   - tk=8.6.9=h84994c4_1001
   - traitlets=4.3.2=py36_0
+  - typing_extensions=3.7.2=py36_1000
   - urllib3=1.12=py36_0
   - webencodings=0.5=py36_0
   - werkzeug=0.14.1=py_0
@@ -384,6 +392,7 @@ dependencies:
   - xorg-xproto=7.0.31=h14c3975_1007
   - xz=5.2.3=0
   - yaml=0.1.7=0
+  - yarl=1.3.0=py36h14c3975_1000
   - zlib=1.2.11=h470a237_3
   - pip:
     - backcall==0.1.0
