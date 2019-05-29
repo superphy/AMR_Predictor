@@ -204,9 +204,11 @@ if __name__ == "__main__":
 			if(num_classes_obj==2):
 				print("set objective to binary")
 				objective = 'binary:logistic'
+				other = 'multi:softmax'
 			else:
 				print("set objective to multiclass")
 				objective = 'multi:softmax'
+				other = 'binary:logistic'
 			if(hyper_param):
 				model = HyperoptEstimator(classifier=xgboost_classification('xbc'), preprocessing=[], algo=tpe.suggest, trial_timeout=200)
 			else:
@@ -225,7 +227,12 @@ if __name__ == "__main__":
 				print("Model Saved, exiting model.py")
 				sys.exit()
 			else:
-				model.fit(x_train,y_train)
+				try:
+					model.fit(x_train,y_train)
+				except:
+					print("UnExpected number of classes have data, switching objectives")
+					model = XGBClassifier(objective=other, silent=True, nthread=num_threads)
+					model.fit(x_train,y_train)
 
 			if(imp_feats):
 				feat_save = 'data/features/'+predict_for+'_'+str(num_feats)+'feats_'+model_type+'trainedOn'+train_string+'_testedOn'+test_string+'_fold'+str(split_counter)+'.npy'
