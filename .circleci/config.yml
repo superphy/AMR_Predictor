@@ -45,7 +45,7 @@ jobs:
               conda env create -f data/envi.yaml
               source activate skmer
               mkdir predict/genomes/clean
-              mv .circleci/test_data/SRR2407633.fasta predict/genomes/clean
+              mv .circleci/test_data/SRR2407633.fasta data/genomes/clean
               snakemake -s annotation/annotate.smk
 
 
