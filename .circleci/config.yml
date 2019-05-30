@@ -47,7 +47,7 @@ jobs:
               mkdir -p data/genomes/clean
               mv .circleci/test_data/SRR2407633.fasta data/genomes/clean
               wget -P ~/.conda/envs/skmer/bin/ "https://github.com/tseemann/prokka/raw/master/binaries/linux/tbl2asn"
-              prokka data/genomes/clean/SRR2407633.fasta --outdir annotation/annotated_genomes/SRR2407633 --prefix SRR2407633 --cpus 1 --force --compliant
+              snakemake -s annotation/annotate.smk
 
 
 workflows:
