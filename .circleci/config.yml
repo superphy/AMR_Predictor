@@ -44,11 +44,9 @@ jobs:
             command: |
               conda env create -f data/envi.yaml
               source activate skmer
-              which tbl2asn
-              mkdir this/will/faill
               mkdir -p data/genomes/clean
               mv .circleci/test_data/SRR2407633.fasta data/genomes/clean
-              wget -P ~/.conda/envs/skmer/bin/ "https://github.com/tseemann/prokka/raw/master/binaries/linux/tbl2asn"
+              wget -P /opt/conda/envs/skmer/bin/ "https://github.com/tseemann/prokka/raw/master/binaries/linux/tbl2asn"
               snakemake -s annotation/annotate.smk
 
 
