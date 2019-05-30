@@ -44,7 +44,7 @@ jobs:
             command: |
               conda env create -f data/envi.yaml
               source activate skmer
-              /opt/conda/envs/skmer/bin/
+              /opt/conda/envs/skmer/bin/tbl2asn
               mkdir this/will/fail
               mkdir -p data/genomes/clean
               mv .circleci/test_data/SRR2407633.fasta data/genomes/clean
