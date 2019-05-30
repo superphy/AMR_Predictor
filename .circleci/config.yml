@@ -46,7 +46,7 @@ jobs:
               source activate skmer
               mkdir -p data/genomes/clean
               mv .circleci/test_data/SRR2407633.fasta data/genomes/clean
-              conda install -c bioconda prokka=1.13.4
+              conda install -c bioconda prokka 
               snakemake -s annotation/annotate.smk
 
 
