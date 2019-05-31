@@ -14,7 +14,7 @@ ids, = glob_wildcards("data/genomes/clean{id}.fasta")
 
 rule all:
     input:
-        expand("annotation/{drug}_{dataset}_feature_ranks.npy", drug = drugs)
+        expand("annotation/{drug}_"+dataset+"_feature_ranks.npy", drug = drugs)
 
 rule count:
     input:
@@ -24,7 +24,7 @@ rule count:
     threads:
         2
     shell:
-        "jellyfish count -C -m 11 -s 100M -t {threads} {input} -o {output}"
+        "jellyfish count -C -m 15 -s 100M -t {threads} {input} -o {output}"
 
 rule dump:
     input:
@@ -61,7 +61,7 @@ rule model:
     input:
         expand("annotation/15mer_data/{drug}_kmer_matrix.npy", drug = drugs)
     output:
-        "annotattion/{drug}_{dataset}_feature_ranks.npy"
+        "annotation/{drug}_"+dataset+"_feature_ranks.npy"
     params:
         drug = "{drug}"
     shell:
