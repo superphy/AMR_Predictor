@@ -1,4 +1,7 @@
 # AMR_Predictor
+
+[![CircleCI](https://circleci.com/gh/superphy/AMR_Predictor.svg?style=svg)](https://circleci.com/gh/superphy/AMR_Predictor)
+
 Machine learning methods to predict the anti-microbial resistance of Salmonella.
 
 ## If you would like to use prebuilt models against your own genomes
