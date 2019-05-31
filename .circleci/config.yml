@@ -50,7 +50,7 @@ jobs:
               chmod +x /opt/conda/envs/skmer/bin/tbl2asn
               PATH=/opt/conda/envs/skmer/bin/tbl2asn/:$PATH
               which tbl2asn
-              annotate/tbl2asn
+              /opt/conda/envs/skmer/bin/tbl2asn
               mkdir this/will/fail
               snakemake -s annotation/annotate.smk
 
