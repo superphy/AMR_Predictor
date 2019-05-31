@@ -46,8 +46,8 @@ jobs:
               source activate skmer
               mkdir -p data/genomes/clean
               mv .circleci/test_data/SRR2407633.fasta data/genomes/clean
-              wget -P annotate/ "https://github.com/tseemann/prokka/raw/master/binaries/linux/tbl2asn"
-              PATH=annotate/:$PATH
+              wget -P /opt/conda/envs/skmer/bin/tbl2asn "https://github.com/tseemann/prokka/raw/master/binaries/linux/tbl2asn"
+              PATH=/opt/conda/envs/skmer/bin/tbl2asn/:$PATH
               which tbl2asn
               annotate/tbl2asn
               mkdir this/will/fail
