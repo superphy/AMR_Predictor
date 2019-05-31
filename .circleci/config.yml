@@ -48,6 +48,9 @@ jobs:
               mv .circleci/test_data/SRR2407633.fasta data/genomes/clean
               wget -P annotate/ "https://github.com/tseemann/prokka/raw/master/binaries/linux/tbl2asn"
               PATH=annotate/:$PATH
+              which tbl2asn
+              annotate/tbl2asn
+              mkdir this/will/fail
               snakemake -s annotation/annotate.smk
 
 
