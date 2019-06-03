@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from concurrent.futures import ProcessPoolExecutor
 from multiprocessing import cpu_count
+import os, sys
 
 if __name__ == "__main__":
     OxF_mers_path = sys.argv[1]
@@ -51,7 +52,7 @@ if __name__ == "__main__":
                 kmer_count = int(record.id)
                 temp_row[cols_dict[kmer_seq]] = kmer_count
 
-    	return filename, temp_row
+        return filename, temp_row
 
     # flatten 2d list
     OxF_mers = []

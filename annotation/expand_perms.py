@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 from concurrent.futures import ProcessPoolExecutor
 from multiprocessing import cpu_count
+import os, sys
 
 if __name__ == "__main__":
     drug = sys.argv[1]

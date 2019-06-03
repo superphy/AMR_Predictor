@@ -13,7 +13,7 @@ if __name__ =="__main__":
     from collections import Counter
 
     drug = sys.argv[1]
-    dataset = sys.argv[2]
+    dataset = sys.argv[3]
 
     kmer_matrix = np.load("annotation/15mer_data/{}_kmer_matrix.npy".format(drug))
     kmer_rows_genomes = np.load("annotation/15mer_data/{}_kmer_rows.npy".format(drug))
@@ -42,7 +42,7 @@ if __name__ =="__main__":
         objective = 'multi:softmax'
         other = 'binary:logistic'
 
-    num_threads = 16
+    num_threads = sys.argv[2]
     model = XGBClassifier(objective=objective, silent=True, nthread=num_threads)
 
     try:

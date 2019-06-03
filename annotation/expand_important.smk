@@ -10,7 +10,7 @@ import pandas as pd
 from concurrent.futures import ProcessPoolExecutor
 from multiprocessing import cpu_count
 
-ids, = glob_wildcards("data/genomes/clean{id}.fasta")
+ids, = glob_wildcards("data/genomes/clean/{id}.fasta")
 
 rule all:
     input:
@@ -64,5 +64,7 @@ rule model:
         "annotation/{drug}_"+dataset+"_feature_ranks.npy"
     params:
         drug = "{drug}"
+    threads:
+        16
     shell:
-        "python annotation/15mer_model.py {params.drug} "+dataset
+        "python annotation/15mer_model.py {params.drug} {threads} "+dataset
