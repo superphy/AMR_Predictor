@@ -55,7 +55,7 @@ rule matrix:
     params:
         drug = "{drug}"
     shell:
-        "python annotation/15mer_matrix.py {input.a} {params.drug}"
+        "sbatch -c 48 --mem 32G --partition NMLResearch --wrap='python annotation/15mer_matrix.py {input.a} {params.drug}'"
 
 rule model:
     input:
@@ -67,4 +67,4 @@ rule model:
     threads:
         16
     shell:
-        "python annotation/15mer_model.py {params.drug} {threads} "+dataset
+        "sbatch -c 16 --mem 125G --partition NMLResearch --wrap='python annotation/15mer_model.py {params.drug} {threads} "+dataset+"'"
