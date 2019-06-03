@@ -76,9 +76,9 @@ if __name__ == "__main__":
 
     # Use concurrent futures to get multiple rows at the same time
     # Then place completed rows into the matrix and update the row dictionary
-    num_start += min(cpu_count(),len(genomes))
+    num_start += min(48,len(genomes))
     progress()
-    with ProcessPoolExecutor(max_workers=cpu_count()) as ppe:
+    with ProcessPoolExecutor(max_workers=48) as ppe:
         for genome_name,temp_row in ppe.map(make_row, genomes):
             num_stop+=1
             if(num_start<total):
