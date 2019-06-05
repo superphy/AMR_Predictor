@@ -19,7 +19,7 @@ if __name__ == "__main__":
     def progress():
         sys.stdout.write('\r')
         sys.stdout.write("Loading Genomes: {} started, {} finished, {} total".format(num_start,num_stop,total))
-        sys.stdout.flush()
+        #sys.stdout.flush()
         if(num_stop==total):
             print("\nAll Genomes Loaded!\n")
 

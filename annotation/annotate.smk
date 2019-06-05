@@ -63,10 +63,19 @@ rule grep_feats:
         while(top_x_feats>0):
             m = max(all_feats[1])
             top_indeces = [i for i, j in enumerate(all_feats[1]) if j == m]
+
+            # make sure we dont take more than top_x total, this can be removed
+            # to keep all tying features in the pipeline
+            if(len(top_indeces) > top_x_feats):
+
+                top_indeces[:top_x_feats]
             top_x_feats -= len(top_indeces)
             for i in top_indeces:
+                # exclude decode for expand_importants.mk
                 top_feats.append((all_feats[0][i]).decode('utf-8'))
                 all_feats[1][i] = 0
+        # double check that we have the correct number of features
+        assert(len(top_feats)==5)
         #shell("echo {top_feats} && touch {output}")
         for seq in top_feats:
             for root, dirs, files in os.walk("annotation/annotated_genomes/"):
