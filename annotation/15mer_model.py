@@ -47,7 +47,7 @@ if __name__ =="__main__":
 
     # calculate feature importances with anova f-value to compare against model importances
     import scipy.stats as stats
-    anova = SelectKBest(chi2, k='all').fit(kmer_matrix,y_train)
+    skb = SelectKBest(chi2, k='all').fit(kmer_matrix,y_train)
 
     """
     f_vals = [] # to store the f-vals for each kmer
@@ -85,4 +85,4 @@ if __name__ =="__main__":
         model.fit(kmer_matrix,y_train)
 
     feat_save = 'annotation/{}_{}feature_ranks.npy'.format(drug,dataset)
-    np.save(feat_save, np.vstack((kmer_cols, model.feature_importances_,anova.scores_)))
+    np.save(feat_save, np.vstack((kmer_cols, model.feature_importances_,skb.scores_)))
