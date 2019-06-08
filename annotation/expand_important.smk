@@ -71,7 +71,7 @@ rule model:
 
 rule prokka:
     input:
-        GENOMES_PATH+"{id}.fasta"
+        "data/genomes/clean/{id}.fasta"
     output:
         "annotation/annotated_genomes/{id}/{id}.ffn",
     threads:
@@ -101,7 +101,7 @@ rule grep_feats:
         top_stats_feats = []
 
         # all_feats is a 2D array with 3 rows: 15mer, model_importance,chi2 importance
-        all_feats = np.load(input.a)
+        all_feats = np.load("annotation/{}_public_feature_ranks.npy".format(params.drug))
 
         # pull top 5 feats and search through genes for hits
         for imp_measure in [1,2]:
@@ -132,7 +132,7 @@ rule grep_feats:
             # double check that we have the correct number of features
             assert(len(top_model_feats)<=5 and len(top_stats_feats)<=5)
 
-            for seq in top_feats:
+            for seq in [top_model_feats,top_stats_feats][imp_measure-1]:
                 for root, dirs, files in os.walk("annotation/annotated_genomes/"):
                     for genome in dirs:
                         shell("echo '\n\nSearching_for_{seq}_in_{genome}_{params.drug}{imp_measure}' >> {output} && grep -B 1 {seq} annotation/annotated_genomes/{genome}/{genome}.ffns >> {output} || echo 'not found' >> {output}")
@@ -141,8 +141,6 @@ rule summary:
         expand('annotation/gene_hits_15mer_for_{drug}_1000feats.out', drug = drugs)
     output:
         "annotation/15mer_annotation_summary.csv"
-    params:
-        drug = "{drug}"
     run:
         # columns for pandas dataframe, this will be faster than appending to the pandas
         df_drug = []
@@ -153,16 +151,16 @@ rule summary:
 
         for drug in drugs:
             # feature importances
-            all_feats = np.load("annotation/{params.drug}_"+dataset+"_feature_ranks.npy")
+            all_feats = np.load("annotation/{}_".format(drug)+dataset+"_feature_ranks.npy")
 
             # array of 15mers, grouped by parent
-            OxF_mers = np.load("annotation/{}_1000feats_public_15mers.npy".format(params.drug))
+            OxF_mers = np.load("annotation/{}_1000feats_public_15mers.npy".format(drug))
 
             # array of 11mer parents
-            OxB_mers = np.load("annotation/{}_1000feats_public_15mers_parent.npy".format(params.drug))
+            OxB_mers = np.load("annotation/{}_1000feats_public_15mers_parent.npy".format(drug))
 
             # load gene hits to prep for creation of pandas dataframe
-            with open("annotation/gene_hits_15mer_for_{}_1000feats.out".format(params.drug)) as file:
+            with open("annotation/gene_hits_15mer_for_{}_1000feats.out".format(drug)) as file:
 
                 # primers, so when we get a hit we know what the informatin was about it
                 OxF_mer = ''
@@ -176,6 +174,7 @@ rule summary:
                     # prime the next loading sequence
                     if(line[:6]=='Search'):
                         intro,f,OxF_mer,n,genome,drug_imp = line.split('_')
+                        drug_imp = drug_imp.rstrip()
                         drug_id = drug_imp[:3]
                         importance_measure = drug_imp[-1]
 
@@ -201,26 +200,32 @@ rule summary:
         current_drug = ''
         curr_start_index = 0
         curr_stop_index = 0
+        all_hits = []
+        def source_name(num):
+            # takes a source number and returns the english name
+            if(num=='1'):
+                return "XGBoost"
+            elif(num=='2'):
+                return "Chi-Squared"
+            else:
+                raise Exception("Only source number 1 and 2 allowed, {} was given".format(num))
+
         for i, pre_pandas_drug in enumerate(df_drug):
+            all_hits.append("{}_{}_{}_{}_{}".format(df_drug[i],df_OxF_mer[i],df_OxB_mer[i],df_hit[i],source_name(df_imp[i])))
+        from collections import Counter
+        hit_counts = dict(Counter(all_hits))
 
-            # if we are starting a new drug
-            if pre_pandas_drug != current_drug:
-                curr_stop_index = i-1
+        pre_pandas = np.zeros((len(hit_counts),6),dtype='object')
 
-                # right now we know that current_drug runs from index
-                # curr_start to index curr_stop
+        for i, (key, value) in enumerate(hit_counts.items()):
+            #count_drug, count_15mer, count_11mer, count_hits, count_imp = key.split('_')
+            splits = key.split('_')
+            pre_pandas[i][5] = value
+            for j, split in enumerate(splits):
+                pre_pandas[i][j] = split
 
-                # making sure we arent at the start of the loop
-                if(i!=0):
-                    model_15mers = []
-                    stat_15mers = []
+        import pandas as pd
 
+        final_df = pd.DataFrame(data=pre_pandas,columns=["Drug","15mer","Parent 11mer","Gene","15mer Source","Number of Hits"])
 
-                    #TODO:
-                    # go through the start and stop index and then build a dictionary for kmers/genes and how many hits they get
-                    # then generate a row for each so that we have Drug - 15mer - 11mer - geneFound - numHitsForThatGene - sourceOfImportance (chi2vsXGBoost)
-                    # maybe not in that order though
-                    # append it to some nested master list so we can make a pandas dataframe to save as a csv
-
-                curr_start_index = i
-                current_drug = pre_pandas_drug
+        final_df.to_csv("annotation/15mer_annotation_summary.csv")
