@@ -101,7 +101,13 @@ rule grep_feats:
         top_stats_feats = []
 
         # all_feats is a 2D array with 3 rows: 15mer, model_importance,chi2 importance
+
+        def nan_to_zero(ele):
+            if(ele=='nan'):
+                return 0
+            return ele
         all_feats = np.load("annotation/{}_public_feature_ranks.npy".format(params.drug))
+        all_feats[2] = [nan_to_zero(i) for i in all_feats[2]]
 
         # pull top 5 feats and search through genes for hits
         for imp_measure in [1,2]:
@@ -118,7 +124,7 @@ rule grep_feats:
                 # make sure we dont take more than top_x total, this can be removed
                 # to keep all tying features in the pipeline but beware, if all are zero it will search through a thousand kmers
                 if(len(top_indeces) > top_x_feats):
-                    top_indeces[:top_x_feats]
+                    top_indeces = top_indeces[:top_x_feats]
 
                 top_x_feats -= len(top_indeces)
                 for i in top_indeces:
@@ -130,7 +136,14 @@ rule grep_feats:
                     all_feats[imp_measure][i] = 0
 
             # double check that we have the correct number of features
-            assert(len(top_model_feats)<=5 and len(top_stats_feats)<=5)
+            try:
+                assert(len(top_model_feats)<=5 and len(top_stats_feats)<=5)
+            except:
+                print("Grep feats for {}".format(params.drug))
+                print("top_model_feats: {}, top_stats_feats: {}".format(len(top_model_feats),len(top_stats_feats)))
+                print("top_model_feats:", top_model_feats)
+                print("top_stats_feats:", top_stats_feats)
+                sys.exit()
 
             for seq in [top_model_feats,top_stats_feats][imp_measure-1]:
                 for root, dirs, files in os.walk("annotation/annotated_genomes/"):
