@@ -17,6 +17,7 @@ def usage():
     "3 - MIC frequency & accuracy bar graphs",
     "4 - MIC frequency graphs"
     "5 - Individual tests: acc vs feat size for each model, each dataset matchup",
+    "6 - Serovar Frequency in the public dataset",
     sep = '\n')
     return
 
@@ -300,8 +301,23 @@ if __name__ == "__main__":
             plt.savefig('figures/individual_tests/1D_'+(title_string.replace(" ",""))+'.png',dpi=300)
             plt.clf()
 
+    if(figure == '6' or figure == 'all'):
+        amr_master_df = pd.read_excel("data/no_ecoli_GenotypicAMR_Master.xlsx")
+        serovar_counts = amr_master_df['serovar'].value_counts()
+        serovar_counts = serovar_counts[:50,]
+        #spt = sns.countplot(x='serovar', data=amr_master_df, order = amr_master_df['serovar'].value_counts().index)
+        i1_indx = 100
+        for i, val in enumerate(serovar_counts.index):
+            if val == 'I 1':
+                i1_indx = i
+        assert(i1_indx!=100)
+        spt = sns.barplot([x for i,x in enumerate(serovar_counts.index) if i!=i1_indx], [x for i,x in enumerate(serovar_counts.values) if i!=i1_indx])
+        plt.xticks(rotation=90, fontsize=10)
+        plt.tight_layout()
+        plt.savefig('figures/serovar_frequencies.png', dpi = 300)
+        plt.clf()
 
-    if(figure not in ['0','1','2','3','4','5','all']):
+    if(figure not in ['0','1','2','3','4','5', '6','all']):
         print("Did not pass a valid argument")
         usage()
         sys.exit(2)
