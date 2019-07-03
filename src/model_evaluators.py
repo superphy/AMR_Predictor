@@ -5,6 +5,7 @@ from decimal import Decimal
 import collections
 from sklearn.metrics import matthews_corrcoef, classification_report, precision_recall_fscore_support
 from keras.utils import np_utils, to_categorical
+import os, sys
 
 def ann_1d(model, test_data, test_names, dilution):
 	'''
@@ -131,9 +132,16 @@ def find_major(pred, act, drug, mic_class_dict):
 
 
 def find_errors(model, test_data, test_names, genome_names, class_dict, drug, mic_class_dict, save_loc):
-	prediction = model.predict(test_data)
-	prediction = [int(round(float(value))) for value in prediction]
-	actual = [int(float(value)) for value in test_names]
+	if not os.path.exists(os.path.abspath(os.path.curdir)+"/data/errors"):
+		os.mkdir(os.path.abspath(os.path.curdir)+"/data/errors/")
+	try:
+		prediction = model.predict(test_data)
+		prediction = [int(round(float(value))) for value in prediction]
+		actual = [int(float(value)) for value in test_names]
+	except:
+		prediction = model.predict_classes(test_data)
+		actual = [np.argmax(value, axis=None, out=None) for value in test_names]
+
 	total_count = 0
 	wrong_count = 0
 	close_count = 0

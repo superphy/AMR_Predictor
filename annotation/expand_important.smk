@@ -36,7 +36,7 @@ rule dump:
 
 rule expand:
     output:
-        "annotation/{drug}_1000feats_"+dataset+"_15mers.npy"
+        "annotation/15mer_data/{drug}_1000feats_"+dataset+"_15mers.npy"
     params:
         drug = "{drug}"
     threads:
@@ -46,7 +46,7 @@ rule expand:
 
 rule matrix:
     input:
-        a = expand("annotation/{drug}_1000feats_"+dataset+"_15mers.npy", drug = drugs),
+        a = expand("annotation/15mer_data/{drug}_1000feats_"+dataset+"_15mers.npy", drug = drugs),
         b = expand("data/jellyfish_results15/{id}.fa", id=ids)
     output:
         "annotation/15mer_data/{drug}_kmer_matrix.npy",
@@ -61,7 +61,7 @@ rule model:
     input:
         expand("annotation/15mer_data/{drug}_kmer_matrix.npy", drug = drugs)
     output:
-        "annotation/{drug}_"+dataset+"_feature_ranks.npy"
+        "annotation/15mer_data/{drug}_"+dataset+"_feature_ranks.npy"
     params:
         drug = "{drug}"
     threads:
@@ -90,9 +90,9 @@ rule single_line:
 rule grep_feats:
     input:
         a = expand("annotation/annotated_genomes/{id}/{id}.ffns", id = ids),
-        b = expand("annotation/{drug}_"+dataset+"_feature_ranks.npy", drug = drugs)
+        b = expand("annotation/15mer_data/{drug}_"+dataset+"_feature_ranks.npy", drug = drugs)
     output:
-        'annotation/gene_hits_15mer_for_{drug}_1000feats.out'
+        'annotation/15mer_data/gene_hits_15mer_for_{drug}_1000feats.out'
     params:
         drug = "{drug}"
     run:
@@ -106,7 +106,7 @@ rule grep_feats:
             if(ele=='nan'):
                 return 0
             return ele
-        all_feats = np.load("annotation/{}_public_feature_ranks.npy".format(params.drug))
+        all_feats = np.load("annotation/15mer_data/{}_public_feature_ranks.npy".format(params.drug))
         all_feats[2] = [nan_to_zero(i) for i in all_feats[2]]
 
         # pull top 5 feats and search through genes for hits
@@ -151,7 +151,7 @@ rule grep_feats:
                         shell("echo '\n\nSearching_for_{seq}_in_{genome}_{params.drug}{imp_measure}' >> {output} && grep -B 1 {seq} annotation/annotated_genomes/{genome}/{genome}.ffns >> {output} || echo 'not found' >> {output}")
 rule summary:
     input:
-        expand('annotation/gene_hits_15mer_for_{drug}_1000feats.out', drug = drugs)
+        expand('annotation/15mer_data/gene_hits_15mer_for_{drug}_1000feats.out', drug = drugs)
     output:
         "annotation/15mer_annotation_summary.csv"
     run:

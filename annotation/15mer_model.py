@@ -84,5 +84,8 @@ if __name__ =="__main__":
         model = XGBClassifier(objective=other, silent=True, nthread=num_threads)
         model.fit(kmer_matrix,y_train)
 
-    feat_save = 'annotation/{}_{}_feature_ranks.npy'.format(drug,dataset)
+    if not os.path.exists(os.path.abspath(os.path.curdir)+"/annotation/15mer_data/"):
+        os.mkdir(os.path.abspath(os.path.curdir)+"/annotation/15mer_data/")
+
+    feat_save = '15mer_data/annotation/{}_{}_feature_ranks.npy'.format(drug,dataset)
     np.save(feat_save, np.vstack((kmer_cols, model.feature_importances_,skb.scores_)))

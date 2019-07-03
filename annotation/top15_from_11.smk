@@ -141,7 +141,7 @@ rule summary:
         all_hits = []
 
         for i, pre_pandas_drug in enumerate(df_drug):
-            all_hits.append("{}_{}_{}_{}_{}".format(df_drug[i],df_OxF_mer[i],df_OxB_mer[i],df_gene[i],df_OxF_score))
+            all_hits.append("{}_{}_{}_{}_{}".format(df_drug[i],df_OxF_mer[i],df_OxB_mer[i],df_gene[i],df_OxF_score[i]))
         from collections import Counter
         hit_counts = dict(Counter(all_hits))
 

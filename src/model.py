@@ -249,6 +249,8 @@ if __name__ == "__main__":
 			model.fit(x_train,y_train)
 			if(imp_feats):
 				raise Exception('You can only pull feature importances from XGB, remove the -i or -m flags')
+			if(save_errors):
+				find_errors(model, x_test, y_test, z_test, mic_class_dict[predict_for], predict_for, mic_class_dict, 'data/errors/'+predict_for+'_'+str(num_feats)+'feats_'+model_type+'trainedOn'+train_string+'_testedOn'+test_string+'_fold'+str(split_counter)+'.txt')
 		elif(model_type == 'ANN'):
 			if(hyper_param):
 				raise Exception('This script does not support hyperas for ANN hyperparameter optimization, see src/hyp.py')
@@ -279,6 +281,8 @@ if __name__ == "__main__":
 			model.compile(loss=loss, metrics=['accuracy'], optimizer='adam')
 
 			model.fit(x_train, y_train, epochs=100, verbose=1, callbacks=[early_stop, reduce_LR])
+			if(save_errors):
+				find_errors(model, x_test, y_test, z_test, mic_class_dict[predict_for], predict_for, mic_class_dict, 'data/errors/'+predict_for+'_'+str(num_feats)+'feats_'+model_type+'trainedOn'+train_string+'_testedOn'+test_string+'_fold'+str(split_counter)+'.txt')
 		else:
 			raise Exception('Unrecognized Model. Use XGB, SVM or ANN')
 

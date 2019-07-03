@@ -36,6 +36,14 @@ if __name__ == "__main__":
     # find the top 5 features
     top_feats = []
     all_feats = np.load('data/features/'+drug+'_1000feats_XGBtrainedOn'+dataset+'_testedOn'+dataset+'_fold1.npy')
+
+    if(isinstance(all_feats[0,0],bytes)):
+        all_feats = [[i.decode('utf-8') for i in all_feats[0]],[float(i.decode('utf-8')) for i in all_feats[1]]]
+
+    for row in all_feats:
+        for col in row:
+            assert(!isinstance(col,bytes))
+
     top_x_feats = 5
 
     # until we have at least 5 features
@@ -73,5 +81,8 @@ if __name__ == "__main__":
             OxF_mer_matrix.append(perms)
             OxB_labels.append(feat)
 
-    np.save("annotation/{}_1000feats_{}_15mers.npy".format(drug,dataset), OxF_mer_matrix)
-    np.save("annotation/{}_1000feats_{}_15mers_parent.npy".format(drug,dataset), OxB_labels)
+    if not os.path.exists(os.path.abspath(os.path.curdir)+"/annotation/15mer_data/"):
+        os.mkdir(os.path.abspath(os.path.curdir)+"/annotation/15mer_data/")
+
+    np.save("annotation/15mer_data/{}_1000feats_{}_15mers.npy".format(drug,dataset), OxF_mer_matrix)
+    np.save("annotation/15mer_data/{}_1000feats_{}_15mers_parent.npy".format(drug,dataset), OxB_labels)
