@@ -54,6 +54,7 @@ def usage():
 	"-o, --out         Where to save result DF, defaults to print to std out",
 	"-p,               Add this flag to do hyperparameter optimization, XGB/SVM only",
 	"-i,               Saves all features and their importance in data/features",
+	"--force_features  Force the model to be trained on the top 1000 features determined from the NCBI dataset (public)",
 	"-e, 			   Saves errors to data/errors",
 	"-h, --help        Prints this menu",
 	sep = '\n')
@@ -69,10 +70,11 @@ if __name__ == "__main__":
 	out = 'print'
 	imp_feats = 0
 	save_errors = 0
+	force_feats = False
 
 	OBO_acc = np.zeros((2,5))
 	try:
-		opts, args =  getopt.getopt(sys.argv[1:],"hx:y:f:a:m:o:pie",["help","train=","test=","features=","attribute=","model=","out="])
+		opts, args =  getopt.getopt(sys.argv[1:],"hx:y:f:a:m:o:pie",["help","train=","test=","features=","attribute=","model=","out=","force_features"])
 	except getopt.GetoptError:
 		usage()
 		sys.exit(2)
@@ -95,6 +97,8 @@ if __name__ == "__main__":
 			imp_feats = 1
 			if not os.path.exists(os.path.abspath(os.path.curdir)+'/data/features'):
 				os.mkdir(os.path.abspath(os.path.curdir)+'/data/features')
+		elif opt == '--force_features':
+			force_feats = True
 		elif opt == '-e':
 			save_errors = 1
 		elif opt in ('-h', '--help'):
@@ -184,11 +188,22 @@ if __name__ == "__main__":
 		cols = []
 		#feature selection
 		if(num_feats!=0):
-			sk_obj = SelectKBest(f_classif, k=num_feats)
-			x_train = sk_obj.fit_transform(x_train, y_train)
-			x_test  = sk_obj.transform(x_test)
+			if(force_feats):
+				# both features and cols are loading in as byte literals
+				features = np.load("predict/features/1000feats_{}.npy".format(predict_for))
+				cols = np.load('data/unfiltered/kmer_cols.npy')
+				feat_mask = [i in features for i in cols]
+				x_train = ((x_train.T)[feat_mask]).T
+				x_test = ((x_test.T)[feat_mask]).T
+				assert(x_train.shape[1] == 1000 and x_test.shape[1] == 1000)
+
+			else:
+				sk_obj = SelectKBest(f_classif, k=num_feats)
+				x_train = sk_obj.fit_transform(x_train, y_train)
+				x_test  = sk_obj.transform(x_test)
 
 		if(imp_feats):
+			assert(force_feats == False) # features were forced, not determined.
 			cols = np.load('data/unfiltered/kmer_cols.npy')
 			feat_indices = np.zeros(len(cols))
 			feat_indices = np.asarray([i for i in range(len(cols))])

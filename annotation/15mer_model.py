@@ -87,5 +87,5 @@ if __name__ =="__main__":
     if not os.path.exists(os.path.abspath(os.path.curdir)+"/annotation/15mer_data/"):
         os.mkdir(os.path.abspath(os.path.curdir)+"/annotation/15mer_data/")
 
-    feat_save = '15mer_data/annotation/{}_{}_feature_ranks.npy'.format(drug,dataset)
-    np.save(feat_save, np.vstack((kmer_cols, model.feature_importances_,skb.scores_)))
+    feat_save = 'annotation/15mer_data/{}_{}_feature_ranks.npy'.format(drug,dataset)
+    np.save(feat_save, np.vstack((kmer_cols, [float(i) for i in model.feature_importances_],[float(i) for i in skb.scores_])))

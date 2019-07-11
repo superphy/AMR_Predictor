@@ -164,16 +164,16 @@ rule summary:
 
         for drug in drugs:
             # feature importances
-            all_feats = np.load("annotation/{}_".format(drug)+dataset+"_feature_ranks.npy")
+            all_feats = np.load("annotation/15mer_data/{}_".format(drug)+dataset+"_feature_ranks.npy")
 
             # array of 15mers, grouped by parent
-            OxF_mers = np.load("annotation/{}_1000feats_public_15mers.npy".format(drug))
+            OxF_mers = np.load("annotation/15mer_data/{}_1000feats_public_15mers.npy".format(drug))
 
             # array of 11mer parents
-            OxB_mers = np.load("annotation/{}_1000feats_public_15mers_parent.npy".format(drug))
+            OxB_mers = np.load("annotation/15mer_data/{}_1000feats_public_15mers_parent.npy".format(drug))
 
             # load gene hits to prep for creation of pandas dataframe
-            with open("annotation/gene_hits_15mer_for_{}_1000feats.out".format(drug)) as file:
+            with open("annotation/15mer_data/gene_hits_15mer_for_{}_1000feats.out".format(drug)) as file:
 
                 # primers, so when we get a hit we know what the informatin was about it
                 OxF_mer = ''

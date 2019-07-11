@@ -25,22 +25,22 @@ rule all:
 
 rule grep_feats:
     output:
-        "annotation/top_11mer_gene_search_{drug}.out"
+        "annotation/15mer_data/top_11mer_gene_search_{drug}.out"
     params:
         drug = "{drug}"
     run:
         drug = params.drug
 
         # 2D array, each row consists of 1280 15mer expansions
-        OxF_mers = np.load("annotation/{}_1000feats_public_15mers.npy".format(drug))
+        OxF_mers = np.load("annotation/15mer_data/{}_1000feats_public_15mers.npy".format(drug))
 
         # 1D array, 11mer parent labels for each row of 15mers
         # OxF_mer_parents[0] is the 11mer parent of all 15mers in OxF_mers[0]
-        OxF_mer_parents = np.load("annotation/{}_1000feats_public_15mers_parent.npy".format(drug))
+        OxF_mer_parents = np.load("annotation/15mer_data/{}_1000feats_public_15mers_parent.npy".format(drug))
 
         # 2D array of shape (3,6400)
         # row[0] are 15mer, row[1] is the score by xgboost, row[2] is the score by chi2
-        feature_ranks = np.load("annotation/{}_public_feature_ranks.npy".format(drug))
+        feature_ranks = np.load("annotation/15mer_data/{}_public_feature_ranks.npy".format(drug))
 
         # set 'nan' strings to zero for max functions
         feature_ranks[2] = [nan_to_zero(i) for i in feature_ranks[2]]
@@ -75,7 +75,7 @@ rule grep_feats:
 
 rule summary:
     input:
-        expand("annotation/top_11mer_gene_search_{drug}.out", drug = drugs)
+        expand("annotation/15mer_data/top_11mer_gene_search_{drug}.out", drug = drugs)
     output:
         "annotation/top15mer_per_11mer_summary.csv"
     run:
@@ -90,16 +90,16 @@ rule summary:
 
         for drug in drugs:
             # feature importances
-            all_feats = np.load("annotation/{}_".format(drug)+dataset+"_feature_ranks.npy")
+            all_feats = np.load("annotation/15mer_data/{}_".format(drug)+dataset+"_feature_ranks.npy")
 
             # array of 15mers, grouped by parent
-            OxF_mers = np.load("annotation/{}_1000feats_public_15mers.npy".format(drug))
+            OxF_mers = np.load("annotation/15mer_data/{}_1000feats_public_15mers.npy".format(drug))
 
             # array of 11mer parents
-            OxB_mers = np.load("annotation/{}_1000feats_public_15mers_parent.npy".format(drug))
+            OxB_mers = np.load("annotation/15mer_data/{}_1000feats_public_15mers_parent.npy".format(drug))
 
             # load gene hits to prep for creation of pandas dataframe
-            with open("annotation/top_11mer_gene_search_{}.out".format(drug)) as file:
+            with open("annotation/15mer_data/top_11mer_gene_search_{}.out".format(drug)) as file:
 
                 # primers, so when we get a hit we know what the informatin was about it
                 OxF_mer = ''

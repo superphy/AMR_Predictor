@@ -39,6 +39,7 @@ if __name__ == "__main__":
 
     if(isinstance(all_feats[0,0],bytes)):
         all_feats = [[i.decode('utf-8') for i in all_feats[0]],[float(i.decode('utf-8')) for i in all_feats[1]]]
+        np.save('data/features/'+drug+'_1000feats_XGBtrainedOn'+dataset+'_testedOn'+dataset+'_fold1.npy', all_feats)
 
     for row in all_feats:
         for col in row:
