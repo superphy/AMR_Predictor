@@ -24,6 +24,7 @@ def find_top_feats(imp_arr,sav_path,top_x):
 if __name__ =="__main__":
     import os, sys
     import numpy as np
+    import math
 
     # where we load the features from
     input_arr = sys.argv[1]
@@ -39,10 +40,30 @@ if __name__ =="__main__":
     if not os.path.exists(os.path.abspath(os.path.curdir)+"/"+save_loc):
         os.mkdir(os.path.abspath(os.path.curdir)+"/"+save_loc)
 
-    feat_imps = np.load(input_arr)
+
+    if('grdi' in input_arr):#and 'AZM' not in input_arr):
+        print("Merging 5 fold cross validation")
+        input_arr = input_arr[:-14] + 'cv_fold1.npy'
+        feat_imps = np.load(input_arr, allow_pickle=True)
+        for i in range(2,6):
+            for j in feat_imps[1]:
+                try:
+                    assert(not math.isnan(float(j.decode('utf-8'))))
+                except:
+                    print("fold {} has nan values")
+                    break
+            fold_arr = input_arr[:-5] + str(i) + '.npy'
+            feat_imps = np.hstack((feat_imps,np.load(fold_arr, allow_pickle=True)))
+    else:
+        print("Using features trained from whole dataset")
+        feat_imps = np.load(input_arr, allow_pickle=True)
+
 
     if(isinstance(feat_imps[0,0],bytes)):
         feat_imps = [[i.decode('utf-8') for i in feat_imps[0]],[float(i.decode('utf-8')) for i in feat_imps[1]]]
+
+    for i in feat_imps[1]:
+        assert(not math.isnan(i))
 
     top_feats = find_top_feats(feat_imps,output,int(top_x))
 

@@ -18,8 +18,7 @@ gids, = glob_wildcards("data/grdi_genomes/clean/{gid}.fasta")
 
 rule all:
     input:
-        expand("annotation/search/11mer_data/{dataset}_hits_for_{drug}.pkl", dataset = datasets, drug = drugs)
-
+        expand("annotation/search/11mer_data/{dataset}_11mer_summary.csv", dataset = datasets)
 rule find_top:
     input:
         "data/features/{drug}_1000feats_XGBtrainedOn{dataset}_testedOn{dataset}_fold1.npy"
@@ -66,7 +65,7 @@ rule grdi_single_line:
 
 rule ncbi_prokka_to_df:
     input:
-        expand("annotation/annotated_genomes/{id}/{id}.ffns", id = ids),
+        "annotation/annotated_genomes/{id}/{id}.ffns"
     output:
         "annotation/gffpandas_ncbi/{id}.pkl"
     run:
@@ -79,7 +78,7 @@ rule ncbi_prokka_to_df:
 
 rule grdi_prokka_to_df:
     input:
-        expand("annotation/annotated_grdi_genomes/{gid}/{gid}.ffns", gid = gids)
+        "annotation/annotated_grdi_genomes/{gid}/{gid}.ffns"
     output:
         "annotation/gffpandas_grdi/{gid}.pkl"
     run:
@@ -91,11 +90,11 @@ rule grdi_prokka_to_df:
 
 rule blast_feats:
     input:
-        a = expand("annotation/search/11mer_data/{drug}_{dataset}_top"+top_x+".npy", drug = drugs, dataset = datasets)
+        "annotation/search/11mer_data/{drug}_{dataset}_top"+top_x+".npy"
     output:
         "annotation/search/11mer_data/{dataset}_blast_hits/{drug}.pkl"
     run:
-        if(wildcards.dataset == 'grdi' and wildcards.drug == 'FIS'):
+        if(wildcards.dataset == 'grdi' and wildcards.drug in ['FIS','AZM']):
             shell("touch {output}")
         else:
             alt_out = str(output).split('.')[0]+'.query'
@@ -122,8 +121,15 @@ rule find_hits:
         if(wildcards.dataset == 'grdi' and wildcards.drug == 'FIS'):
             shell("touch {output}")
         else:
-            shell("python annotation/search/find_hits.py {input.a} {wildcards.dataset} {wildcards.drug} {top_x}")
+            shell("python annotation/search/find_hits.py annotation/search/11mer_data/{wildcards.dataset}_blast_hits/{wildcards.drug}.pkl {wildcards.dataset} {wildcards.drug} {top_x}")
 
+rule hit_summary:
+    input:
+        expand("annotation/search/11mer_data/{dataset}_hits_for_{drug}.pkl", dataset = datasets, drug = drugs)
+    output:
+        "annotation/search/11mer_data/{dataset}_11mer_summary.csv"
+    shell:
+        "python/search/hit_summary.py {wildcards.dataset} {output}"
 
 
 

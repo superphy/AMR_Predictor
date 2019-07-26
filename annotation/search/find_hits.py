@@ -10,7 +10,12 @@ def find_locs(kmer, blast_df):
 
     # for every kmer hit in the genome, append the location
     for i in range(kmer_df.shape[0]):
-        locs.append([kmer_df['sstart'][i],kmer_df['send'][i],kmer_df['sseqid'][i].split('_')[0],kmer_df['sseqid'][i]])
+        send = kmer_df['send'].values[i]
+        sstart = kmer_df['sstart'].values[i]
+        genome_id = kmer_df['sseqid'].values[i].split('_')[0]
+        contig_name = kmer_df['sseqid'].values[i]
+        locs.append([send,sstart,genome_id,contig_name])
+
     # locs is 2d list, each row is (start, stop, genome_id, contig_name)
     return locs
 
@@ -30,9 +35,13 @@ def find_gene(start, stop, genome_id, contig_name, prokka_loc):
         orig_contig_name = orig_contig_name[1]
         contig_num = orig_contig_name.split('_')[1]
 
-    elif(contig_name.split('_')[0] == genome_id and len(contig_name.split('_')==2))
+    elif(contig_name.split('_')[0] == genome_id and len(contig_name.split('_'))==2):
         contig_num = contig_name.split('_')[1]
 
+    # SRR5573065_SRR5573065.fasta|33_length=41292_depth=1.01x
+    elif(contig_name.split('_')[0] == genome_id and len(contig_name.split('_'))==4):
+        contig_num = contig_name.split('|')[1].split('_')[0]
+        
     else:
         raise Exception("Unexpected contig name found: {}".format(contig_name))
 
@@ -49,11 +58,12 @@ def find_gene(start, stop, genome_id, contig_name, prokka_loc):
                 break
 
     # columns are: ['seq_id','source','type','start','end','score','strand','phase','attributes']
-    with open(prokka_loc+genome_id+'.pkl') as fh:
-        gff_df = skbio.io.read(fh, format="blast+6",into=pd.DataFrame,default_columns=True)
+    #with open(prokka_loc+genome_id+'.pkl', 'rb') as fh:
+    #    gff_df = skbio.io.read(fh, format="blast+6",into=pd.DataFrame,default_columns=True)
+    gff_df = pd.read_pickle(prokka_loc+genome_id+'.pkl')
 
     # keep only the contig the kmer was found in and only show coding sequences (Prodigal)
-    contig_df = gff_df[gff_df[seq_id]==prokka_contig]
+    contig_df = gff_df[gff_df['seq_id']==prokka_contig]
     contig_df = contig_df[contig_df['type']=='CDS']
 
     start = int(start)
@@ -114,15 +124,16 @@ if __name__ == "__main__":
     import os,sys
     import skbio.io
     import pandas as pd
+    import numpy as np
 
     blast_path = sys.argv[1]
     dataset = sys.argv[2]
     drug = sys.argv[3]
-    top_x = sys.arv[4]
+    top_x = sys.argv[4]
 
-    if(dataset == 'grdi' and drug = 'FIS'):
+    if(dataset == 'grdi' and drug == 'FIS'):
         raise Exception("Called find_hits.py for FIS using GRDI dataset, the snakemake shouldnt allow this")
-    top_feats = "annotation/search/11mer_data/{}_{}_top{}.npy".format(drug, dataset, top_x)
+    top_feats = np.load("annotation/search/11mer_data/{}_{}_top{}.npy".format(drug, dataset, top_x))
 
     with open(blast_path) as fh:
         blast_df = skbio.io.read(fh, format="blast+6",into=pd.DataFrame,default_columns=True)
@@ -138,11 +149,14 @@ if __name__ == "__main__":
     for kmer in top_feats:
         # locs is 2d list, each row is (start, stop, genome_id, contig_name)
         locs = find_locs(kmer, blast_df)
-            for loc in locs:
-                # gene_info is 1D list: gene_up, dist_up, gene_down, dist_down
-                gene_info = find_gene(*loc, prokka_loc)
-                gene_hits.append([kmer]+gene_info+loc)
+        for loc in locs:
+            # ignore SA genome hits in public and SRR hits in grdi
+            if((loc[2][:2] == 'SA' and dataset == 'public') or (loc[2][:3] == 'SRR' and dataset=='grdi')):
+                continue
+            # gene_info is 1D list: gene_up, dist_up, gene_down, dist_down
+            gene_info = find_gene(*loc, prokka_loc)
+            gene_hits.append([kmer]+gene_info+loc)
 
     # save gene hits as a dataframe
-    hits_df = pd.DataFrame(data = np.asarray(gene_hits),columns = [kmer, gene_up, dist_up, gene_down, dist_down, start, stop, genome_id, contig_name])
+    hits_df = pd.DataFrame(data = np.asarray(gene_hits),columns = ['kmer', 'gene_up', 'dist_up', 'gene_down', 'dist_down', 'start', 'stop', 'genome_id', 'contig_name'])
     hits_df.to_pickle("annotation/search/11mer_data/{}_hits_for_{}.pkl".format(dataset,drug))
