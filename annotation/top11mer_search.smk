@@ -129,7 +129,7 @@ rule hit_summary:
     output:
         "annotation/search/11mer_data/{dataset}_11mer_summary.csv"
     shell:
-        "python/search/hit_summary.py {wildcards.dataset} {output}"
+        "python annotation/search/hit_summary.py {wildcards.dataset} {output}"
 
 
 

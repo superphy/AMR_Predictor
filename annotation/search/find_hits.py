@@ -39,9 +39,9 @@ def find_gene(start, stop, genome_id, contig_name, prokka_loc):
         contig_num = contig_name.split('_')[1]
 
     # SRR5573065_SRR5573065.fasta|33_length=41292_depth=1.01x
-    elif(contig_name.split('_')[0] == genome_id and len(contig_name.split('_'))==4):
+    elif(contig_name.split('_')[0] == genome_id and len(contig_name.split('_')) in [4,5]):
         contig_num = contig_name.split('|')[1].split('_')[0]
-        
+
     else:
         raise Exception("Unexpected contig name found: {}".format(contig_name))
 
@@ -56,6 +56,10 @@ def find_gene(start, stop, genome_id, contig_name, prokka_loc):
             if("_{} ".format(contig_num) in line):
                 prokka_contig = line.split(" ")[1]
                 break
+
+    if('prokka_contig' not in locals()):
+        print("Contig number {2} and contig name {3} not located in {0}{1}/{1}.gff".format(gff_loc,genome_id, contig_num, contig_name))
+        return [gene_up, dist_up, gene_down, dist_down]
 
     # columns are: ['seq_id','source','type','start','end','score','strand','phase','attributes']
     #with open(prokka_loc+genome_id+'.pkl', 'rb') as fh:
@@ -103,13 +107,13 @@ def find_gene(start, stop, genome_id, contig_name, prokka_loc):
             dist_up = 0
             break
 
-        elif(start < gene_stop < stop):
+        elif(start <= gene_stop <= stop):
             # kmer hanging over right end of a gene
             gene_up = dict(i.split('=') for i in gene_anno[8].split(';'))['product']
             dist_up = stop-gene_stop
             break
 
-        elif(start < gene_start < stop):
+        elif(start <= gene_start <= stop):
             # kmer hanging over the left end of a gene
             gene_up = dict(i.split('=') for i in gene_anno[8].split(';'))['product']
             dist_up = gene_start-start
@@ -133,7 +137,7 @@ if __name__ == "__main__":
 
     if(dataset == 'grdi' and drug == 'FIS'):
         raise Exception("Called find_hits.py for FIS using GRDI dataset, the snakemake shouldnt allow this")
-    top_feats = np.load("annotation/search/11mer_data/{}_{}_top{}.npy".format(drug, dataset, top_x))
+    top_feats = np.load("annotation/search/11mer_data/{}_{}_top{}.npy".format(drug, dataset, top_x), allow_pickle = True)
 
     with open(blast_path) as fh:
         blast_df = skbio.io.read(fh, format="blast+6",into=pd.DataFrame,default_columns=True)
