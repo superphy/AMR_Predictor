@@ -81,46 +81,78 @@ def find_gene(start, stop, genome_id, contig_name, prokka_loc):
         gene_start = int(gene_anno[3])
         gene_stop = int(gene_anno[4])
 
-        if(start > gene_stop):
-            if(gene_num==df_length-1):
-                # we are after the last gene
-                gene_up = dict(i.split('=') for i in gene_anno[8].split(';'))['product']
-                dist_up = start - gene_stop
+        try:
+
+            if(start > gene_stop):
+                if(gene_num==df_length-1):
+                    # we are after the last gene
+                    gene_dict = dict(i.split('=') for i in gene_anno[8].split(';'))
+                    dist_up = start - gene_stop
+                    if(gene_dict['product']=='hypothetical protein'):
+                        gene_up = "HypoProt:hypothetical protein"
+                    else:
+                        gene_up = gene_dict['gene']+':'+gene_dict['product']
+                    break
+
+                # we are not at the correct gene yet
+                continue
+            elif(stop < gene_start):
+                # the kmer is before the current gene
+                gene_dict = dict(i.split('=') for i in gene_anno[8].split(';'))
+                dist_down = gene_start-stop
+                if(gene_dict['product']=='hypothetical protein'):
+                    gene_down = "HypoProt:hypothetical protein"
+                else:
+                    try:
+                        gene_down = gene_dict['gene']+':'+gene_dict['product']
+                    except KeyError:
+                        gene_down = 'none:'+ dict(i.split('=') for i in gene_anno[8].split(';'))['product']
+
+                prev_gene_anno = contig_df.values[gene_num-1]
+
+                gene_dict = dict(i.split('=') for i in prev_gene_anno[8].split(';'))
+                dist_up = start - prev_gene_anno[4]
+                if(gene_dict['product']=='hypothetical protein'):
+                    gene_up = "HypoProt:hypothetical protein"
+                else:
+                    gene_up = gene_dict['gene']+':'+gene_dict['product']
                 break
 
-            # we are not at the correct gene yet
-            continue
-        elif(stop < gene_start):
-            # the kmer is before the current gene
-            gene_down = dict(i.split('=') for i in gene_anno[8].split(';'))['product']
-            dist_down = gene_start-stop
+            elif(start >= gene_start and stop <= gene_stop):
+                # the kmer is inside of a gene
+                gene_dict = dict(i.split('=') for i in gene_anno[8].split(';'))
+                dist_up = 0
+                if(gene_dict['product']=='hypothetical protein'):
+                    gene_up = "HypoProt:hypothetical protein"
+                else:
+                    gene_up = gene_dict['gene']+':'+gene_dict['product']
+                break
 
-            prev_gene_anno = contig_df.values[gene_num-1]
+            elif(start <= gene_stop <= stop):
+                # kmer hanging over right end of a gene
+                gene_dict = dict(i.split('=') for i in gene_anno[8].split(';'))
+                dist_up = stop-gene_stop
+                if(gene_dict['product']=='hypothetical protein'):
+                    gene_up = "HypoProt:hypothetical protein"
+                else:
+                    gene_up = gene_dict['gene']+':'+gene_dict['product']
+                break
 
-            gene_up = dict(i.split('=') for i in prev_gene_anno[8].split(';'))['product']
-            dist_up = start - prev_gene_anno[4]
+            elif(start <= gene_start <= stop):
+                # kmer hanging over the left end of a gene
+                gene_dict = dict(i.split('=') for i in gene_anno[8].split(';'))
+                dist_up = gene_start-start
+                if(gene_dict['product']=='hypothetical protein'):
+                    gene_up = "HypoProt:hypothetical protein"
+                else:
+                    gene_up = gene_dict['gene']+':'+gene_dict['product']
+                break
+
+            else:
+                raise Exception("Unexpected kmer start: {} stop: {} in relation to gene start: {} stop: {}".format(start, stop, gene_start, gene_stop))
+        except KeyError:
+            gene_up = 'none:'+ dict(i.split('=') for i in gene_anno[8].split(';'))['product']
             break
-
-        elif(start >= gene_start and stop <= gene_stop):
-            # the kmer is inside of a gene
-            gene_up = dict(i.split('=') for i in gene_anno[8].split(';'))['product']
-            dist_up = 0
-            break
-
-        elif(start <= gene_stop <= stop):
-            # kmer hanging over right end of a gene
-            gene_up = dict(i.split('=') for i in gene_anno[8].split(';'))['product']
-            dist_up = stop-gene_stop
-            break
-
-        elif(start <= gene_start <= stop):
-            # kmer hanging over the left end of a gene
-            gene_up = dict(i.split('=') for i in gene_anno[8].split(';'))['product']
-            dist_up = gene_start-start
-            break
-
-        else:
-            raise Exception("Unexpected kmer start: {} stop: {} in relation to gene start: {} stop: {}".format(start, stop, gene_start, gene_stop))
 
     return [gene_up, dist_up, gene_down, dist_down]
 

@@ -2,6 +2,7 @@
 Takes as input a hit_df and groups it for readability in a csv
 """
 def merge_df(df_path, drug, dataset):
+    from statistics import stdev
     """
     Takes path to pandas df with the columns:
     [kmer, gene_up, dist_up, gene_down, dist_down, start, stop, genome_id, contig_name]
@@ -29,8 +30,19 @@ def merge_df(df_path, drug, dataset):
 
                 count = gene_df.shape[0]
                 average_dist = total_dist/count
+                if(len(gene_df[gene_dist])<2):
+                    std_dev = 0
+                else:
+                    std_dev  = stdev([abs(int(float(i))) for i in gene_df[gene_dist]])
 
-                hit_summary.append([dataset, drug, kmer, gene, count, average_dist])
+                try:
+                    gene, name = gene.split(':')
+                except:
+                    print("Gene: {}".format(gene))
+                    print("{} {}".format(drug,dataset))
+                    gene, carb, name = gene.split(':')
+
+                hit_summary.append([dataset, drug, kmer, gene, name, count, average_dist, std_dev])
 
     return hit_summary
 
@@ -57,6 +69,18 @@ if __name__ == "__main__":
         for hit in drug_list:
             all_hits.append(hit)
 
-    all_df = pd.DataFrame(data=np.asarray(all_hits),columns=['dataset','drug','kmer','gene','count','average_dist'])
+    data = np.asarray(all_hits)
+
+    what_amg = np.zeros((data.shape[0]), dtype = object)
+
+    amgs = pd.read_csv("data/gene_labels.tsv",sep='\t')
+
+    for i, val in enumerate(what_amg):
+        for j, amg_list in enumerate(amgs['gene_codes']):
+            for amg in amg_list:
+                if(data[i][3].split('_')[0] in amg):
+                    what_amg[i] = amgs['AMR Gene Family'][j]
+
+    all_df = pd.DataFrame(data=np.concatenate((data,np.asarray([what_amg]).T),axis=1),columns=['dataset','drug','kmer','gene','name','count','average_dist', 'std_dev' ,"AMG"])
 
     all_df.to_csv(output)
