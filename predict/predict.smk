@@ -223,7 +223,7 @@ rule predict:
 					assert(train_kmer==test_kmer)
 				except:
 					print("Expected kmer {} but got {}".format(train_kmer,test_kmer))
-					sys.exit()
+					raise
 
 			# if your GPU has a compute capability below 3.5 this next line will fail
 			predictions = [int(round(i)) for i in bst.predict(dtest, validate_features = True)]

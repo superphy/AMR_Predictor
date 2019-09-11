@@ -108,7 +108,7 @@ rule blast_feats:
                 for feat in top_feats:
                     fh.write(">{}\n".format(feat))
                     fh.write(feat+"\n")
-            shell("blastn -task blastn-short -db data/master.db -query {alt_out} -ungapped -perc_identity 100 -dust no -word_size 11 -evalue 100000 -outfmt 6 -out {output}")
+            shell("blastn -task blastn-short -db data/master.db -query {alt_out} -ungapped -perc_identity 100 -dust no -word_size 11 -max_target_seqs 50000 -evalue 100000 -outfmt 6 -out {output}")
 
 rule find_hits:
     input:
@@ -118,7 +118,7 @@ rule find_hits:
     output:
         "annotation/search/11mer_data/{dataset}_hits_for_{drug}.pkl"
     run:
-        if(wildcards.dataset == 'grdi' and wildcards.drug == 'FIS'):
+        if(wildcards.dataset == 'grdi' and wildcards.drug in ['FIS','AZM']):
             shell("touch {output}")
         else:
             shell("python annotation/search/find_hits.py annotation/search/11mer_data/{wildcards.dataset}_blast_hits/{wildcards.drug}.pkl {wildcards.dataset} {wildcards.drug} {top_x}")

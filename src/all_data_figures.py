@@ -36,8 +36,8 @@ def label_points(x, y, labels, ax):
             ax.text(x[i]+0.005, y[i]+0.005, label, fontsize = 7)
 
 drugs = ['AMC', 'AMP', 'AZM', 'CHL', 'CIP', 'CRO', 'FIS', 'FOX', 'SXT', 'TET', 'TIO', 'GEN', 'NAL']
-names = ['Amoxicillin','Ampicillin','Azithromycin','Chloramphenicol','Ciprofloxacin','Ceftriaxone','Sulfisoxazole',
-'Cefoxitin','Trimethoprim/Sulfamethoxazole','Tetracycline','Ceftiofur','Gentamicin','Nalidixic Acid']
+names = ['Amoxicillin','Ampicillin','Azithromycin','Chloramphenicol','Ciprofloxacin','Ceftriaxone','Sulfisoxazole (NCBI only)          ',
+'Cefoxitin','Trimethoprim/\nSulfamethoxazole','Tetracycline','Ceftiofur','Gentamicin','Nalidixic Acid']
 
 if __name__ == "__main__":
     if not os.path.exists(os.path.abspath(os.path.curdir)+'/figures'):
@@ -138,9 +138,9 @@ if __name__ == "__main__":
         plt.ylabel("Accuracy")
         group._legend.set_title('Antimicrobial')
         bar_titles = [
-        'Trained on GRDI,\nTested on Public', '\n\n\nTrained on kh,\nTested on GRDI',
-        'Trained on GRDI,\nTested on kh','\n\n\nTrained on kh\nwith 5-Fold\nCross Validation',
-        'Trained on Public,\nTested on GRDI','\n\n\nTrained on Public\nwith 5-Fold\nCross Validation',
+        'Trained on GRDI,\nTested on NCBI', '\n\n\nTrained on\nNCBI Ken & Hei,\nTested on GRDI',
+        'Trained on GRDI,\nTested on NCBI Ken & Hei','\n\n\nTrained on\nNCBI Ken & Hei\nwith 5-Fold\nCross Validation',
+        'Trained on NCBI,\nTested on GRDI','\n\n\nTrained on NCBI\nwith 5-Fold\nCross Validation',
         'Trained on GRDI with\n5-Fold Cross Validation']
         for text, label in zip(group._legend.texts, names):
             text.set_text(label)
@@ -148,7 +148,9 @@ if __name__ == "__main__":
         plt.xticks(rotation=0, fontsize = 7, horizontalalignment='center')
         group.fig.get_children()[-1].set_bbox_to_anchor((1.325,0.6,0,0))
         plt.setp(group._legend.get_title(), fontsize='18')
-        plt.savefig('figures/dataset_comparisons/dataset_clusters.png', dpi=300, bbox_inches='tight')
+        #plt.setp(group._legend.get_texts(), fontsize='12')
+        #plt.tight_layout(pad = 3)
+        plt.savefig('figures/dataset_comparisons/dataset_clusters.png', dpi=400, bbox_inches='tight')
         plt.clf()
 
         cust_pal = ['fire engine red','water blue', 'bright lime','vibrant purple','cyan','strong pink','dark grass green']
@@ -158,13 +160,14 @@ if __name__ == "__main__":
         plt.ylabel("Accuracy")
         group._legend.set_title('Dataset Comparison')
         bar_titles = [
-        'Trained on GRDI,\nTested on Public', 'Trained on kh,\nTested on GRDI',
-        'Trained on GRDI,\nTested on kh','Trained on kh with\n5-Fold Cross Validation',
-        'Trained on Public,\nTested on GRDI','Trained on Public with\n5-Fold Cross Validation',
+        'Trained on GRDI,\nTested on NCBI', 'Trained on NCBI Ken & Hei,\nTested on GRDI',
+        'Trained on GRDI,\nTested on NCBI Ken & Hei','Trained on NCBI Ken & Hei with\n5-Fold Cross Validation',
+        'Trained on NCBI,\nTested on GRDI','Trained on NCBI with\n5-Fold Cross Validation',
         'Trained on GRDI with\n5-Fold Cross Validation']
         for text, label in zip(group._legend.texts, bar_titles):
             text.set_text(label)
         plt.xticks(rotation=-30)
+        plt.tight_layout(pad = 5.5)
         plt.savefig('figures/dataset_comparisons/drug_clusters.png', dpi=300)
         plt.clf()
 
@@ -179,7 +182,10 @@ if __name__ == "__main__":
 
         for dataset in ['public', 'kh']:
             ax = sns.lmplot(dataset, 'grdi', data = simp_df, fit_reg = False)
-            plt.xlabel('Simpsons Diversity In The '+dataset.capitalize()+' Data Set')
+            dataset_string = dataset.capitalize()
+            if(dataset_string=='Public'):
+                dataset_string = 'NCBI'
+            plt.xlabel('Simpsons Diversity In The '+dataset_string+' Dataset')
             plt.ylabel("Simpsons Diversity In The GRDI Data Set")
             plt.xlim(0,0.75)
             plt.ylim(0,0.75)
@@ -191,7 +197,7 @@ if __name__ == "__main__":
             plt.clf()
 
 
-    if(figure in ['3','4','all']):
+    if(figure in ['3','4','7','all']):
         if(figure != '4'):
             if not os.path.exists(os.path.abspath(os.path.curdir)+'/figures/accuracies_and_frequencies/'):
                 os.mkdir(os.path.abspath(os.path.curdir)+'/figures/accuracies_and_frequencies/')
@@ -200,7 +206,7 @@ if __name__ == "__main__":
                 os.mkdir(os.path.abspath(os.path.curdir)+'/figures/frequencies/')
 
         if(figure == 'all'):
-            figures = ['3','4']
+            figures = ['3','4','7']
         else:
             figures = [figure]
 
@@ -212,16 +218,17 @@ if __name__ == "__main__":
                 else:
                     with open('data/public_mic_class_order_dict.pkl','rb') as fh:
                         class_dict = pickle.load(fh)
-
+                supports = {}
                 for drug in drugs:
                     if(dataset=='grdi' and drug == 'FIS'):
                         continue
                     classes = [strip_tail(i) for i in class_dict[drug]]
                     with open('results/'+dataset+str(set_number+1)+'_'+drug+'/'+drug+'_1000feats_XGBtrainedOn'+dataset+'_testedOnaCrossValidation.pkl','rb') as fh:
                         single_df = pickle.load(fh)
-                    ax = sns.barplot(y='Supports', x=classes, data = single_df)
-                    plt.xlabel('Minimum Inhibitory Concentration (mg/L)')
-                    plt.ylabel('Number of Genomes')
+                    if(figure in ['3','4']):
+                        ax = sns.barplot(y='Supports', x=classes, data = single_df)
+                        plt.xlabel('Minimum Inhibitory Concentration (mg/L)')
+                        plt.ylabel('Number of Genomes')
 
                     if(figure == '3'):
                         # Append the accuracies to the tops of the bars
@@ -249,6 +256,36 @@ if __name__ == "__main__":
                         ax.set_title(dataset+' '+drug+' MIC Frequencies')
                         plt.savefig('figures/frequencies/'+dataset+'_'+drug+'.png',dpi=300)
                         plt.clf()
+
+                    if(figure == '7'):
+                        supports[drug]=single_df['Supports']
+
+                if(figure == '7'):
+                    all_classes = [
+                    '0.0150','0.0300','0.0600', '0.1250', '0.2500', '0.5000',  '1.0000',
+                    '2.0000','4.0000','8.0000','16.0000','32.0000','64.0000','128.0000','256.0000']
+
+                    sup_counts = np.zeros((13,len(all_classes)))
+                    sup_bool_mask = np.ones((13,len(all_classes)))
+
+                    for drug_count, drug in enumerate(drugs):
+                        drug_sup = supports[drug]
+                        for mic in drug_sup.index:
+                            if(mic[1]=='='):
+                                s_mic = mic[2:]
+                            else:
+                                s_mic = mic
+
+                            try:
+                                sup_counts[drug_count][all_classes.index(s_mic)] = drug_sup[mic]
+                                sup_bool_mask[drug_count][all_classes.index(s_mic)] = 0
+                            except:
+                                sup_counts[drug_count][3] = drug_sup['0.1200']
+                                sup_bool_mask[drug_count][3] = 0
+
+                    freq_df = pd.DataFrame(data = sup_counts,index = drugs, columns = all_classes)
+                    ax = sns.heatmap(freq_df, mask = sup_bool_mask, annot=False)
+                    plt.show()
 
     if(figure == '5' or figure =='all'):
         if not os.path.exists(os.path.abspath(os.path.curdir)+'/figures/individual_tests/'):
@@ -317,7 +354,7 @@ if __name__ == "__main__":
         plt.savefig('figures/serovar_frequencies.png', dpi = 300)
         plt.clf()
 
-    if(figure not in ['0','1','2','3','4','5', '6','all']):
+    if(figure not in [str(i) for i in range(8)]+['all']):
         print("Did not pass a valid argument")
         usage()
         sys.exit(2)

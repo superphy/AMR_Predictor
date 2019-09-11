@@ -15,6 +15,15 @@ drug = 'AMP'
 errors = {}
 models = ['XGB','ANN','SVM']
 
+def find_num_uniq(model_type):
+    # find how many errors are unique to that model
+    other_models = np.array(models)[[i != model_type for i in models]]
+    uniqs = []
+    for err in errors[model_type]:
+        if err not in list(errors[other_models[0]]) or err not in list(errors[other_models[1]]):
+            uniqs.append(err)
+    return len(uniqs)
+
 for model in models:
 
     df_folds = {}
@@ -31,7 +40,12 @@ print("XGB,SVM: {}, XGB,ANN {}".format(len(list(set(errors['XGB']) & set(errors[
 print("SVM,ANN: {}".format(len(list(set(errors['SVM']) & set(errors['ANN'])))))
 print("All: {}".format(len(list(set(errors['SVM']) & set(errors['ANN']) & set(errors['XGB'])))))
 
-
 venn3([set(errors[model]) for model in models], set_labels = models, normalize_to = 10)
+
+##for model in models:
+#    print(list(errors[model])[0])
+#sys.exit()
+for model in models:
+    print("unique to {}: {}".format(model,find_num_uniq(model)))
 
 plt.show()
