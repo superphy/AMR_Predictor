@@ -10,11 +10,20 @@ from itertools import chain
 if __name__ == "__main__":
     kmer_length = sys.argv[1]
     out = sys.argv[2]
-    feat_sets = {}
-    for set_num in [str(i+1) for i in range(5)]:
-        feat_sets[set_num] = np.load("data/genomes/top_feats/1000_{}mers{}.npy".format(kmer_length,set_num))
+    dataset_path = sys.argv[3]
 
-    all_feats = [feat_sets[str(i+1)] for i in range(5)]
+    if dataset_path == 'grdi_':
+        dataset = 'grdi'
+        set_nums = list(range(6,10))
+    else:
+        dataset = 'public'
+        set_nums = list(range(1,6))
+
+    feat_sets = {}
+    for set_num in set_nums:
+        feat_sets[set_num] = np.load("data/genomes/top_feats/all_{}mers{}.npy".format(kmer_length,set_num))
+
+    all_feats = [feat_sets[i] for i in set_nums]
 
     master_mers = np.array(list(set(chain(*all_feats))))
     bool_mask = [len(master_mers[i]) for i in range(len(master_mers))]

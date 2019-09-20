@@ -12,8 +12,12 @@ from multiprocessing import cpu_count
 
 def parse_fasta(args):
     genome, kmer_length = args
+    if(genome[:2] == 'SA'):
+        jf_path = "data/grdi_genomes/jellyfish_results{}/{}".format(kmer_length, genome)
+    else:
+        jf_path = "data/genomes/jellyfish_results{}/{}".format(kmer_length, genome)
     current_multi_mers = []
-    for record in SeqIO.parse("data/genomes/jellyfish_results{}/{}".format(kmer_length, genome), "fasta"):
+    for record in SeqIO.parse(jf_path, "fasta"):
         kmer_seq = record.seq
         kmer_seq = kmer_seq._get_seq_str_and_check_alphabet(kmer_seq)
         if(len(kmer_seq) == int(kmer_length)):
@@ -25,11 +29,16 @@ if __name__ == "__main__":
     out = sys.argv[2]
 
     # set is designed to only run certain genomes at a time, to prevent maxing RAM
-    # set = 0 to run on all sets
     set_num = int(sys.argv[3])
 
-    genomes = ([files for r,d,files in os.walk("data/genomes/jellyfish_results{}/".format(kmer_length))][0])
+    if(set_num in range(6,10)):
+        genome_path = "data/grdi_genomes/jellyfish_results{}/".format(kmer_length)
+    else:
+        genome_path = "data/genomes/jellyfish_results{}/".format(kmer_length)
 
+    genomes = ([files for r,d,files in os.walk(genome_path)][0])
+
+    # ncbi splits (five total)
     if (set_num == 1):
         genomes = np.array(genomes)[np.array([i[:4]=='SRR1' for i in genomes])]
     elif (set_num == 2):
@@ -41,7 +50,20 @@ if __name__ == "__main__":
     elif (set_num == 5):
         genomes = np.array(genomes)[np.array([i[:4] in ['SRR4', 'SRR5'] or i[:5] in ['SRR30','SRR33','SRR34','SRR35','SRR37'] for i in genomes])]
 
-    assert(len(genomes)>1000)
+    # grdi splits (four total)
+    elif (set_num == 6):
+        genomes = np.array(genomes)[np.array([i[:5]=='SA200'or i[:6] in ['SA2010','SA2011'] for i in genomes])]
+    elif (set_num == 7):
+        genomes = np.array(genomes)[np.array([i[:6]=='SA2013' for i in genomes])]
+    elif (set_num == 8):
+        genomes = np.array(genomes)[np.array([i[:6]=='SA2014' for i in genomes])]
+    elif (set_num == 9):
+        genomes = np.array(genomes)[np.array([i[:6] in ['SA2012','SA2015','SA2016'] for i in genomes])]
+
+    else:
+        raise Exception("only sets 1-9 allowed (1-5 for ncbi, 6-9 for grdi)")
+
+    assert(len(genomes)>250)
 
     print("There are {} genomes in set {}".format(len(genomes), set_num))
 

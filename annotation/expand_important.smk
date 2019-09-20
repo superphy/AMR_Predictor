@@ -11,6 +11,7 @@ from concurrent.futures import ProcessPoolExecutor
 from multiprocessing import cpu_count
 
 ids, = glob_wildcards("data/genomes/clean/{id}.fasta")
+gids, = glob_wildcards("data/grdi_genomes/clean/{gid}.fasta")
 
 rule all:
     input:
@@ -26,6 +27,16 @@ rule count:
     shell:
         "jellyfish count -C -m 15 -s 100M -t {threads} {input} -o {output}"
 
+rule grdi_count:
+    input:
+        "data/grdi_genomes/clean/{gid}.fasta"
+    output:
+        temp("data/jellyfish_results15/{gid}.jf")
+    threads:
+        2
+    shell:
+        "jellyfish count -C -m 15 -s 100M -t {threads} {input} -o {output}"
+
 rule dump:
     input:
         "data/jellyfish_results15/{id}.jf"
@@ -34,29 +45,42 @@ rule dump:
     shell:
         "jellyfish dump {input} > {output}"
 
+rule dump:
+    input:
+        "data/jellyfish_results15/{gid}.jf"
+    output:
+        "data/jellyfish_results15/{gid}.fa"
+    shell:
+        "jellyfish dump {input} > {output}"
+
 rule expand:
     output:
-        "annotation/15mer_data/{drug}_1000feats_"+dataset+"_15mers.npy"
+        "annotation/15mer_data/{drug}_1000feats_{dataset}_15mers.npy"
     params:
         drug = "{drug}"
+        dataset = "{dataset}"
     threads:
         5
     shell:
-        "python annotation/expand_perms.py {params.drug} "+dataset
+        "python annotation/expand_perms.py {params.drug} {params.dataset}"
 
+# needs to be checked for dataset
 rule matrix:
     input:
-        a = expand("annotation/15mer_data/{drug}_1000feats_"+dataset+"_15mers.npy", drug = drugs),
-        b = expand("data/jellyfish_results15/{id}.fa", id=ids)
+        a = expand("annotation/15mer_data/{drug}_1000feats_{dataset}_15mers.npy", drug = drugs, dataset = datasets),
+        b = expand("data/jellyfish_results15/{id}.fa", id=ids),
+        c = expand("data/jellyfish_results15/{gid}.fa", gid=gids)
     output:
-        "annotation/15mer_data/{drug}_kmer_matrix.npy",
-        "annotation/15mer_data/{drug}_kmer_rows.npy",
-        "annotation/15mer_data/{drug}_kmer_cols.npy"
+        "annotation/15mer_data/{dataset}_{drug}_kmer_matrix.npy",
+        "annotation/15mer_data/{dataset}_{drug}_kmer_rows.npy",
+        "annotation/15mer_data/{dataset}_{drug}_kmer_cols.npy"
     params:
         drug = "{drug}"
+        dataset = "{dataset}"
     shell:
-        "sbatch -c 48 --mem 32G --partition NMLResearch --wrap='python annotation/15mer_matrix.py {input.a} {params.drug}'"
+        "sbatch -c 48 --mem 32G --partition NMLResearch --wrap='python annotation/15mer_matrix.py {input.a} {params.drug} {params.dataset}'"
 
+# needs to be checked for dataset
 rule model:
     input:
         expand("annotation/15mer_data/{drug}_kmer_matrix.npy", drug = drugs)
@@ -69,6 +93,7 @@ rule model:
     shell:
         "sbatch -c 16 --mem 125G --partition NMLResearch --wrap='python annotation/15mer_model.py {params.drug} {threads} "+dataset+"'"
 
+# needs to be checked for dataset
 rule prokka:
     input:
         "data/genomes/clean/{id}.fasta"
@@ -79,6 +104,7 @@ rule prokka:
     shell:
         "prokka {input} --outdir annotation/annotated_genomes/{wildcards.id} --prefix {wildcards.id} --cpus {threads} --force --compliant"
 
+# needs to be checked for dataset
 rule single_line:
     input:
         "annotation/annotated_genomes/{id}/{id}.ffn"
@@ -87,6 +113,7 @@ rule single_line:
     shell:
         "awk \'!/^>/ {{ printf \"%s\", $0; n = \"\\n\" }} ; /^>/ {{ print n $0; n = \"\" }} ; END {{ printf \"%s\", n }}\' < {input}  > {output}"
 
+# needs to be checked for dataset
 rule grep_feats:
     input:
         a = expand("annotation/annotated_genomes/{id}/{id}.ffns", id = ids),
@@ -149,6 +176,8 @@ rule grep_feats:
                 for root, dirs, files in os.walk("annotation/annotated_genomes/"):
                     for genome in dirs:
                         shell("echo '\n\nSearching_for_{seq}_in_{genome}_{params.drug}{imp_measure}' >> {output} && grep -B 1 {seq} annotation/annotated_genomes/{genome}/{genome}.ffns >> {output} || echo 'not found' >> {output}")
+
+# needs to be checked for dataset
 rule summary:
     input:
         expand('annotation/15mer_data/gene_hits_15mer_for_{drug}_1000feats.out', drug = drugs)
