@@ -11,6 +11,7 @@ if __name__ =="__main__":
     feats = sys.argv[1]
     drug  = sys.argv[2]
     dataset = sys.argv[3]
+    kmer_length = sys.arv[4]
 
     if(dataset != 'public'):
         raise Exception("hyp_average.py is not yet setup for non public data")
@@ -21,6 +22,11 @@ if __name__ =="__main__":
     elif(dataset=='kh'):
         path = 'kh_'
 
+    if kmer_length != '11':
+        kmer = '_'+kmer_length+'mer'
+    else:
+        kmer = ''
+
     OBN_accs = []
     OBO_accs = []
 
@@ -29,7 +35,9 @@ if __name__ =="__main__":
 
     # everything is saved in data/{path}{drug}/hyperas/
     for i in range(1,6):
-        split_df = pd.read_pickle("data/"+path+drug+"/hyperas/"+str(feats)+"feats_"+str(i)+".pkl")
+        split_df = pd.read_pickle("data/{}{}{}/hyperas/{}feats_{}.pkl".format(
+        path, drug, kmer, feats, i
+        ))
 
         # initialize new dataframe values
         if i==1:
@@ -62,9 +70,19 @@ if __name__ =="__main__":
 
     final_df = pd.DataFrame(data = final, index = index, columns = ['Precision','Recall', 'F-Score','Supports', '1D Acc'])
 
-    final_df.to_pickle("results/public1_"+drug+"/"+drug+"_"+feats+"feats_ANNtrainedOnpublic_testedOnaCrossValidation.pkl")
+    if kmer_length == '11':
+        final_df.to_pickle("results/public1_"+drug+"/"+drug+"_"+feats+"feats_ANNtrainedOnpublic_testedOnaCrossValidation.pkl")
 
-    if not os.path.exists(os.path.abspath(os.path.curdir)+"/data/split_accuracies"):
-        os.mkdir(os.path.abspath(os.path.curdir)+"/data/split_accuracies")
-    # saving the accuracies for each split
-    np.save('data/split_accuracies/'+drug+'_'+str(feats)+'feats_ANNtrainedOnpublic_testedOnaCrossValidation.npy' ,np.vstack((OBN_accs,OBO_accs)))
+        if not os.path.exists(os.path.abspath(os.path.curdir)+"/data/split_accuracies"):
+            os.mkdir(os.path.abspath(os.path.curdir)+"/data/split_accuracies")
+        # saving the accuracies for each split
+        np.save('data/split_accuracies/'+drug+'_'+str(feats)+'feats_ANNtrainedOnpublic_testedOnaCrossValidation.npy' ,np.vstack((OBN_accs,OBO_accs)))
+
+    else:
+        if not os.path.exists(os.path.abspath(os.path.curdir)+"/results/multi-mer/"+kmer_length+"mer/split_accuracies/"):
+            os.makedirs(os.path.abspath(os.path.curdir)+"/results/multi-mer/"+kmer_length+"mer/split_accuracies/")
+
+        final_df.to_pickle("results/multi-mer/"+kmer_length+"mer/public1_"+drug+"/"+drug+"_"+feats+"feats_ANNtrainedOnpublic_testedOnaCrossValidation.pkl")
+
+        # saving the accuracies for each split
+        np.save('results/multi-mer/'+kmer_length+'mer/split_accuracies/'+drug+'_'+str(feats)+'feats_ANNtrainedOnpublic_testedOnaCrossValidation.npy' ,np.vstack((OBN_accs,OBO_accs)))

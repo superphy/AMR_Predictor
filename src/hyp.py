@@ -167,6 +167,7 @@ def data():
 	drug  = sys.argv[2]
 	fold  = sys.argv[4]
 	dataset = sys.argv[5]
+	kmer_length = sys.argv[6]
 
 	# Matrix of classes for each drug
 	if(dataset=='grdi'):
@@ -180,6 +181,11 @@ def data():
 	elif(dataset=='kh'):
 		path = 'kh_'
 
+	if kmer_length != '11':
+		kmer = '_'+kmer_length+'mer'
+	else:
+		kmer = ''
+
 	# fold 1 uses sets 1,2,3 to train, 4 to test, fold 2 uses sets 2,3,4 to train, 5 to test, etc
 	train_sets = [(i+int(fold)-1)%5 for i in range(5)]
 	train_sets = [str(i+1) for i in train_sets]
@@ -187,21 +193,21 @@ def data():
 	num_classes = len(mic_class_dict[drug])
 
 	# load the relevant training sets and labels
-	x_train1 = np.load('data/filtered/{}{}/splits/set{}/x.npy'.format(path,drug,train_sets[0]))
-	x_train2 = np.load('data/filtered/{}{}/splits/set{}/x.npy'.format(path,drug,train_sets[1]))
-	x_train3 = np.load('data/filtered/{}{}/splits/set{}/x.npy'.format(path,drug,train_sets[2]))
-	y_train1 = np.load('data/filtered/{}{}/splits/set{}/y.npy'.format(path,drug,train_sets[0]))
-	y_train2 = np.load('data/filtered/{}{}/splits/set{}/y.npy'.format(path,drug,train_sets[1]))
-	y_train3 = np.load('data/filtered/{}{}/splits/set{}/y.npy'.format(path,drug,train_sets[2]))
+	x_train1 = np.load('data/filtered/{}{}{}/splits/set{}/x.npy'.format(path,drug,kmer,train_sets[0]))
+	x_train2 = np.load('data/filtered/{}{}{}/splits/set{}/x.npy'.format(path,drug,kmer,train_sets[1]))
+	x_train3 = np.load('data/filtered/{}{}{}/splits/set{}/x.npy'.format(path,drug,kmer,train_sets[2]))
+	y_train1 = np.load('data/filtered/{}{}{}/splits/set{}/y.npy'.format(path,drug,kmer,train_sets[0]))
+	y_train2 = np.load('data/filtered/{}{}{}/splits/set{}/y.npy'.format(path,drug,kmer,train_sets[1]))
+	y_train3 = np.load('data/filtered/{}{}{}/splits/set{}/y.npy'.format(path,drug,kmer,train_sets[2]))
 
 	# merge the 3 training sets into 1
 	x_train = np.vstack((x_train1, x_train2, x_train3))
 	y_train = np.concatenate((y_train1, y_train2, y_train3))
 
-	x_test  = np.load('data/filtered/{}{}/splits/set{}/x.npy'.format(path,drug,train_sets[3]))
-	y_test  = np.load('data/filtered/{}{}/splits/set{}/y.npy'.format(path,drug,train_sets[3]))
+	x_test  = np.load('data/filtered/{}{}{}/splits/set{}/x.npy'.format(path,drug,kmer,train_sets[3]))
+	y_test  = np.load('data/filtered/{}{}{}/splits/set{}/y.npy'.format(path,drug,kmer,train_sets[3]))
 
-	x_val  = np.load('data/filtered/{}{}/splits/set{}/x.npy'.format(path,drug,train_sets[4]))
+	x_val  = np.load('data/filtered/{}{}{}/splits/set{}/x.npy'.format(path,drug,kmer,train_sets[4]))
 
 	# hyperas asks for train and test so the validation set is what comes last, to check the final model
 	# we need to save it to be used later, because we have the sk_obj now.
@@ -210,7 +216,7 @@ def data():
 		x_train = sk_obj.fit_transform(x_train, y_train)
 		x_test  = sk_obj.transform(x_test)
 		x_val  = sk_obj.transform(x_val)
-		np.save('data/filtered/{}{}/splits/val{}_{}.npy'.format(path,drug,fold,str(feats)), x_val)
+		np.save('data/filtered/{}{}{}/splits/val{}_{}.npy'.format(path,drug,kmer,fold,str(feats)), x_val)
 
 	y_train = to_categorical(y_train, num_classes)
 	y_test  = to_categorical(y_test, num_classes)
@@ -283,6 +289,7 @@ if __name__ == "__main__":
 	max_evals = int(sys.argv[3])
 	fold  = sys.argv[4]
 	dataset = sys.argv[5]
+	kmer_length = sys.argv[6]
 
 	# Useful to have in the slurm output
 	print("************************************")
@@ -309,12 +316,17 @@ if __name__ == "__main__":
 	elif(dataset=='kh'):
 		path = 'kh_'
 
+	if kmer_length != '11':
+		kmer = '_'+kmer_length+'mer'
+	else:
+		kmer = ''
+
 	# fold 1 uses sets 1,2,3 to train, 4 to test and 5 to validate, fold 2 uses sets 2,3,4 to train, 5 to test, etc
 	train_sets = [(i+int(fold)-1)%5 for i in range(5)]
 	train_sets = [str(i+1) for i in train_sets]
 
-	test_names  = np.load('data/filtered/{}{}/splits/set{}/y.npy'.format(path,drug,train_sets[4]))
-	test_data = np.load('data/filtered/{}{}/splits/val{}_{}.npy'.format(path,drug,fold,feats))
+	test_names  = np.load('data/filtered/{}{}{}/splits/set{}/y.npy'.format(path,drug,kmer,train_sets[4]))
+	test_data = np.load('data/filtered/{}{}{}/splits/val{}_{}.npy'.format(path,drug,kmer,fold,feats))
 	from keras.utils import to_categorical
 	test_names = to_categorical(test_names, num_classes)
 
@@ -335,12 +347,8 @@ if __name__ == "__main__":
 	conf_df.set_axis(mic_class_dict[drug], axis='columns', inplace=True) # Label the axis
 	################################################################
 
-
-	if not os.path.exists(os.path.abspath(os.path.curdir)+"/data/"+path+drug):
-		os.mkdir(os.path.abspath(os.path.curdir)+"/data/"+path+drug)
-
-	if not os.path.exists(os.path.abspath(os.path.curdir)+"/data/"+path+drug+"/hyperas/"):
-		os.mkdir(os.path.abspath(os.path.curdir)+"/data/"+path+drug+"/hyperas/")
+	if not os.path.exists(os.path.abspath(os.path.curdir)+"/data/{}{}{}/hyperas/".format(path,drug,kmer)):
+		os.makedirs(os.path.abspath(os.path.curdir)+"/data/{}{}{}/hyperas/".format(path,drug,kmer))
 
 	# ann_1d -> returns: (perc, mcc, prediction, actual)
 	results = ann_1d(best_model, test_data, test_names, 0)
@@ -371,6 +379,6 @@ if __name__ == "__main__":
 	print("on {} features using a {} trained on {} data, tested on {}".format(feats, 'ANN', 'public', t_string))
 	print("Accuracy:", running_sum)
 	print(result_df)
-	out = "data/"+path+drug+"/hyperas/"
+	out = "data/{}{}{}/hyperas/".format(path, drug, kmer)
 	out = out+str(feats)+'feats_'+fold+'.pkl'
 	result_df.to_pickle(out)

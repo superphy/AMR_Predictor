@@ -11,7 +11,7 @@ rule split:
     params:
         drug  = "{drug}"
     shell:
-        "sbatch -c 1 --mem 32G --wrap='python src/validation_split_hyperas.py public {params.drug}'"
+        "sbatch -c 1 --mem 32G --wrap='python src/validation_split_hyperas.py public {params.drug} 1000 11'"
 
 rule hyperas:
     input:
@@ -23,7 +23,7 @@ rule hyperas:
         split = "{split}",
         feat = "{feat}"
     shell:
-        "sbatch -c 16 --mem 125G --wrap='python src/hyp.py {params.feat} {params.drug} 10 {params.split} public'"
+        "sbatch -c 16 --mem 125G --wrap='python src/hyp.py {params.feat} {params.drug} 10 {params.split} public 31'"
 
 rule average:
     input:
@@ -34,4 +34,4 @@ rule average:
         drug = "{drug}",
         feat = "{feat}"
     shell:
-        "sbatch -c 1 --mem 2GB --wrap='python src/hyp_average.py {params.feat} {params.drug} public'"
+        "sbatch -c 1 --mem 2GB --wrap='python src/hyp_average.py {params.feat} {params.drug} public 31'"

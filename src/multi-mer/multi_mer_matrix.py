@@ -10,8 +10,15 @@ import os, sys
 
 if __name__ == "__main__":
     mm_path = sys.argv[1]
-    drug = sys.argv[2]
+    split_num = int(sys.argv[2])
     kmer_length = sys.argv[3]
+
+    if split_num in range(1,47):
+        dataset = 'public'
+    elif split_num in range(47,59):
+        dataset = 'grdi'
+    else:
+        raise Exception("Split should be in range 1-59 but got ",split_num)
 
     num_start = 0
     num_stop = 0
@@ -38,18 +45,25 @@ if __name__ == "__main__":
         # Create a temp row to fill and return (later placed in the kmer_matrix)
         temp_row = [0]*len(relevant_feats)
 
-        # Walk through the file
-        for record in SeqIO.parse("data/genomes/jellyfish_results{}/{}".format(kmer_length,filename), "fasta"):
+        if(dataset == 'grdi'):
+            jf_path = "data/grdi_genomes/jellyfish_results{}/{}".format(kmer_length, filename)
+        else:
+            jf_path = "data/genomes/jellyfish_results{}/{}".format(kmer_length, filename)
+            
+        for record in SeqIO.parse(jf_path, "fasta"):
             # Retrieve the sequence as a string
             kmer_seq = record.seq
             kmer_seq = kmer_seq._get_seq_str_and_check_alphabet(kmer_seq)
 
-
+            """
             if(kmer_seq in relevant_feats):
                 kmer_count = int(record.id)
                 temp_row[cols_dict[kmer_seq]] = kmer_count
             else:
                 raise Exception("kmer {} found in jellyfish file {} but not in master list {}".format(kmer_seq, filename,mm_path))
+            """
+            kmer_count = int(record.id)
+            temp_row[cols_dict[kmer_seq]] = kmer_count
 
         return filename, temp_row
 
@@ -57,8 +71,22 @@ if __name__ == "__main__":
 
     relevant_feats = mmers
 
-    genomes = ([files for r,d,files in os.walk("data/genomes/jellyfish_results{}/".format(kmer_length))][0])
+    if(dataset == 'public'):
+        genomes = np.load("data/multi-mer/genome_names.npy")
+        start_num = (split_num - 1) * 128
+        stop_num = split_num * 128
+    elif(dataset == 'grdi'):
+        genomes = np.load("data/multi-mer/grdi_genome_names.npy")
+        start_num = (split_num-46 -1) * 128
+        stop_num = (split_num-46) * 128
+
+    if split_num in [46,58]:
+        genomes = genomes[start_num:]
+    else:
+        genomes = genomes[start_num:stop_num]
+
     total = len(genomes)
+
     runs = [i.split('.')[0] for i in genomes]
 
     # declaring empty kmer matrix to fill
@@ -83,6 +111,6 @@ if __name__ == "__main__":
                 kmer_matrix[rows_dict[genome_name]][i] = val
 
     # save everything
-    np.save("data/multi-mer/{}_{}mer_matrix.npy".format(drug,kmer_length), kmer_matrix)
-    np.save("data/multi-mer/{}_{}mer_rows.npy".format(drug,kmer_length), runs)
-    np.save("data/multi-mer/{}_{}mer_cols.npy".format(drug,kmer_length), relevant_feats)
+    np.save("data/multi-mer/splits/{}mer_matrix{}.npy".format(kmer_length, split_num), kmer_matrix)
+    np.save("data/multi-mer/splits/{}mer_rows{}.npy".format(kmer_length,split_num), runs)
+    np.save("data/multi-mer/splits/{}mer_cols{}.npy".format(kmer_length,split_num), relevant_feats)

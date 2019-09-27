@@ -1,7 +1,17 @@
 """
 Takes in an array of 15mers,
 trains a model and then dumps the feature rankings
+
+Also saves feature selected matrices along the way
 """
+
+
+"""
+If you dont force class and pass 10000 features, each splits gets 10k features and the final model is the best 10k of the total 10k*10 splits
+If you do pass force class feats and pass 10000, each class of each split gets 10000 features, all are kept, no furthur feature selection
+^^^ can rewrite to merge each class matrix, do feature selection, and then merge the rest of the matrix.
+"""
+
 
 if __name__ =="__main__":
     import numpy as np
@@ -19,6 +29,9 @@ if __name__ =="__main__":
     dataset = sys.argv[3]
     kmer_length = sys.argv[4]
     num_feats = sys.argv[5]
+
+    # if we want the top X features predictive of each class, not just overall
+    force_per_class = 0
 
     if dataset == 'public':
         dataset_path = ''
@@ -68,62 +81,138 @@ if __name__ =="__main__":
     matrix_path = "/data/multi-mer/kbest/{}/{}_{}_{}mer_matrix.npy".format(
     dataset, num_feats, drug, kmer_length)
 
-    if not os.path.exists(os.path.abspath(os.path.curdir)+matrix_path):
+    if not os.path.exists(os.path.abspath(os.path.curdir)+matrix_path) or force_per_class == 1:
             step_size = int(len(kmer_cols) / 10)
             split_starts = [step_size*i for i in range(11)]
 
-            # save each split
-            for i in range(10):
-                np.save("data/multi-mer/kbest/{}/all_{}_{}mer_matrix{}.npy".format(
-                dataset_path, drug, kmer_length, i+1), ((kmer_matrix.T)[split_starts[i]:split_starts[i+1]]).T)
-                np.save("data/multi-mer/kbest/{}/all_{}_{}mer_cols{}.npy".format(
-                dataset_path, drug, kmer_length, i+1), kmer_cols[split_starts[i]:split_starts[i+1]])
-                gc.collect() # gotta make sure we dont ever exceed 1TB
+            # save each split, run normally for force_per_class
+            if not os.path.exists(os.path.abspath(os.path.curdir)+"/data/multi-mer/kbest/{}/all_{}_{}mer_matrix{}.npy".format(dataset, drug, kmer_length, 1)):
+                for i in range(10):
+                    np.save("data/multi-mer/kbest/{}/all_{}_{}mer_matrix{}.npy".format(
+                    dataset, drug, kmer_length, i+1), ((kmer_matrix.T)[split_starts[i]:split_starts[i+1]]).T)
+                    np.save("data/multi-mer/kbest/{}/all_{}_{}mer_cols{}.npy".format(
+                    dataset, drug, kmer_length, i+1), kmer_cols[split_starts[i]:split_starts[i+1]])
+                    gc.collect() # gotta make sure we dont ever exceed 1TB
 
             # clear room for splits
             del kmer_matrix
             del kmer_cols
             gc.collect()
 
-            for i in range(10):
-                # feature selection
-                kmer_matrix = np.load("data/multi-mer/kbest/{}/all_{}_{}mer_matrix{}.npy".format(
-                dataset, drug, kmer_length, i+1))
-                kmer_cols = np.load("data/multi-mer/kbest/{}/all_{}_{}mer_cols{}.npy".format(
-                dataset, drug, kmer_length, i+1))
+            # load, feature select, then save each split. force_per_class needs own rules: see below
+            if not os.path.exists(os.path.abspath(os.path.curdir)+"data/multi-mer/kbest/{}/{}_{}_{}mer_matrix{}.npy".format(dataset, num_feats, drug, kmer_length, 1)) and force_per_class == 0:
+                for i in range(10):
+                    # feature selection
+                    kmer_matrix = np.load("data/multi-mer/kbest/{}/all_{}_{}mer_matrix{}.npy".format(
+                    dataset, drug, kmer_length, i+1))
+                    kmer_cols = np.load("data/multi-mer/kbest/{}/all_{}_{}mer_cols{}.npy".format(
+                    dataset, drug, kmer_length, i+1))
+
+                    sk_obj = SelectKBest(f_classif, k = int(num_feats))
+                    kmer_matrix = sk_obj.fit_transform(kmer_matrix, y_train)
+                    kmer_cols = (sk_obj.transform(kmer_cols.reshape(1,-1))).flatten()
+
+                    np.save("data/multi-mer/kbest/{}/{}_{}_{}mer_matrix{}.npy".format(
+                    dataset, num_feats, drug, kmer_length, i+1), kmer_matrix)
+                    np.save("data/multi-mer/kbest/{}/{}_{}_{}mer_cols{}.npy".format(
+                    dataset, num_feats, drug, kmer_length, i+1), kmer_cols)
+
+                    del kmer_matrix
+                    del kmer_cols
+                    gc.collect()
+
+            # same block as directly above but for force_per_class
+            if not os.path.exists(os.path.abspath(os.path.curdir)+"data/multi-mer/per_class/{}/{}_{}_{}mer_matrix1-1.npy".format(dataset, num_feats, drug, kmer_length)) and force_per_class == 1:
+                for i in range(10):
+                    for class_num, mic_class in enumerate(mic_class_dict[drug]):
+                        counts = Counter(y_train)
+                        if counts[class_num] < 5:
+                            print("skipping {} class {} because it only has {} samples".format(drug, mic_class, counts[mic_class]))
+                            continue
+
+                        # we are going to repeat the feature selection once per class that has >5 samples,
+                        kmer_matrix = np.load("data/multi-mer/kbest/{}/all_{}_{}mer_matrix{}.npy".format(
+                        dataset, drug, kmer_length, i+1))
+                        kmer_cols = np.load("data/multi-mer/kbest/{}/all_{}_{}mer_cols{}.npy".format(
+                        dataset, drug, kmer_length, i+1))
+
+                        class_y_train = [int(i == class_num) for i in y_train]
+
+                        assert(np.sum(class_y_train >=5))
+
+                        sk_obj = SelectKBest(f_classif, k = int(num_feats))
+                        kmer_matrix = sk_obj.fit_transform(kmer_matrix, class_y_train)
+                        kmer_cols = (sk_obj.transform(kmer_cols.reshape(1,-1))).flatten()
+
+                        np.save("data/multi-mer/per_class/{}/{}_{}_{}mer_matrix{}-{}.npy".format(
+                        dataset, num_feats, drug, kmer_length, i+1, class_num+1), kmer_matrix)
+                        np.save("data/multi-mer/per_class/{}/{}_{}_{}mer_cols{}-{}.npy".format(
+                        dataset, num_feats, drug, kmer_length, i+1, class_num+1), kmer_cols)
+
+                        del kmer_matrix
+                        del kmer_cols
+                        gc.collect()
+
+            # merge results, do final feature selection
+            kmer_matrix = []
+            kmer_cols = []
+
+            if(force_per_class == 0):
+                for i in range(10):
+                    if(i == 0):
+                        kmer_matrix = np.load("data/multi-mer/kbest/{}/{}_{}_{}mer_matrix{}.npy".format(
+                        dataset, num_feats, drug, kmer_length, i+1))
+                    else:
+                        split_matrix = np.load("data/multi-mer/kbest/{}/{}_{}_{}mer_matrix{}.npy".format(
+                        dataset, num_feats, drug, kmer_length, i+1))
+                        kmer_matrix = np.concatenate((kmer_matrix,split_matrix), axis=1)
+                        del split_matrix
+                    split_cols = np.load("data/multi-mer/kbest/{}/{}_{}_{}mer_cols{}.npy".format(
+                    dataset, num_feats, drug, kmer_length, i+1))
+                    for col in split_cols:
+                        kmer_cols.append(col)
+
+            else:
+                for i in range(10):
+                    for class_num, mic_class in enumerate(mic_class_dict[drug]):
+                        counts = Counter(y_train)
+                        print("Skipping class in append stage")
+                        if counts[class_num] < 5:
+                            continue
+                        if (i == 0) and (class_num == 0):
+                            kmer_matrix = np.load("data/multi-mer/per_class/{}/{}_{}_{}mer_matrix{}-{}.npy".format(
+                            dataset, num_feats, drug, kmer_length, i+1, class_num+1))
+                        else:
+                            split_matrix = np.load("data/multi-mer/per_class/{}/{}_{}_{}mer_matrix{}-{}.npy".format(
+                            dataset, num_feats, drug, kmer_length, i+1, class_num+1))
+                            kmer_matrix = np.concatenate((kmer_matrix,split_matrix), axis=1)
+                            del split_matrix
+                        split_cols = np.load("data/multi-mer/per_class/{}/{}_{}_{}mer_cols{}-{}.npy".format(
+                        dataset, num_feats, drug, kmer_length, i+1, class_num+1))
+                        for col in split_cols:
+                            kmer_cols.append(col)
+
+
+            kmer_cols = np.array(kmer_cols)
+
+            if(force_per_class == 0):
 
                 sk_obj = SelectKBest(f_classif, k = int(num_feats))
                 kmer_matrix = sk_obj.fit_transform(kmer_matrix, y_train)
-                kmer_cols = sk_obj.transform(kmer_cols)
+                kmer_cols = (sk_obj.transform(kmer_cols.reshape(1,-1))).flatten()
 
-                np.save("data/multi-mer/kbest/{}/{}_{}_{}mer_matrix{}.npy".format(
-                dataset, num_feats, drug, kmer_length, i+1), kmer_matrix)
-                np.save("data/multi-mer/kbest/{}/{}_{}_{}mer_cols{}.npy".format(
-                dataset, num_feats, drug, kmer_length, i+1), kmer_cols)
+                np.save("data/multi-mer/kbest/{}/{}_{}_{}mer_matrix.npy".format(
+                dataset, num_feats, drug, kmer_length), kmer_matrix)
+                np.save("data/multi-mer/kbest/{}/{}_{}_{}mer_cols.npy".format(
+                dataset, num_feats, drug, kmer_length), kmer_cols)
 
-                del kmer_matrix
-                del kmer_cols
-                gc.collect()
+            else:
+                # can look into splitting and doing feature selection on each class of the matrix
+                np.save("data/multi-mer/per_class/{}/{}_{}_{}mer_matrix.npy".format(
+                dataset, num_feats, drug, kmer_length), kmer_matrix)
+                np.save("data/multi-mer/per_class/{}/{}_{}_{}mer_cols.npy".format(
+                dataset, num_feats, drug, kmer_length), kmer_cols)
 
-            # merge results
-            kmer_matrix = []
-            kmer_cols = []
-            for i in range(10):
-                if(i==0):
-                    split_matrix = np.load("data/multi-mer/kbest/{}/{}_{}_{}mer_matrix{}.npy".format(
-                    dataset, num_feats, drug, kmer_length, i+1))
-                else:
-                    kmer_matrix = np.concatenate((kmer_matrix,split_matrix), axis=0)
-                split_cols = np.load("data/multi-mer/kbest/{}/{}_{}_{}mer_cols{}.npy".format(
-                dataset, num_feats, drug, kmer_length, i+1))
-                for col in split_cols:
-                    kmer_cols = kmer_cols.append(col)
-            kmer_cols = np.array(kmer_cols)
-
-            np.save("data/multi-mer/kbest/{}/{}_{}_{}mer_matrix.npy".format(
-            dataset, num_feats, drug, kmer_length), kmer_matrix)
-            np.save("data/multi-mer/kbest/{}/{}_{}_{}mer_cols.npy".format(
-            dataset, num_feats, drug, kmer_length), kmer_cols)
 
     else:
         del kmer_matrix
@@ -131,16 +220,16 @@ if __name__ =="__main__":
         gc.collect()
 
         kmer_matrix = np.load("data/multi-mer/kbest/{}/{}_{}_{}mer_matrix.npy".format(
-        dataset, num_feats, drug, kmer_length, split_num))
+        dataset, num_feats, drug, kmer_length))
         kmer_cols = np.load("data/multi-mer/kbest/{}/{}_{}_{}mer_cols.npy".format(
-        dataset, num_feats, drug, kmer_length, split_num))
+        dataset, num_feats, drug, kmer_length))
 
     print(len(kmer_cols))
-    assert(len(kmer_cols) == int(num_feats))
+    assert(len(kmer_cols) == int(num_feats) or force_per_class == 1)
 
-    # calculate feature importances with chi2 to compare against model importances
+    # calculate feature importances with anova to compare against model importances
     import scipy.stats as stats
-    skb = SelectKBest(chi2, k='all').fit(kmer_matrix, y_train)
+    skb = SelectKBest(f_classif, k='all').fit(kmer_matrix, y_train)
 
     num_classes_obj = len(Counter(y_train).keys())
 
@@ -162,9 +251,10 @@ if __name__ =="__main__":
         model = XGBClassifier(objective=other, silent=True, nthread=num_threads)
         model.fit(kmer_matrix,y_train)
 
-    if not os.path.exists(os.path.abspath(os.path.curdir)+"/annotation/15mer_data/"):
-        os.mkdir(os.path.abspath(os.path.curdir)+"/annotation/15mer_data/")
-
-    feat_save = 'data/multi-mer/feat_ranks/{}_{}_{}_{}mer_feature_ranks.npy'.format(
-    dataset,num_feats,drug,kmer_length)
+    if(force_per_class == 0):
+        feat_save = 'data/multi-mer/feat_ranks/{}_{}_{}_{}mer_feature_ranks.npy'.format(
+        dataset,num_feats,drug,kmer_length)
+    else:
+        feat_save = 'data/multi-mer/per_class/{}_{}_{}_{}mer_feature_ranks.npy'.format(
+        dataset,num_feats,drug,kmer_length)
     np.save(feat_save, np.vstack((kmer_cols, [float(i) for i in model.feature_importances_],[float(i) for i in skb.scores_])))

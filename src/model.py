@@ -24,7 +24,7 @@ from hyperopt import tpe
 from model_evaluators import *
 from data_transformers import *
 
-def get_data(dataset, drug):
+def get_data(dataset, drug, kmer_length, num_feats):
 	#choose which dataset to use
 	path  = ""
 	if dataset == "grdi":
@@ -35,10 +35,32 @@ def get_data(dataset, drug):
 		if dataset != "public":
 			raise Exception('did not receive a valid -x or -y name, run model.py --help for more info')
 
-	#load kmer matrix and MIC classes
-	X = np.load(("data/filtered/{}{}/kmer_matrix.npy").format(path,drug))
-	Y = np.load(("data/filtered/{}{}/kmer_rows_mic.npy").format(path,drug))
-	Z = np.load(("data/filtered/{}{}/kmer_rows_genomes.npy").format(path,drug))
+	if(kmer_length != 11):
+		#load multi-mer data
+
+		# dont forget to force column name changes
+
+		X = np.load("data/multi-mer/kbest/{}/{}_{}_{}mer_matrix.npy".format(
+		dataset, num_feats, drug, kmer_length))
+
+		Z = np.load("data/multi-mer/{}{}mer_rows.npy".format(path, kmer_length))
+
+		mic_df = joblib.load("data/{}_mic_class_dataframe.pkl".format(dataset))
+		mic_class_dict = joblib.load("data/{}_mic_class_order_dict.pkl".format(dataset))
+
+		Y = [mic_df[drug][i] for i in Z]
+
+		row_mask = [i in mic_class_dict[drug] for i in Y]
+
+		X = X[row_mask]
+		Y = np.asarray(Y)[row_mask]
+		Z = np.asarray(Z)[row_mask]
+
+	else:
+		#load kmer matrix and MIC classes
+		X = np.load(("data/filtered/{}{}/kmer_matrix.npy").format(path,drug))
+		Y = np.load(("data/filtered/{}{}/kmer_rows_mic.npy").format(path,drug))
+		Z = np.load(("data/filtered/{}{}/kmer_rows_genomes.npy").format(path,drug))
 	Y = [remove_symbols(i) for i in Y]
 	return X, Y, Z
 
@@ -49,6 +71,7 @@ def usage():
 	"-y, --test        Which set to test on [public, grdi, kh]",
 	"                  Note that not passing a -y causes cross validation on the train set",
 	"-f, --features    Number of features to train on, set to 0 to use all",
+	"-k  --kmer_length What length of kmer is used [11,15,31]"
 	"-a, --attribute   What to make the prediction on [AMP, AMC, AZM, etc]",
 	"-m, --model       Which model to use [XGB, SVM, ANN], defaults to XGB",
 	"-o, --out         Where to save result DF, defaults to print to std out",
@@ -71,10 +94,11 @@ if __name__ == "__main__":
 	imp_feats = 0
 	save_errors = 0
 	force_feats = False
+	kmer_length = 11
 
 	OBO_acc = np.zeros((2,5))
 	try:
-		opts, args =  getopt.getopt(sys.argv[1:],"hx:y:f:a:m:o:pie",["help","train=","test=","features=","attribute=","model=","out=","force_features"])
+		opts, args =  getopt.getopt(sys.argv[1:],"hx:y:f:k:a:m:o:pie",["help","train=","test=","features=","attribute=","model=","out=","force_features", "kmer_length="])
 	except getopt.GetoptError:
 		usage()
 		sys.exit(2)
@@ -85,6 +109,8 @@ if __name__ == "__main__":
 			test = arg
 		elif opt in ('-f', '--features'):
 			num_feats = int(arg)
+		elif opt in ('-k', '--kmer_length'):
+			kmer_length = int(arg)
 		elif opt in ('-a', '--attribute'):
 			predict_for = arg
 		elif opt in ('-m', '--model'):
@@ -104,6 +130,7 @@ if __name__ == "__main__":
 		elif opt in ('-h', '--help'):
 			usage()
 			sys.exit()
+
 
 	X = []
 	Y = []
@@ -128,18 +155,18 @@ if __name__ == "__main__":
 	#le.fit([remove_symbols(i) for i in mic_class_dict['predict_for']])
 
 	mic_dict = [remove_symbols(i) for i in mic_class_dict[predict_for]]
-	le.fit(mic_dict)
+	le.classes_ = mic_dict
 	#if no -y is passed in we want to do a 5 fold cross validation on the data
 	if test =='cv':
-		X, Y, Z = get_data(train, predict_for) # pull entire data set to be split later
+		X, Y, Z = get_data(train, predict_for, kmer_length, num_feats) # pull entire data set to be split later
 		Y = le.transform(Y)
 		#print(Y)
 		#Y = encode_categories(Y, mic_dict)
 		if(num_feats>= X.shape[1]):
 			num_feats = 0
 	else: #we are not cross validating
-		x_train, y_train, z_train = get_data(train, predict_for) # pull training set
-		x_test, y_test, z_test = get_data(test, predict_for) # pull testing set
+		x_train, y_train, z_train = get_data(train, predict_for, kmer_length, num_feats) # pull training set
+		x_test, y_test, z_test = get_data(test, predict_for, kmer_length, num_feats) # pull testing set
 		#le.fit(np.concatenate((y_train,y_test))) # need to fit on both sets of labels, so everything is accounted for (finding what the replacements are)
 		y_train = le.transform(y_train) # just applying the label encoder on the 2 sets (actually replacing things)
 		y_test = le.transform(y_test)
@@ -187,7 +214,7 @@ if __name__ == "__main__":
 		print("done num classes")
 		cols = []
 		#feature selection
-		if(num_feats!=0):
+		if(num_feats!=0 and kmer_length == 11):
 			if(force_feats):
 				# both features and cols are loading in as byte literals
 				features = np.load("predict/features/1000feats_{}.npy".format(predict_for))
