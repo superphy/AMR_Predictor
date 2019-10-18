@@ -24,7 +24,7 @@ from hyperopt import tpe
 from model_evaluators import *
 from data_transformers import *
 
-def get_data(dataset, drug, kmer_length, num_feats):
+def get_data(dataset, drug, kmer_length, num_feats,force_per_class):
 	#choose which dataset to use
 	path  = ""
 	if dataset == "grdi":
@@ -38,10 +38,15 @@ def get_data(dataset, drug, kmer_length, num_feats):
 	if(kmer_length != 11):
 		#load multi-mer data
 
-		# dont forget to force column name changes
+		if force_per_class:
+			feat_cluster = 'per_class'
+		else:
+			feat_cluster = 'kbest'
 
-		X = np.load("data/multi-mer/kbest/{}/{}_{}_{}mer_matrix.npy".format(
-		dataset, num_feats, drug, kmer_length))
+		X = np.load("data/multi-mer/{}/{}/{}_{}_{}mer_matrix.npy".format(
+		feat_cluster, dataset, num_feats, drug, kmer_length))
+
+		print("Matrix Shape:", X.shape)
 
 		Z = np.load("data/multi-mer/{}{}mer_rows.npy".format(path, kmer_length))
 
@@ -78,6 +83,7 @@ def usage():
 	"-p,               Add this flag to do hyperparameter optimization, XGB/SVM only",
 	"-i,               Saves all features and their importance in data/features",
 	"--force_features  Force the model to be trained on the top 1000 features determined from the NCBI dataset (public)",
+	"--force_per_class Force the model to be trained on top f kmers from each class",
 	"-e, 			   Saves errors to data/errors",
 	"-h, --help        Prints this menu",
 	sep = '\n')
@@ -95,10 +101,11 @@ if __name__ == "__main__":
 	save_errors = 0
 	force_feats = False
 	kmer_length = 11
+	force_per_class = False
 
 	OBO_acc = np.zeros((2,5))
 	try:
-		opts, args =  getopt.getopt(sys.argv[1:],"hx:y:f:k:a:m:o:pie",["help","train=","test=","features=","attribute=","model=","out=","force_features", "kmer_length="])
+		opts, args =  getopt.getopt(sys.argv[1:],"hx:y:f:k:a:m:o:pie",["help","train=","test=","features=","attribute=","model=","out=","force_features","force_per_class", "kmer_length="])
 	except getopt.GetoptError:
 		usage()
 		sys.exit(2)
@@ -125,6 +132,8 @@ if __name__ == "__main__":
 				os.mkdir(os.path.abspath(os.path.curdir)+'/data/features')
 		elif opt == '--force_features':
 			force_feats = True
+		elif opt == '--force_per_class':
+			force_per_class = True
 		elif opt == '-e':
 			save_errors = 1
 		elif opt in ('-h', '--help'):
@@ -146,7 +155,7 @@ if __name__ == "__main__":
 		sys.exit()
 
 	# this encodes the classes into integers for the models, 1,2,4,8 becomes 0,1,2,3
-	le = preprocessing.LabelEncoder()
+	# le = preprocessing.LabelEncoder()
 	if(train=='grdi'):
 		mic_class_dict = joblib.load("data/grdi_mic_class_order_dict.pkl")
 	else:
@@ -155,21 +164,22 @@ if __name__ == "__main__":
 	#le.fit([remove_symbols(i) for i in mic_class_dict['predict_for']])
 
 	mic_dict = [remove_symbols(i) for i in mic_class_dict[predict_for]]
-	le.classes_ = mic_dict
+	#le.classes_ = mic_dict
+	encoder = { mic_dict[i] : i for i in range(0, len(mic_dict))}
+
 	#if no -y is passed in we want to do a 5 fold cross validation on the data
 	if test =='cv':
-		X, Y, Z = get_data(train, predict_for, kmer_length, num_feats) # pull entire data set to be split later
-		Y = le.transform(Y)
-		#print(Y)
-		#Y = encode_categories(Y, mic_dict)
+		X, Y, Z = get_data(train, predict_for, kmer_length, num_feats, force_per_class) # pull entire data set to be split later
+		#Y = le.transform(Y)
+		Y = np.array([encoder[i] for i in Y])
 		if(num_feats>= X.shape[1]):
 			num_feats = 0
 	else: #we are not cross validating
-		x_train, y_train, z_train = get_data(train, predict_for, kmer_length, num_feats) # pull training set
-		x_test, y_test, z_test = get_data(test, predict_for, kmer_length, num_feats) # pull testing set
+		x_train, y_train, z_train = get_data(train, predict_for, kmer_length, num_feats, force_per_class) # pull training set
+		x_test, y_test, z_test = get_data(test, predict_for, kmer_length, num_feats, force_per_class) # pull testing set
 		#le.fit(np.concatenate((y_train,y_test))) # need to fit on both sets of labels, so everything is accounted for (finding what the replacements are)
-		y_train = le.transform(y_train) # just applying the label encoder on the 2 sets (actually replacing things)
-		y_test = le.transform(y_test)
+		y_train = np.array([encoder[i] for i in y_train]) # just applying the label encoder on the 2 sets (actually replacing things)
+		y_test = np.array([encoder[i] for i in y_test])
 		#y_train = encode_categories(y_train, mic_dict)
 		#y_test  = encode_categories(y_test, mic_dict)
 		if(num_feats>= x_train.shape[1]):
@@ -265,7 +275,7 @@ if __name__ == "__main__":
 				# note that for this to save properly, imp_feats must == 1
 				joblib.dump(bst, "predict/models/xgb_public_{}feats_{}model.bst".format(str(num_feats),predict_for))
 				np.save("predict/features/{}feats_{}.npy".format(str(num_feats),predict_for), cols.flatten())
-				np.save("predict/features/{}feats_le_{}.npy".format(str(num_feats),predict_for),le.classes_)
+				np.save("predict/features/{}feats_le_{}.npy".format(str(num_feats),predict_for),mic_dict)
 				print("Model Saved, exiting model.py")
 				sys.exit()
 			else:

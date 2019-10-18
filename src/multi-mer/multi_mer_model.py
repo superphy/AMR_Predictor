@@ -31,7 +31,7 @@ if __name__ =="__main__":
     num_feats = sys.argv[5]
 
     # if we want the top X features predictive of each class, not just overall
-    force_per_class = 0
+    force_per_class = int(sys.argv[6])
 
     if dataset == 'public':
         dataset_path = ''
@@ -67,9 +67,13 @@ if __name__ =="__main__":
         print("Removed {} invalid rows from {} kmer_matrix".format(num_removed,drug))
 
     # encode mic labels from 1,2,4,8 to 0,1,2,3
-    le = preprocessing.LabelEncoder()
-    le.classes_ = mic_class_dict[drug]
-    y_train = le.transform(kmer_rows_mic)
+    #le = preprocessing.LabelEncoder()
+    #le.classes_ = mic_class_dict[drug]
+    #y_train = le.transform(kmer_rows_mic)
+
+    # encode mic labels from 1,2,4,8 to 0,1,2,3
+    encoder = { mic_class_dict[drug][i] : i for i in range(0, len(mic_class_dict[drug]))}
+    y_train = [encoder[i] for i in kmer_rows_mic]
 
     # feature selection with anova f val to the top 1000 features
     import gc
@@ -124,33 +128,33 @@ if __name__ =="__main__":
             # same block as directly above but for force_per_class
             if not os.path.exists(os.path.abspath(os.path.curdir)+"data/multi-mer/per_class/{}/{}_{}_{}mer_matrix1-1.npy".format(dataset, num_feats, drug, kmer_length)) and force_per_class == 1:
                 for i in range(10):
+                    # we are going to repeat the feature selection once per class that has >5 samples,
+                    kmer_matrix = np.load("data/multi-mer/kbest/{}/all_{}_{}mer_matrix{}.npy".format(
+                    dataset, drug, kmer_length, i+1))
+                    kmer_cols = np.load("data/multi-mer/kbest/{}/all_{}_{}mer_cols{}.npy".format(
+                    dataset, drug, kmer_length, i+1))
+
                     for class_num, mic_class in enumerate(mic_class_dict[drug]):
                         counts = Counter(y_train)
                         if counts[class_num] < 5:
                             print("skipping {} class {} because it only has {} samples".format(drug, mic_class, counts[mic_class]))
                             continue
 
-                        # we are going to repeat the feature selection once per class that has >5 samples,
-                        kmer_matrix = np.load("data/multi-mer/kbest/{}/all_{}_{}mer_matrix{}.npy".format(
-                        dataset, drug, kmer_length, i+1))
-                        kmer_cols = np.load("data/multi-mer/kbest/{}/all_{}_{}mer_cols{}.npy".format(
-                        dataset, drug, kmer_length, i+1))
+                        class_y_train = [int(ele == class_num) for ele in y_train]
 
-                        class_y_train = [int(i == class_num) for i in y_train]
-
-                        assert(np.sum(class_y_train >=5))
+                        assert(np.sum(class_y_train) >=5)
 
                         sk_obj = SelectKBest(f_classif, k = int(num_feats))
-                        kmer_matrix = sk_obj.fit_transform(kmer_matrix, class_y_train)
-                        kmer_cols = (sk_obj.transform(kmer_cols.reshape(1,-1))).flatten()
+                        split_matrix = sk_obj.fit_transform(kmer_matrix, class_y_train)
+                        split_cols = (sk_obj.transform(kmer_cols.reshape(1,-1))).flatten()
 
                         np.save("data/multi-mer/per_class/{}/{}_{}_{}mer_matrix{}-{}.npy".format(
-                        dataset, num_feats, drug, kmer_length, i+1, class_num+1), kmer_matrix)
+                        dataset, num_feats, drug, kmer_length, i+1, class_num+1), split_matrix)
                         np.save("data/multi-mer/per_class/{}/{}_{}_{}mer_cols{}-{}.npy".format(
-                        dataset, num_feats, drug, kmer_length, i+1, class_num+1), kmer_cols)
+                        dataset, num_feats, drug, kmer_length, i+1, class_num+1), split_cols)
 
-                        del kmer_matrix
-                        del kmer_cols
+                        del split_matrix
+                        del split_cols
                         gc.collect()
 
             # merge results, do final feature selection

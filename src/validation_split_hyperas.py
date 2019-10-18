@@ -62,9 +62,12 @@ if __name__=='__main__':
 
     # possible label encodings are determined from all possible MIC values for that drug
     # for example, we change 0.25,0.5,1,2 into 0,1,2,3
-    le = preprocessing.LabelEncoder()
-    le.classes_ = mic_dict
-    Y = le.transform(Y)
+    #le = preprocessing.LabelEncoder()
+    #le.classes_ = mic_dict
+    #Y = le.transform(Y)
+
+    encoder = { mic_dict[i] : i for i in range(0, len(mic_dict))}
+    Y = np.array([encoder[i] for i in Y])
 
     cv = StratifiedKFold(n_splits=5, random_state=913824)
     model_data = cv.split(X, Y, Z)

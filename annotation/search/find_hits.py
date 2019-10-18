@@ -166,10 +166,16 @@ if __name__ == "__main__":
     dataset = sys.argv[2]
     drug = sys.argv[3]
     top_x = sys.argv[4]
+    num_feats = sys.argv[5]
+    kmer_length = sys.argv[6]
 
-    if(dataset == 'grdi' and drug == 'FIS'):
+    if(dataset == 'grdi' and drug in ['FIS','AZM']):
         raise Exception("Called find_hits.py for FIS using GRDI dataset, the snakemake shouldnt allow this")
-    top_feats = np.load("annotation/search/11mer_data/{}_{}_top{}.npy".format(drug, dataset, top_x), allow_pickle = True)
+
+    if kmer_length == '11':
+        top_feats = np.load("annotation/search/11mer_data/{}_{}_top{}.npy".format(drug, dataset, top_x), allow_pickle = True)
+    else:
+        top_feats = np.load("data/multi-mer/feat_ranks/{}_{}_{}_{}mer_top5_feats.npy".format(dataset, num_feats, drug, kmer_length), allow_pickle = True)
 
     with open(blast_path) as fh:
         blast_df = skbio.io.read(fh, format="blast+6",into=pd.DataFrame,default_columns=True)
@@ -181,8 +187,9 @@ if __name__ == "__main__":
 
     # each row in gene hits will be [kmer, gene_up, dist_up, gene_down, dist_down, start, stop, genome_id, contig_name]
     gene_hits = []
-
     for kmer in top_feats:
+        if kmer_length != '11':
+            kmer = kmer[0]
         # locs is 2d list, each row is (start, stop, genome_id, contig_name)
         locs = find_locs(kmer, blast_df)
         for loc in locs:
@@ -195,4 +202,7 @@ if __name__ == "__main__":
 
     # save gene hits as a dataframe
     hits_df = pd.DataFrame(data = np.asarray(gene_hits),columns = ['kmer', 'gene_up', 'dist_up', 'gene_down', 'dist_down', 'start', 'stop', 'genome_id', 'contig_name'])
-    hits_df.to_pickle("annotation/search/11mer_data/{}_hits_for_{}.pkl".format(dataset,drug))
+    if(kmer_length == '11'):
+        hits_df.to_pickle("annotation/search/11mer_data/{}_hits_for_{}.pkl".format(dataset,drug))
+    else:
+        hits_df.to_pickle("data/multi-mer/blast/{}_{}_{}mer_blast_hits/{}_hits.pkl".format(num_feats, dataset, kmer_length, drug))

@@ -15,8 +15,11 @@ from tensorflow import set_random_seed
 from concurrent.futures import ProcessPoolExecutor
 from multiprocessing import cpu_count
 
-session_conf = tensorflow.ConfigProto(intra_op_parallelism_threads=16,inter_op_parallelism_threads=16)
-sess = tensorflow.Session(config=session_conf)
+config = tensorflow.ConfigProto(intra_op_parallelism_threads=cpu_count(),
+								inter_op_parallelism_threads=2,
+								allow_soft_placement=True,
+								device_count = {'CPU': cpu_count()})
+sesions = tensorflow.Session(config=config)
 
 from hyperopt import Trials, STATUS_OK, tpe
 from keras.layers.convolutional import Conv1D
@@ -31,7 +34,6 @@ from hyperas.distributions import choice, uniform
 
 from sklearn import metrics
 from sklearn.externals import joblib
-from sklearn.cross_validation import train_test_split
 from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit
 from sklearn.feature_selection import SelectKBest, f_classif
 from sklearn.metrics import matthews_corrcoef, confusion_matrix, classification_report
@@ -258,7 +260,7 @@ def create_model(x_train, y_train, x_test, y_test):
 		model.add(Dense(num_classes, kernel_initializer='uniform', activation='softmax'))
 
 	model.compile(loss='poisson', metrics=['accuracy'], optimizer='adam')
-	model.fit(x_train, y_train, epochs=100, verbose=0, callbacks=[early_stop, reduce_LR])
+	model.fit(x_train, y_train, epochs=100, verbose=0, batch_size=8, callbacks=[early_stop, reduce_LR])
 
 	score, acc = model.evaluate(x_test, y_test, verbose=0)
 	return {'loss': -acc, 'status': STATUS_OK, 'model': model}

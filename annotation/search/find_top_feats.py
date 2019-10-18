@@ -17,7 +17,7 @@ def find_top_feats(imp_arr,sav_path,top_x):
 
         top_x -= len(top_indeces)
         for i in top_indeces:
-            top_feats.append(imp_arr[0][i])
+            top_feats.append(imp_arr[:,i])
             imp_arr[1][i] = 0
     return top_feats
 
