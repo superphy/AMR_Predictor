@@ -11,7 +11,7 @@ dataset_paths = ['','grdi_']
 
 rule all:
     input:
-        "results/multi-mer/"+kmer_length+"mer/best_hits.csv"
+        "results/multi-mer/"+kmer_length+"mer/top_hit_with_card.csv"
 rule clean:
     input:
         "data/genomes/raw/{id}.fasta"
@@ -291,3 +291,11 @@ rule find_best_hit:
         "results/multi-mer/"+kmer_length+"mer/best_hits.csv"
     shell:
         "python annotation/search/select_best_hit.py "+kmer_length
+
+rule add_card_hits:
+    input:
+        "results/multi-mer/"+kmer_length+"mer/best_hits.csv"
+    output:
+        "results/multi-mer/"+kmer_length+"mer/top_hit_with_card.csv"
+    shell:
+        "python src/multi-mer/CARD_hits.py 31"
