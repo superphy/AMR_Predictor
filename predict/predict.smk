@@ -162,9 +162,10 @@ rule predict:
 		from data_transformers import remove_symbols
 		from model_evaluators import find_major
 
-		drugs = ['AMP','AMC','AZM','CHL','CIP','CRO','FIS','FOX','GEN','NAL','SXT','TET','TIO']
+		#drugs = ['AMP','AMC','AZM','CHL','CIP','CRO','FIS','FOX','GEN','NAL','SXT','TET','TIO']
 
 		mic_class_dict = joblib.load("predict/genomes/public_mic_class_order_dict.pkl")
+		drugs = list(mic_class_dict.keys())
 
 		# load in 2D matrix of kmer counts, columns are kmers and rows are genomes so
 		# kmer_matrix[genome][kmer] returns how many times that kmer was seen in that genome
@@ -184,7 +185,7 @@ rule predict:
 		kmer_cols = np.load("predict/genomes/unfiltered/kmer_cols.npy")
 
 		# make pandas to store predictions
-		predicts = np.zeros((len(kmer_rows), 13),dtype= 'object')
+		predicts = np.zeros((len(kmer_rows), len(drugs)),dtype= 'object')
 		predict_df = pd.DataFrame(data = predicts, index = kmer_rows, columns = drugs)
 
 		# go through each drug and make prediction for just that drug
@@ -226,7 +227,11 @@ rule predict:
 					raise
 
 			# if your GPU has a compute capability below 3.5 this next line will fail
+			import time
+			start = time.time()
 			predictions = [int(round(i)) for i in bst.predict(dtest, validate_features = True)]
+			end = time.time()
+			#print("Prediction on {} took {}s".format(drug, end-start))
 
 			# predictions will be encoded into 0,1,2,3... so we need to bring them back to MIC values
 			le = preprocessing.LabelEncoder()
@@ -248,6 +253,7 @@ rule predict:
 
 			# for every genome we predicted on, we need to add the results to our DataFrame
 			# and then we need to evaluate the prediction for errors
+			missing_counter = 0
 			for prediction, run_id in zip(predictions, kmer_rows):
 				predict_df.at[run_id,drug] = prediction
 
@@ -279,8 +285,10 @@ rule predict:
 					with open('predict/prediction_errors.txt', 'a') as myfile:
 						myfile.write("\nDrug:{} Genome:{} Predicted:{} Actual:{} OBO:{} Major?:{}".format(drug, run_id, prediction, actual, off_by_one,find_major(pred_loc,act_loc,drug,mic_class_dict)))
 				except:
-					print("Could not find a valid {} MIC for {}".format(drug, run_id))
+					#print("Could not find a valid {} MIC for {}".format(drug, run_id))
+					missing_counter +=1
 					continue
+			print("{}/{} {} samples did not have valid labels, see predict/logs/mic_public.log for more info".format(missing_counter,len(predictions),drug))
 
 
 
@@ -291,7 +299,7 @@ rule predict:
 			shell("python src/genome_error_table_converter.py predict/prediction_errors.txt")
 
 			# create a dataframe for the results to be stored in as we read them
-			results_df = pd.DataFrame(data = np.zeros((13,6)),index = drugs,columns=['Accuracy (1D)','Accuracy (Direct)',
+			results_df = pd.DataFrame(data = np.zeros((len(drugs),6)),index = drugs,columns=['Accuracy (1D)','Accuracy (Direct)',
 			'Total Predictions','Non-Major Error Rate','Major Error Rate','Very Major Error Rate'])
 
 			# we are going to walk line by line classifying results
