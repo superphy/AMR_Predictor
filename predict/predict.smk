@@ -16,6 +16,9 @@ def make_row(filename):
 	"""
 	Given a genome file, create and return a row of kmer counts
 	to be inserted into the kmer matrix.
+
+	DEPRECATED
+
 	"""
 	relevant_feats = np.load("predict/features/relevant_feats_{}.npy".format(str(features)))
 	cols_dict = { relevant_feats[i] : i for i in range(0, len(relevant_feats))}
@@ -34,6 +37,26 @@ def make_row(filename):
 			kmer_count = int(record.id)
 			temp_row[cols_dict[kmer_seq]] = kmer_count
 
+	return filename, temp_row
+
+def make_row_from_query(filename):
+	import numpy as np
+	relevant_feats = np.load("predict/features/relevant_feats_{}.npy".format(str(features)))
+	cols_dict = { relevant_feats[i] : i for i in range(0, len(relevant_feats))}
+
+	# Create a temp row to fill and return (later placed in the kmer_matrix)
+	temp_row = [0]*len(relevant_feats)
+
+	# place kmer counts in correct order
+	with open("predict/genomes/jellyfish_results/"+filename) as file:
+		for line in file:
+			line = line.rstrip()
+			kmer, count = line.split()
+			if(int(count)>255):
+				count = 255
+			temp_row[cols_dict[kmer]] = int(count)
+
+	# returns a row of kmer counts and the sequence name it came from
 	return filename, temp_row
 
 rule all:
@@ -66,7 +89,7 @@ rule dump:
 	output:
 		"predict/genomes/jellyfish_results/{id}.fa"
 	shell:
-		"jellyfish dump {input} > {output}"
+		"jellyfish query {input} -s predict/features/relevant_feats_1000.fasta > {output}"
 
 rule matrix:
 	# This rule is preprocessing the data to be in the correct format to be fed
@@ -126,7 +149,7 @@ rule matrix:
 		num_start += min(cpu_count(),len(genomes))
 		progress()
 		with ProcessPoolExecutor(max_workers=cpu_count()) as ppe:
-			for genome_name,temp_row in ppe.map(make_row, genomes):
+			for genome_name,temp_row in ppe.map(make_row_from_query, genomes):
 				num_stop+=1
 				if(num_start<total):
 					num_start+=1
