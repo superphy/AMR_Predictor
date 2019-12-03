@@ -82,6 +82,8 @@ def compare_mic_df(ldf, rdf):
     has_nan = 0
     invalid = 0
 
+    errors = []
+
     for drug in drugs:
         ldfd = ldf[drug]
         rdfd = rdf[drug]
@@ -98,8 +100,13 @@ def compare_mic_df(ldf, rdf):
                     continue
                 wrong +=1
                 #print("{} {} are not equal ({} {})".format(ldfd[sample], rdfd[sample], drug, sample))
+                errors.append([sample,drug,ldfd[sample], rdfd[sample]])
+
+    df = pd.DataFrame(data = errors, columns=['id','antimicrobial','patric','NCBI'])
 
     print("Correct: {} Wrong: {} NaN/Invalid: {}".format(correct,wrong,has_nan+invalid))
+
+    return df
 
 def find_major(pred, act, drug):
 	pred = (str(pred).split("=")[-1])
