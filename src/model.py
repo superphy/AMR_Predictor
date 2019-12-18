@@ -57,7 +57,7 @@ def get_data(dataset, drug, kmer_length, num_feats,force_per_class):
 
 		row_mask = [i in mic_class_dict[drug] for i in Y]
 
-		X = X[row_mask]
+		#X = X[row_mask]
 		Y = np.asarray(Y)[row_mask]
 		Z = np.asarray(Z)[row_mask]
 
@@ -79,8 +79,9 @@ def usage():
 	"-k  --kmer_length What length of kmer is used [11,15,31]"
 	"-a, --attribute   What to make the prediction on [AMP, AMC, AZM, etc]",
 	"-m, --model       Which model to use [XGB, SVM, ANN], defaults to XGB",
+	"-c, --cores       How many cores to pass to the model, defaults to 16"
 	"-o, --out         Where to save result DF, defaults to print to std out",
-	"-p,               Add this flag to do hyperparameter optimization, XGB/SVM only",
+	"-p,               See src/hyperas.smk for hyperparameter optimizations.",
 	"-i,               Saves all features and their importance in data/features",
 	"--force_features  Force the model to be trained on the top 1000 features determined from the NCBI dataset (public)",
 	"--force_per_class Force the model to be trained on top f kmers from each class",
@@ -102,10 +103,11 @@ if __name__ == "__main__":
 	force_feats = False
 	kmer_length = 11
 	force_per_class = False
+	num_threads = 16
 
 	OBO_acc = np.zeros((2,5))
 	try:
-		opts, args =  getopt.getopt(sys.argv[1:],"hx:y:f:k:a:m:o:pie",["help","train=","test=","features=","attribute=","model=","out=","force_features","force_per_class", "kmer_length="])
+		opts, args =  getopt.getopt(sys.argv[1:],"hx:y:f:k:a:m:o:c:pie",["help","train=","test=","features=","attribute=","model=","out=","force_features","force_per_class", "kmer_length=", "cores="])
 	except getopt.GetoptError:
 		usage()
 		sys.exit(2)
@@ -122,10 +124,13 @@ if __name__ == "__main__":
 			predict_for = arg
 		elif opt in ('-m', '--model'):
 			model_type = arg
+		elif opt in ('-c', '--cores'):
+			num_threads = int(arg)
 		elif opt in ('-o', '--out'):
 			out = arg
 		elif opt == '-p':
 			hyper_param = 1
+			raise Exception("See src/hyperas.smk for hyperparameter optimizations.")
 		elif opt == '-i':
 			imp_feats = 1
 			if not os.path.exists(os.path.abspath(os.path.curdir)+'/data/features'):
@@ -187,8 +192,6 @@ if __name__ == "__main__":
 
 	#num_classes = len(le.classes_)
 	num_classes = len(mic_class_dict[predict_for])
-
-	num_threads = 16
 
 	cv = StratifiedKFold(n_splits=5, random_state=913824)
 	cvscores = []

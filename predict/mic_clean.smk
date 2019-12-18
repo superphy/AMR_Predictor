@@ -1,4 +1,3 @@
-
 #################################################################
 
 # Location of the MIC data
@@ -24,9 +23,18 @@ def transform(input, log, output,
     logging.basicConfig(filename=log[0],level=logging.DEBUG)
     logging.info('MIC binning')
 
-    micsdf = pd.read_excel(input[0])
-    micsdf = micsdf[slice_cols]
-    micsdf = micsdf.set_index(slice_cols[0])
+    if input[0][-4:] == '.csv':
+        micsdf = pd.read_csv(input[0], dtype = str)
+    elif input[0][-5:] == '.xlsx':
+        micsdf = pd.read_excel(input[0])
+    else:
+        raise Exception("Only .csv or .xlsx are supported for predict/mic_labels")
+
+    MICs = list(micsdf.columns.values)
+    MICs = [i for i in MICs if i[:3] in ['run','MIC']]
+
+    micsdf = micsdf[MICs]
+    micsdf = micsdf.set_index(MICs[0])
 
     logging.debug('Using classes defined in {}'.format(input[1]))
     with open(input[1], 'r') as infh:
@@ -48,9 +56,7 @@ def transform(input, log, output,
             # Iterate through MIC values and assign class labels
             logging.debug('MIC values will be mapped to: {}'.format(panel.class_labels))
 
-            i = 0
             for m in mic_series:
-                i += 1
                 mlabel, isna = panel.transform(m)
 
                 if isna:
