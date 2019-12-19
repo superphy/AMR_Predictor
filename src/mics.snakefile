@@ -2,7 +2,7 @@
 #################################################################
 
 # Location of the MIC data
-PUBLIC_MIC_SPREADSHEET_PATH = "data/data/dec2019_master_antibiogram.csv"
+PUBLIC_MIC_SPREADSHEET_PATH = "data/dec2019_master_antibiogram.csv"
 GRDI_MIC_SPREADSHEET_PATH = "data/ResolvedCIPARS_SRL (1).xlsx"
 
 #################################################################
