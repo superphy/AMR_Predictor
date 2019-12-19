@@ -18,6 +18,7 @@ if __name__ == "__main__":
 	kmer_matrix = np.load(os.path.abspath(os.path.curdir)+"/data/unfiltered/kmer_matrix.npy")
 	kmer_cols = np.load(os.path.abspath(os.path.curdir)+"/data/unfiltered/kmer_cols.npy")
 	kmer_rows = np.load(os.path.abspath(os.path.curdir)+"/data/unfiltered/kmer_rows.npy")
+	utf_kmer_rows = [i.decode('utf-8') for i in kmer_rows]
 
 	# For each drug
 	#delete this, hardcoded for testing
@@ -39,9 +40,12 @@ if __name__ == "__main__":
 		# Drop all rows where the cell has an NaN entry
 		new_df = df.dropna(subset=[drug])
 		new_df = new_df[drug]
+
+		# theses are genomes that have valid MICs for this drug
 		new_df_rows = new_df.index.values 	# Row names are genomes
 
 		# Mask the kmermatrix stuff
+		"""
 		num_rows = len(df_rows)
 		mask = [1]*(num_rows)
 
@@ -50,6 +54,9 @@ if __name__ == "__main__":
 			if x not in new_df_rows:
 				mask[i] = 0
 		bool_mask = [bool(x) for x in mask]
+		"""
+
+		bool_mask = [i in new_df_rows for i in utf_kmer_rows]
 
 		print(kmer_matrix.shape)
 		new_kmer_matrix = kmer_matrix[bool_mask, :]
@@ -73,5 +80,3 @@ if __name__ == "__main__":
 		np.save(os.path.abspath(os.path.curdir)+'/data/'+drug+'/kmer_cols.npy', kmer_cols)
 
 		print("end: prepping amr data for ",drug)
-
-
