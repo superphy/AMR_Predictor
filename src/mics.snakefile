@@ -2,7 +2,7 @@
 #################################################################
 
 # Location of the MIC data
-PUBLIC_MIC_SPREADSHEET_PATH = "data/no_ecoli_GenotypicAMR_Master.xlsx"
+PUBLIC_MIC_SPREADSHEET_PATH = "data/data/dec2019_master_antibiogram.csv"
 GRDI_MIC_SPREADSHEET_PATH = "data/ResolvedCIPARS_SRL (1).xlsx"
 
 #################################################################
@@ -23,7 +23,13 @@ def transform(input, log, output,
     logging.basicConfig(filename=log[0],level=logging.DEBUG)
     logging.info('MIC binning')
 
-    micsdf = pd.read_excel(input[0])
+    if input[0][-4:] == '.csv':
+        micsdf = pd.read_csv(input[0])
+    elif input[0][-5:] == '.xlsx':
+        micsdf = pd.read_excel(input[0])
+    else:
+        raise Exception("Only .csv or .xlsx are supported for mic labels")
+
     micsdf = micsdf[slice_cols]
     micsdf = micsdf.set_index(slice_cols[0])
 

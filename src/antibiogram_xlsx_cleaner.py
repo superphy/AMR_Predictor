@@ -16,10 +16,10 @@ def remove_tail(seq):
     splits = seq.split('/')
     if len(splits)==2:
         return splits[0][:-3]
-    elif len(splits)==3:
+    elif len(splits) in [1,3]:
         return splits[0]
     else:
-        raise Exception("Unexpected number of / seen")
+        raise Exception("Unexpected number of / seen in sequence {}".format(seq))
 
 def remove_equality(seq):
     # Will turn "== 2" into "2" || '== 2 mg/L' into '2 mg/L'
@@ -30,14 +30,18 @@ def remove_equality(seq):
     else:
         return seq
 
-mic_df = pd.read_excel('data/2019-Antibiogram.xlsx')
 
-mics = ["MIC_AMP", "MIC_AMC", "MIC_FOX", "MIC_CRO",
-"MIC_TIO", "MIC_GEN", "MIC_FIS", "MIC_SXT", "MIC_AZM",
-"MIC_CHL", "MIC_CIP", "MIC_NAL", "MIC_TET"]
+if __name__ == "__main__":
+    input = sys.argv[1]
+    output = sys.argv[2]
+    mic_df = pd.read_csv(input)
 
-# go through every column of relevant MIC values
-for mic in mics:
-    mic_df[mic]=[remove_equality(i) for i in [remove_tail(i) for i in mic_df[mic]]]
+    mics = ["MIC_AMP", "MIC_AMC", "MIC_FOX", "MIC_CRO",
+    "MIC_TIO", "MIC_GEN", "MIC_FIS", "MIC_SXT", "MIC_AZM",
+    "MIC_CHL", "MIC_CIP", "MIC_NAL", "MIC_TET"]
 
-mic_df.to_excel("data/new_antibiogram_test.xlsx")
+    # go through every column of relevant MIC values
+    for mic in mics:
+        mic_df[mic]=[remove_equality(i) for i in [remove_tail(i) for i in mic_df[mic]]]
+
+    mic_df.to_csv(output)

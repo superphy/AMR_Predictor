@@ -89,8 +89,8 @@ def id_to_mic(sample):
             # and the full name used as the 3 letter code
             continue
         mic_3l = mics[antimicrobials.index(drug[0])]
-        info["{}_SIR".format(mic_3l)] = drug[1]
-        info["{}_MIC".format(mic_3l)] = drug[2]+' '+drug[3].split('/')[0]
+        info["SIR_{}".format(mic_3l)] = drug[1]
+        info["MIC_{}".format(mic_3l)] = drug[2]+' '+drug[3].split('/')[0]
 
         if "Typing Method" in info:
             # check for consistency in typing method for a sample
@@ -133,7 +133,7 @@ data = handle.read()
 handle.close()
 root = ET.fromstring(data)
 
-df_columns = ['BioSample']+[i+'_MIC' for i in mics]+[i+'_SIR' for i in mics]+[
+df_columns = ['BioSample']+['MIC_'+i for i in mics]+['SIR_'+i for i in mics]+[
 'isolation_source', 'serovar', 'collection_date', 'collected_by',
 'geo_loc_name', 'strain', 'sub_species', 'Typing Method', 'Testing Standard']
 

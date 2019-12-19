@@ -230,8 +230,10 @@ rule evaluate:
         import numpy as np
         import pandas as pd
         # create a dataframe for the results to be stored in as we read them
-        results_df = pd.DataFrame(data = np.zeros((len(drugs),6)),index = drugs,columns=['Accuracy (1D)','Accuracy (Direct)',
-        'Total Predictions','Non-Major Error Rate','Major Error Rate','Very Major Error Rate'])
+        results_df = pd.DataFrame(data = np.zeros((len(drugs),9)),index = drugs,columns=[
+        'Accuracy (1D)','Accuracy (Direct)','Total Predictions','Non-Major Error Rate',
+        'Major Error Rate','Very Major Error Rate','Non-Major Error Rate (1D)',
+        'Major Error Rate (1D)','Very Major Error Rate (1D)'])
 
         # we are going to walk line by line classifying results
         with open("prediction_errors.txt") as file:
@@ -258,12 +260,20 @@ rule evaluate:
                     results_df.at[drug,'Total Predictions']+=1
                     if(off_by_one=='True'):
                         results_df.at[drug,'Accuracy (1D)']+=1
-                    if(major=='NonMajor'):
-                        results_df.at[drug,'Non-Major Error Rate']+=1
+                        if(major=='NonMajor'):
+                            results_df.at[drug,'Non-Major Error Rate']+=1
+                        elif(major=='MajorError'):
+                            results_df.at[drug,'Major Error Rate']+=1
+                        elif(major=='VeryMajorError'):
+                            results_df.at[drug,'Very Major Error Rate']+=1
+                        else:
+                            raise Exception("Major rate: {} not able to be properly classified".format(major))
+                    elif(major=='NonMajor'):
+                        results_df.at[drug,'Non-Major Error Rate (1D)']+=1
                     elif(major=='MajorError'):
-                        results_df.at[drug,'Major Error Rate']+=1
+                        results_df.at[drug,'Major Error Rate (1D)']+=1
                     elif(major=='VeryMajorError'):
-                        results_df.at[drug,'Very Major Error Rate']+=1
+                        results_df.at[drug,'Very Major Error Rate (1D)']+=1
                     else:
                         raise Exception("Major rate: {} not able to be properly classified".format(major))
 
@@ -289,12 +299,15 @@ rule evaluate:
             results_df.at[drug,'Accuracy (1D)'] = results_df['Accuracy (1D)'][drug] / total
             results_df.at[drug,'Accuracy (Direct)'] = results_df['Accuracy (Direct)'][drug] / total
 
+            for error_type in ['Non-Major Error Rate','Major Error Rate','Very Major Error Rate']:
+                results_df.at[drug, error_type] += results_df.at[drug, error_type+' (1D)']
+
             # for errors we divide raw counts by total predictions
             num_errors = 0
-            for error_type in ['Non-Major Error Rate','Major Error Rate','Very Major Error Rate']:
+            for error_type in ['Non-Major Error Rate','Major Error Rate','Very Major Error Rate',
+            'Non-Major Error Rate (1D)','Major Error Rate (1D)','Very Major Error Rate (1D)']:
                 num_errors+= results_df[error_type][drug]
-            results_df.at[drug,'Non-Major Error Rate'] = results_df['Non-Major Error Rate'][drug] / total
-            results_df.at[drug,'Major Error Rate'] = results_df['Major Error Rate'][drug] / total
-            results_df.at[drug,'Very Major Error Rate'] = results_df['Very Major Error Rate'][drug] / total
+                results_df.at[drug, error_type] = results_df[error_type][drug] / total
+
 
         results_df.to_csv("results.csv")
