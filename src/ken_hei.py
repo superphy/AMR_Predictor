@@ -5,15 +5,21 @@ import pandas as pd
 import numpy as np
 import os
 import sys
-SEROVAR1 = "Heidelberg"
-SEROVAR2 = "Kentucky"
-FILEPATH = "data/no_ecoli_GenotypicAMR_Master.xlsx"
+keep_serovars = ['Kentucky','Heidelberg']
+SISTR_path = "data/no_ecoli_GenotypicAMR_Master.xlsx"
+NCBI_path = "data/dec2019_master_antibiogram.csv"
+
+def which_serovar(NCBI, SISTR):
+    if NCBI in [' ', 'Unknown','Serotype pending']:
+        return SISTR
+    else:
+        return NCBI
 
 if __name__ == "__main__":
     #load arrays from spreadsheet
-    df = pd.read_excel(FILEPATH)
-    df_run = df['run'].tolist()
-    df_serovar = df['serovar'].tolist()
+    SISTR_df = pd.read_excel(SISTR_path)
+    NCBI_df = pd.read_csv(NCBI_path)
+
     drug = sys.argv[1]
 
     #load genomes from kmer rows
@@ -25,26 +31,20 @@ if __name__ == "__main__":
     #load kmer mic rows
     kmer_mic = np.load(os.path.abspath(os.path.curdir)+'/data/'+drug+"/kmer_rows_mic.npy")
 
-    #funtion to find index of a genome in the run array
-    def find_index(genome):
-        for i, element in enumerate(kmer_rows):
-            if genome == element:
-                return i
+    runs = [i.decode('utf-8') for i in kmer_rows]
 
-    bool_mask = np.zeros(len(kmer_rows))
+    possible_serovars = []
 
-    #funtion to fill the bool mask by comparing run genomes against kmer rows genomes based on their serovar
-    def find_serovar(kmer_rows):
-        for i, element in enumerate(kmer_rows):
-            if df_serovar[find_index(element)] == SEROVAR1 or df_serovar[find_index(element)] == SEROVAR2:
-                bool_mask[i] = 1
+    for run in runs:
+        possible_serovars.append([NCBI_df[NCBI_df['run']==run]['serovar'].values[0],SISTR_df[SISTR_df['run']==run]['serovar'].values[0]])
 
-    find_serovar(kmer_rows)
-    bool_mask = [i == 1 for i in bool_mask]
+    serovars = [which_serovar(i[0],i[1]) for i in possible_serovars]
+
+    bool_mask = [i in keep_serovars for i in serovars]
 
     #filter rows and matrix to contain specified serovar(s)
     kmer_rows = kmer_rows[bool_mask]
-    kmer_matrix = kmer_matrix[bool_mask, :]
+    kmer_matrix = kmer_matrix[bool_mask]
     kmer_mic = kmer_mic[bool_mask]
 
     if not os.path.exists(os.path.abspath(os.path.curdir)+'/data/kh_' + drug):
