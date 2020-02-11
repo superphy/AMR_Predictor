@@ -85,6 +85,7 @@ def usage():
 	"-i,               Saves all features and their importance in data/features",
 	"--force_features  Force the model to be trained on the top 1000 features determined from the NCBI dataset (public)",
 	"--force_per_class Force the model to be trained on top f kmers from each class",
+	"-d, --dump        Dumps XGBoost boosters and feature arrays into /predict/"
 	"-e, 			   Saves errors to data/errors",
 	"-h, --help        Prints this menu",
 	sep = '\n')
@@ -104,10 +105,11 @@ if __name__ == "__main__":
 	kmer_length = 11
 	force_per_class = False
 	num_threads = 16
+	save_model=False
 
 	OBO_acc = np.zeros((2,5))
 	try:
-		opts, args =  getopt.getopt(sys.argv[1:],"hx:y:f:k:a:m:o:c:pie",["help","train=","test=","features=","attribute=","model=","out=","force_features","force_per_class", "kmer_length=", "cores="])
+		opts, args =  getopt.getopt(sys.argv[1:],"hx:y:f:k:a:m:o:c:pied",["help","train=","test=","features=","attribute=","model=","out=","force_features","force_per_class", "kmer_length=", "cores=", "dump"])
 	except getopt.GetoptError:
 		usage()
 		sys.exit(2)
@@ -141,6 +143,10 @@ if __name__ == "__main__":
 			force_per_class = True
 		elif opt == '-e':
 			save_errors = 1
+		elif opt == '-d':
+			# dump boosters and feature arrays
+			save_model = True
+
 		elif opt in ('-h', '--help'):
 			usage()
 			sys.exit()
@@ -269,7 +275,6 @@ if __name__ == "__main__":
 			else:
 				model = XGBClassifier(objective=objective, silent=True, nthread=num_threads)
 
-			save_model=False
 			if(save_model):
 				import xgboost as xgb
 				xg_train = xgb.DMatrix(x_train,y_train, feature_names=[i.decode('utf-8') for i in cols.flatten()])

@@ -22,8 +22,11 @@ rule hyperas:
         drug = "{drug}",
         split = "{split}",
         feat = "{feat}"
-    shell:
-        "sbatch -c 16 --mem 125G --wrap='python src/hyp.py {params.feat} {params.drug} 10 {params.split} public 31'"
+    run:
+        trials = 10
+        if int(params.feat) > 5000:
+            trials = int(int(params.feat)*0.01)
+        shell("sbatch -c 16 --mem 150G --wrap='python src/hyp.py {params.feat} {params.drug} {trials} {params.split} public 11'")
 
 rule average:
     input:
@@ -34,4 +37,4 @@ rule average:
         drug = "{drug}",
         feat = "{feat}"
     shell:
-        "sbatch -c 1 --mem 2GB --wrap='python src/hyp_average.py {params.feat} {params.drug} public 31'"
+        "sbatch -c 1 --mem 2GB --wrap='python src/hyp_average.py {params.feat} {params.drug} public 11'"

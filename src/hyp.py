@@ -15,12 +15,6 @@ from tensorflow import set_random_seed
 from concurrent.futures import ProcessPoolExecutor
 from multiprocessing import cpu_count
 
-config = tensorflow.ConfigProto(intra_op_parallelism_threads=cpu_count(),
-								inter_op_parallelism_threads=2,
-								allow_soft_placement=True,
-								device_count = {'CPU': cpu_count()})
-sesions = tensorflow.Session(config=config)
-
 from hyperopt import Trials, STATUS_OK, tpe
 from keras.layers.convolutional import Conv1D
 from keras.layers.core import Dense, Dropout, Activation
@@ -28,6 +22,9 @@ from keras.layers import Flatten, BatchNormalization
 from keras.models import Sequential, load_model
 from keras.utils import np_utils, to_categorical
 from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
+
+from keras import backend as K
+K.set_session(K.tf.Session(config=K.tf.ConfigProto(intra_op_parallelism_threads=16, inter_op_parallelism_threads=16)))
 
 from hyperas import optim
 from hyperas.distributions import choice, uniform
@@ -41,8 +38,32 @@ from sklearn.metrics import matthews_corrcoef, confusion_matrix, classification_
 from model_evaluators import *
 from data_transformers import *
 
-seed(913824)
-set_random_seed(913824)
+#seed(913824)
+#set_random_seed(913824)
+
+def explain_parameters(best_run):
+	"""
+	Takes in a hyperas best run dictionary and explains the network architecture
+	"""
+	print("--- model parameters ---")
+	levels_of_patience = [4,8,12,16]
+	print('Patience:',levels_of_patience[int(best_run['patience'])])
+	num_layers = int(best_run['num_layers'])
+
+	if num_layers == 0:
+		print("no hidden layers")
+	else:
+		print('Input')
+		for layer in range(num_layers):
+			if layer == 0:
+				print("{} neurons".format(best_run['int']))
+				print("{}{} dropout".format(best_run['Dropout'],'%'))
+			else:
+				print("{} neurons".format(best_run['int_'+str(layer)]))
+				print("{}{} dropout".format(best_run['Dropout_'+str(layer)],'%'))
+		print('Output')
+
+	print("--- end of parameters ---")
 
 def eval_model(model, test_data, test_names):
 	'''
@@ -260,7 +281,7 @@ def create_model(x_train, y_train, x_test, y_test):
 		model.add(Dense(num_classes, kernel_initializer='uniform', activation='softmax'))
 
 	model.compile(loss='poisson', metrics=['accuracy'], optimizer='adam')
-	model.fit(x_train, y_train, epochs=100, verbose=0, batch_size=8, callbacks=[early_stop, reduce_LR])
+	model.fit(x_train, y_train, epochs=100, verbose=0, batch_size=6000, callbacks=[early_stop, reduce_LR])
 
 	score, acc = model.evaluate(x_test, y_test, verbose=0)
 	return {'loss': -acc, 'status': STATUS_OK, 'model': model}
@@ -298,6 +319,7 @@ if __name__ == "__main__":
 	print("hyperas.py")
 	print(drug, feats)
 	print("************************************")
+	print("Trials:",max_evals)
 
 	# Load data
 	mic_class_dict = joblib.load(os.path.abspath(os.path.curdir)+"/data/public_mic_class_order_dict.pkl")
@@ -307,6 +329,11 @@ if __name__ == "__main__":
 	# Split data, get best model
 	train_data, train_names, test_data, test_names = data()
 	best_run, best_model = optim.minimize(model=create_model, data=data, algo=tpe.suggest, max_evals=max_evals, trials=Trials(),keep_temp=True)
+
+
+	print("Validation accuracies")
+	print(best_model.evaluate(test_data, test_names))
+	print("ending validation acc")
 
 	# Find and record errors
 	# find_errors(best_model, test_data, test_names, genome_names, class_dict, drug, mic_class_dict)
@@ -334,6 +361,7 @@ if __name__ == "__main__":
 
 	## Score #######################################################
 	score = best_model.evaluate(test_data, test_names)
+	explain_parameters(best_run)
 	score_1d = eval_model(best_model, test_data, test_names)
 	y_true = score_1d[3]
 	y_true = y_true.astype(int)

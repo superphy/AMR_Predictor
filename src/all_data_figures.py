@@ -18,6 +18,7 @@ def usage():
     "4 - MIC frequency graphs"
     "5 - Individual tests: acc vs feat size for each model, each dataset matchup",
     "6 - Serovar Frequency in the public dataset",
+    "8 - 1000 kmer NCBI summary",
     sep = '\n')
     return
 
@@ -354,7 +355,62 @@ if __name__ == "__main__":
         plt.savefig('figures/serovar_frequencies.png', dpi = 300)
         plt.clf()
 
-    if(figure not in [str(i) for i in range(8)]+['all']):
+    if(figure in ['8','all']):
+        sns.set(style="darkgrid", rc= {"xtick.bottom": True, "ytick.left": True, "axes.facecolor": ".9"})
+        master_df['train&test'] = [master_df['train'][i]+'-->'+master_df['test'][i] for i in range(len(master_df.index))]
+        summ_df = master_df[(master_df['feats'] == 1000) & (master_df['train&test'] == 'public-->aCrossValidation')]
+
+        models = ['XGB','SVM','ANN']
+
+        save_df = pd.DataFrame(data=np.zeros((13,3),dtype='object'), index=drugs, columns = models)
+        for i, row in enumerate(summ_df.values):
+            summ_drug = row[5]
+            summ_model = row[1]
+            sum_1Dacc = row[6]
+            save_df.at[summ_drug,summ_model] = sum_1Dacc
+        save_df.to_csv("fig1_df.csv")
+
+        print(master_df)
+
+        names = ['Co-Amoxiclav','Ampicillin','Azithromycin','Chloramphenicol','Ciprofloxacin','Ceftriaxone','Sulfisoxazole',
+        'Cefoxitin','   Trimethoprim/\nSulfamethoxazole','Tetracycline','Ceftiofur','Gentamicin','Nalidixic Acid']
+
+        bar = sns.catplot(
+        x='drug', y ='1Dacc', hue ='model', kind='bar', data=summ_df.sort_values(by=['1Dacc']),
+        hue_order = ["XGB", "SVM", "ANN"]
+        )
+        plt.xlabel("Antimicrobial", fontsize=14)
+        plt.ylabel("Accuracy (Within 1 Dilution)", fontsize=14)
+
+        for ax in bar.axes.flat:
+            labels = ax.get_xticklabels()
+            labels = [names[drugs.index(i.get_text())] for i in labels]
+        bar.set_xticklabels(labels, rotation=-30, ha='left')
+
+        import matplotlib.transforms as mtrans
+        for ax in bar.axes.flat:
+            trans = mtrans.Affine2D().translate(-20, 0)
+            for i, t in enumerate(ax.get_xticklabels()):
+                if i == 12:
+                    trans = mtrans.Affine2D().translate(-20, 20)
+                    t.set_transform(t.get_transform()+trans)
+                else:
+                    trans = mtrans.Affine2D().translate(-20, 0)
+                    t.set_transform(t.get_transform()+trans)
+
+            import matplotlib.ticker as plticker
+            ax.set(ylim=(0, 1))
+            loc = plticker.MultipleLocator(base=0.1)
+            ax.yaxis.set_major_locator(loc)
+            ax.set_yticks([i/40 for i in range(40)], minor=True)
+            ax.grid(b=True, which='minor', color='w', linewidth=0.5)
+
+        fig = plt.gcf()
+        fig.set_size_inches(7, 5)
+        fig.subplots_adjust(bottom=0.25)
+        plt.show()
+
+    if(figure not in [str(i) for i in range(9)]+['all']):
         print("Did not pass a valid argument")
         usage()
         sys.exit(2)
