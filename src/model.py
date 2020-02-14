@@ -143,7 +143,7 @@ if __name__ == "__main__":
 			force_per_class = True
 		elif opt == '-e':
 			save_errors = 1
-		elif opt == '-d':
+		elif opt in ('-d', '--dump'):
 			# dump boosters and feature arrays
 			save_model = True
 
@@ -276,9 +276,10 @@ if __name__ == "__main__":
 				model = XGBClassifier(objective=objective, silent=True, nthread=num_threads)
 
 			if(save_model):
+				#print(predict_for,num_classes,objective)
 				import xgboost as xgb
 				xg_train = xgb.DMatrix(x_train,y_train, feature_names=[i.decode('utf-8') for i in cols.flatten()])
-				param = {'objective':objective, 'num_class': num_classes_obj}
+				param = {'objective':objective, 'num_class': num_classes}
 				bst = xgb.train(param,xg_train)
 				# note that for this to save properly, imp_feats must == 1
 				joblib.dump(bst, "predict/models/xgb_public_{}feats_{}model.bst".format(str(num_feats),predict_for))
