@@ -43,6 +43,8 @@ def transform(input, log, output,
         classes = {}
         class_orders = {}
         for col in micsdf:
+            if col not in slice_cols:
+                continue
             logging.debug('Creating MIC panel for {}'.format(col))
             drug = col.replace('MIC_', '')
 
