@@ -73,7 +73,7 @@ dependencies:
   - java-jdk=8.0.92=1
   - jellyfish=2.2.10=h2d50403_0
   - jemalloc=4.5.0=0
-  - jpeg=9c=h470a237_0
+  - jpeg=9c
   - keras=2.1.6=py36_0
   - kiwisolver=1.0.1=py36hf484d3e_0
   - libffi=3.2.1=hd88cf55_4
