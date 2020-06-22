@@ -30,7 +30,7 @@ def find_top_genes(kmer_length, search_num):
         dataset_ranks = kmer_ranks[kmer_ranks['Dataset']==dataset]
 
         for drug in drugs:
-            if(dataset == 'grdi' and drug in ['AZM', 'FIS']):
+            if(dataset == 'grdi' and drug in ['FIS']):
                 continue
 
             """

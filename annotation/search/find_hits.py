@@ -169,7 +169,7 @@ if __name__ == "__main__":
     num_feats = sys.argv[5]
     kmer_length = sys.argv[6]
 
-    if(dataset == 'grdi' and drug in ['FIS','AZM']):
+    if(dataset == 'grdi' and drug in ['FIS']):
         raise Exception("Called find_hits.py for FIS using GRDI dataset, the snakemake shouldnt allow this")
 
     if kmer_length == '11':

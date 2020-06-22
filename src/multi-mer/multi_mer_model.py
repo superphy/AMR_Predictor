@@ -23,13 +23,13 @@ if __name__ =="__main__":
     from sklearn.feature_selection import SelectKBest, chi2, f_classif
     from collections import Counter
     import psutil
-
+    
     drug = sys.argv[1]
     num_threads = int(sys.argv[2])
     dataset = sys.argv[3]
     kmer_length = sys.argv[4]
     num_feats = sys.argv[5]
-
+    print(drug,dataset)
     # if we want the top X features predictive of each class, not just overall
     force_per_class = int(sys.argv[6])
 
@@ -53,7 +53,15 @@ if __name__ =="__main__":
     num_starting_mic = len(kmer_rows_mic)
 
     # keep only rows with valid MIC labels
-    assert(type(kmer_rows_mic[0])==type(mic_class_dict[drug][0]))
+    def to_str(i):
+        if isinstance(i, str):
+            return i
+        else:
+            return str(i)
+    print('rows_mic[0]:',type(kmer_rows_mic[0]), kmer_rows_mic[0])
+    print('class_dict[0]:',type(mic_class_dict[drug][0]), mic_class_dict[drug][0])
+    kmer_rows_mic = [to_str(i) for i in kmer_rows_mic]
+    assert(type(kmer_rows_mic[0])==type(mic_class_dict[drug][0]))    
     row_mask = [i in mic_class_dict[drug] for i in kmer_rows_mic]
     kmer_matrix = kmer_matrix[row_mask]
     kmer_rows_mic = np.asarray(kmer_rows_mic)[row_mask]

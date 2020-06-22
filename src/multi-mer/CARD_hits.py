@@ -14,17 +14,41 @@ def rewrite_fastas(input, output):
     '''
     puts species name into contig header
     '''
-    for record in SeqIO.parse(input,"fasta"):
-        print(record.id)
-        contig, species = record.id.split('[')
-        record.id =(contig[:-1]+'|'+species[:-1]).replace(' ','_')
-        SeqIO.write(record, output, "fasta")
+    if os.path.exists(output):
+        os.system("rm "+output)
+
+    records = list(SeqIO.parse(input, 'fasta'))
+
+    for record in records:
+        header = record.description.split('[')
+        if len(header) == 2:
+            record.id =(header[0][:-1]+'|'+header[1][:-1]).replace(' ','_')
+            record.description = ''
+    SeqIO.write(records, output, "fasta")
+
+def make_card_db():
+    # goes into 4 CARD fastas, fixes name, merges into master fasta, makes db
+
+    files = ['data/CARD/protein_fasta_protein_homolog_model.fasta','data/CARD/protein_fasta_protein_knockout_model.fasta',
+    'data/CARD/protein_fasta_protein_overexpression_model.fasta','data/CARD/protein_fasta_protein_variant_model.fasta']
+
+    # clearn headers
+    for file in files:
+        rewrite_fastas(file, file.split('.')[0]+'_fixed.fasta')
+
+    # merge into single fasta
+    os.system("cat data/CARD/protein_fasta_*fixed.fasta > data/CARD/all_prot.fasta")
+
+    # make database
+    os.system("makeblastdb -in data/CARD/all_prot.fasta -out data/CARD/CARDdb -title protein_resistance_db -dbtype prot")
+
+    return 0
 
 def strip_amg_hits(df):
     '''
     takes best_hits.csv and returns only top hits overall, not just AMG's
     '''
-    df = df.tail(24)
+    df = df.tail(25)
     df = df.reset_index(drop=True)
     df = df.drop(columns = ['Unnamed: 0', 'AMG'])
     return df
@@ -46,7 +70,7 @@ def find_top_gene(df):
     card_hits = []
     for dataset in datasets:
         for drug in drugs:
-            if dataset == 'grdi' and drug in ['AZM','FIS']:
+            if dataset == 'grdi' and drug in ['FIS']:
                 continue
             set_df = df[df['qseqid']=="{}_{}".format(dataset,drug)]
             if len(set_df['stitle'])>0:
@@ -77,6 +101,7 @@ def public_to_ncbi(dataset):
     else:
         return 'GRDI'
 
+
 if __name__ == "__main__":
     kmer_length = sys.argv[1]
     all_hits_df = pd.read_csv("results/multi-mer/{}mer/best_hits.csv".format(kmer_length))
@@ -87,6 +112,13 @@ if __name__ == "__main__":
     # build blast query
     if not os.path.exists(os.path.abspath(os.path.curdir)+"/data/CARD/top_{}mer_hits_search_query.fasta".format(kmer_length)):
         make_blast_query(general_hits_df, "data/CARD/top_{}mer_hits_search_query.fasta".format(kmer_length))
+
+    # build CARD blast db
+    if not os.path.exists(os.path.abspath(os.path.curdir)+"/data/CARD/protein_fasta_protein_homolog_model.fasta"):
+        raise Exception("Download CARD dat from https://card.mcmaster.ca/latest/data and place in AMR_Predictor/data/CARD/")
+
+    if not os.path.exists(os.path.abspath(os.path.curdir)+"/data/CARD/CARDdb.phr"):
+        make_card_db()
 
     os.system("blastx -db data/CARD/CARDdb -query data/CARD/top_"+kmer_length+"mer_hits_search_query.fasta -outfmt '6 qseqid stitle pident length mismatch gapopen qstart qend sstart send evalue bitscore' -out data/CARD/all_CARD_hits.tsv")
 

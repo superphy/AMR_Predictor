@@ -9,6 +9,7 @@ def merge_df(df_path, drug, dataset):
     and returns a df with the columns:
     [drug, dataset, kmer, gene_up, gene_up_count, avg_dist_up, gene_down, gene_down_count, avg_dist_down]
     """
+    print(df_path)
     df = pd.read_pickle(df_path)
     hit_summary = []
 
@@ -63,7 +64,7 @@ if __name__ == "__main__":
     all_hits = []
 
     for drug in drugs:
-        if(dataset == 'grdi' and drug in ['FIS','AZM']):
+        if(dataset == 'grdi' and drug in ['FIS']):
             continue
         if(kmer_length == '11'):
             df_path = "annotation/search/11mer_data/{}_hits_for_{}.pkl".format(dataset,drug)

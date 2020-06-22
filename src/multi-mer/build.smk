@@ -67,20 +67,31 @@ rule grdi_dump:
 rule union:
     # runs 5 times for ncbi, 4 for grdi
     input:
-        expand("data/genomes/jellyfish_results"+kmer_length+"/{id}.fa", id=ids)
+        expand("data/genomes/jellyfish_results"+kmer_length+"/{id}.fa", id=ids),
+        expand("data/grdi_genomes/jellyfish_results"+kmer_length+"/{gid}.fa", gid=gids)
     output:
         "data/genomes/top_feats/all_"+kmer_length+"mers{set_num}.npy"
     shell:
-        "python src/multi-mer/find_master.py "+kmer_length+" {output} {set_num}"
+        "python src/multi-mer/find_master.py "+kmer_length+" {output} {wildcards.set_num}"
 
 rule merge_masters:
     # runs once per dataset
     input:
         expand("data/genomes/top_feats/all_"+kmer_length+"mers{set_num}.npy", set_num = set_nums)
     output:
-        "data/genomes/top_feats/{dataset_path}all_"+kmer_length+"mers.npy"
+        "data/genomes/top_feats/all_"+kmer_length+"mers.npy"
+    run:
+        blank_path = ''
+        "python src/multi-mer/find_all_feats.py "+kmer_length+" {output} {blank_path}"
+
+rule merge_masters_grdi:
+    # runs once per dataset
+    input:
+        expand("data/genomes/top_feats/all_"+kmer_length+"mers{set_num}.npy", set_num = set_nums)
+    output:
+       "data/genomes/top_feats/grdi_all_"+kmer_length+"mers.npy"
     shell:
-        "python src/multi-mer/find_all_feats.py "+kmer_length+" {output} {dataset_path}"
+       "python src/multi-mer/find_all_feats.py "+kmer_length+" {output} grdi_"
 
 rule matrix:
 # runs 46 times for ncbi, 12 times for grdi
@@ -95,13 +106,18 @@ rule matrix:
         if not os.path.exists(os.path.abspath(os.path.curdir)+"/data/multi-mer/genome_names.npy"):
             genomes = ([files for r,d,files in os.walk("data/genomes/jellyfish_results{}/".format(kmer_length))][0])
             np.save("data/multi-mer/genome_names.npy", genomes)
-        if not os.path.exists(os.path.abspath(os.path.curdir)+"/data/multi-mer/genome_names.npy"):
+        if not os.path.exists(os.path.abspath(os.path.curdir)+"/data/multi-mer/grdi_genome_names.npy"):
             genomes = ([files for r,d,files in os.walk("data/grdi_genomes/jellyfish_results{}/".format(kmer_length))][0])
             np.save("data/multi-mer/grdi_genome_names.npy", genomes)
 
-
-        shell("sbatch -c 16 --mem 700G --partition NMLResearch --wrap='python src/multi-mer/multi_mer_matrix.py {input} {wildcards.split} {kmer_length}'")
-
+        ncbi_path = "data/genomes/top_feats/all_"+kmer_length+"mers.npy"
+        grdi_path = "data/genomes/top_feats/grdi_all_"+kmer_length+"mers.npy"
+        if int(wildcards.split) in range(1, 47):
+            shell("sbatch -c 16 --mem 700G --partition NMLResearch --wrap='python src/multi-mer/multi_mer_matrix.py {ncbi_path} {wildcards.split} {kmer_length}'")
+        elif int(wildcards.split) in range(47,59):
+            shell("sbatch -c 16 --mem 700G --partition NMLResearch --wrap='python src/multi-mer/multi_mer_matrix.py {grdi_path} {wildcards.split} {kmer_length}'")
+        else:
+            raise Exception("split number not in range for ncbi or grdi datasets")
 rule merge:
     input:
         expand("data/multi-mer/splits/"+kmer_length+"mer_matrix{split}.npy", split = split_nums)
@@ -127,12 +143,13 @@ rule model:
         "data/multi-mer/grdi_"+kmer_length+"mer_matrix.npy",
         "data/multi-mer/"+kmer_length+"mer_matrix.npy"
     output:
-        "data/multi-mer/feat_ranks/{dataset}_1000_{drug}_"+kmer_length+"mer_feature_ranks.npy"
+        "data/multi-mer/feat_ranks/{dataset}_1000000_{drug}_"+kmer_length+"mer_feature_ranks.npy"
     run:
         if wildcards.dataset == 'grdi' and wildcards.drug == 'FIS':
             shell("touch {output}")
         else:
-            shell("sbatch -c 144 --mem 1007G --partition NMLResearch --wrap='python src/multi-mer/multi_mer_model.py {drug} 144 {dataset} 31 1000000 0'")
+
+            shell("sbatch -c 144 --mem 1007G --partition NMLResearch --wrap='python src/multi-mer/multi_mer_model.py {wildcards.drug} 144 {wildcards.dataset} 31 1000000 0'")
 
 rule ncbi_prokka:
     input:
@@ -156,7 +173,7 @@ rule grdi_prokka:
 
 rule ncbi_prokka_to_df:
     input:
-        "annotation/annotated_genomes/{id}/{id}.ffns"
+        "annotation/annotated_genomes/{id}/{id}.ffn"
     output:
         "annotation/gffpandas_ncbi/{id}.pkl"
     run:
@@ -169,7 +186,7 @@ rule ncbi_prokka_to_df:
 
 rule grdi_prokka_to_df:
     input:
-        "annotation/annotated_grdi_genomes/{gid}/{gid}.ffns"
+        "annotation/annotated_grdi_genomes/{gid}/{gid}.ffn"
     output:
         "annotation/gffpandas_grdi/{gid}.pkl"
     run:
@@ -193,7 +210,7 @@ rule find_top:
         sys.path.append('annotation/search/')
         from find_top_feats import find_top_feats
 
-        if(wildcards.dataset == 'grdi' and wildcards.drug in ['AZM','FIS']):
+        if(wildcards.dataset == 'grdi' and wildcards.drug in ['FIS']):
             shell("touch {output}")
         else:
             feat_imps = np.load(input[0], allow_pickle=True)
@@ -215,15 +232,15 @@ rule blast_feats:
     input:
         "data/multi-mer/feat_ranks/{dataset}_1000000_{drug}_"+kmer_length+"mer_top5_feats.npy"
     output:
-        "data/multi-mer/blast/1000000_{dataset}_"+kmer_length+"mer_blast_hits/{drug}.pkl"
+        "data/multi-mer/blast/1000000_{dataset}_"+kmer_length+"mer_blast_hits/{drug}.blast"
     run:
-        if(wildcards.dataset == 'grdi' and wildcards.drug in ['AZM','FIS']):
+        if(wildcards.dataset == 'grdi' and wildcards.drug in ['FIS']):
             shell("touch {output}")
         else:
             import numpy as np
             alt_out = str(output).split('.')[0]+'.query'
-            if not os.path.exists(os.path.abspath(os.path.curdir)+"/data/multi-mer/blast/1000_{}_"+kmer_length+"mer_blast_hits".format(wildcards.dataset)):
-                os.mkdir(os.path.abspath(os.path.curdir)+"/data/multi-mer/blast/1000_{}_"+kmer_length+"mer_blast_hits".format(wildcards.dataset))
+            if not os.path.exists(os.path.abspath(os.path.curdir)+"/data/multi-mer/blast/1000000_{}_"+kmer_length+"mer_blast_hits".format(wildcards.dataset)):
+                os.mkdir(os.path.abspath(os.path.curdir)+"/data/multi-mer/blast/1000000_{}_"+kmer_length+"mer_blast_hits".format(wildcards.dataset))
             top_feats = np.load(input[0], allow_pickle=True)
             #if(isinstance(top_feats[0], list)):
             top_feats = np.array(top_feats)[:,0]
@@ -239,13 +256,13 @@ rule blast_feats:
 
 rule find_hits:
     input:
-        a = "data/multi-mer/blast/1000000_{dataset}_"+kmer_length+"mer_blast_hits/{drug}.pkl",
+        a = "data/multi-mer/blast/1000000_{dataset}_"+kmer_length+"mer_blast_hits/{drug}.blast",
         b = expand("annotation/gffpandas_ncbi/{id}.pkl", id = ids),
         c = expand("annotation/gffpandas_grdi/{gid}.pkl", gid = gids)
     output:
         "data/multi-mer/blast/1000000_{dataset}_"+kmer_length+"mer_blast_hits/{drug}_hits.pkl"
     run:
-        if(wildcards.dataset == 'grdi' and wildcards.drug in ['FIS','AZM']):
+        if(wildcards.dataset == 'grdi' and wildcards.drug in ['FIS']):
             shell("touch {output}")
         else:
             shell("python annotation/search/find_hits.py {input.a} {wildcards.dataset} {wildcards.drug} 5 1000000 "+kmer_length)
@@ -269,7 +286,7 @@ rule score_summary:
         row = []
         for drug in drugs:
             for dataset in datasets:
-                if dataset == 'grdi' and drug in ['AZM','FIS']:
+                if dataset == 'grdi' and drug in ['FIS']:
                     continue
                 imp_path = "data/multi-mer/feat_ranks/{}_1000000_{}_{}mer_feature_ranks.npy".format(dataset,drug,kmer_length)
                 imp_arr = np.load(imp_path, allow_pickle=True)
